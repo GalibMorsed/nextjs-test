@@ -1,9 +1,8 @@
 import React from "react";
 
-export default function Home() {
-  return (
-    <div className="container">
-      <h1>heyyyyy</h1>
-    </div>
-  );
+export default function HomePage() {
+  return <div className="p-4">
+    <h1>Welcome to NextNews App</h1>
+    <p>Your source for the latest news articles.</p>
+  </div>;
 }
