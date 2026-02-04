@@ -1,0 +1,8 @@
+1. install Dependencies
+npm i
+
+2. start your dev server
+npm run dev
+
+3. test database connection
+npm run test-db
