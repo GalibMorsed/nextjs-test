@@ -1,10 +1,26 @@
-import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/server';
+import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
 
 export function middleware(req: NextRequest) {
-    const isLoggedIn = false; // replace later with supabase auth check
+    const { pathname } = req.nextUrl;
 
-    if (!isLoggedIn && req.nextUrl.pathname.startsWith('/notes')) {
-        return NextResponse.redirect(new URL('/auth/login', req.url));
+    const accessToken = req.cookies.get("sb-access-token");
+
+    const protectedRoutes = ["/notes"];
+
+    const isProtected = protectedRoutes.some(route =>
+        pathname.startsWith(route)
+    );
+
+    if (isProtected && !accessToken) {
+        const loginUrl = new URL("/auth/login", req.url);
+        loginUrl.searchParams.set("redirect", pathname);
+        return NextResponse.redirect(loginUrl);
     }
+
+    return NextResponse.next();
 }
+
+export const config = {
+    matcher: ["/notes/:path*"],
+};
