@@ -6,3 +6,7 @@ export default function HomePage() {
     <p>Your source for the latest news articles.</p>
   </div>;
 }
+export const metadata = {
+  title: "NewsApp – Trending & Latest News",
+  description: "Read trending news from technology, sports, business and more.",
+};
