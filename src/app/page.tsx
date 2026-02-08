@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import ArticleCard from "./components/artticalCart";
 
 // 1. Define types matching your API response
 interface Article {
@@ -56,58 +57,49 @@ export default async function Home() {
 
   if (!articles || articles.length === 0) {
     return (
-      <main className="p-4">
-        <h1 className="text-2xl font-bold">News Feed</h1>
-        <p>No news available at the moment.</p>
+      <main className="flex min-h-screen flex-col items-center justify-center p-8 text-center bg-gray-50">
+        <div className="max-w-md">
+          <h1 className="text-3xl font-bold text-gray-800 mb-2">News Feed</h1>
+          <p className="text-gray-600">
+            No news available at the moment. Please check back later.
+          </p>
+        </div>
       </main>
     );
   }
 
   return (
-    <main className="container mx-auto p-4">
-      <h1 className="text-3xl font-bold mb-6">Top Headlines</h1>
+    <main className="min-h-screen bg-gray-50 p-6 md:p-8 lg:p-12">
+      <div className="max-w-7xl mx-auto">
+        <header className="mb-10">
+          <h1 className="text-4xl md:text-5xl font-extrabold text-gray-900 tracking-tight mb-2">
+            Top Headlines
+          </h1>
+          <p className="text-lg text-gray-600">
+            Stay updated with the latest stories from around the world.
+          </p>
+        </header>
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {articles.map((article) => (
-          <article
-            key={article.url}
-            className="border rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow"
-          >
-            {article.urlToImage ? (
-              <img
-                src={article.urlToImage}
-                alt={article.title}
-                className="w-full h-48 object-cover"
+        <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          {articles.map((article, index) => {
+            const formattedDate = article.publishedAt
+              ? new Date(article.publishedAt).toLocaleDateString(undefined, {
+                  month: "short",
+                  day: "numeric",
+                  year: "numeric",
+                })
+              : "Date Not Available";
+
+            return (
+              <ArticleCard
+                key={article.url + index}
+                article={article}
+                index={index}
+                formattedDate={formattedDate}
               />
-            ) : (
-              <div className="w-full h-48 bg-gray-200 flex items-center justify-center text-gray-500">
-                No Image
-              </div>
-            )}
-
-            <div className="p-4">
-              <h2 className="text-xl font-semibold mb-2 line-clamp-2">
-                {article.title}
-              </h2>
-              <p className="text-gray-600 text-sm mb-4 line-clamp-3">
-                {article.description}
-              </p>
-              <div className="flex justify-between items-center mt-auto">
-                <span className="text-xs text-gray-500">
-                  {new Date(article.publishedAt).toLocaleDateString()}
-                </span>
-                <a
-                  href={article.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-blue-600 hover:underline text-sm font-medium"
-                >
-                  Read Full Story
-                </a>
-              </div>
-            </div>
-          </article>
-        ))}
+            );
+          })}
+        </div>
       </div>
     </main>
   );
