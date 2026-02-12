@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@gnews-io/gnews-io-js": "^2.2.0",
+    "@heroicons/react": "^2.2.0",
     "@supabase/supabase-js": "^2.94.1",
     "axios": "^1.13.4",
     "bcrypt": "^6.0.0",
@@ -20,8 +21,10 @@
     "cors": "^2.8.6",
     "dotenv": "^17.2.3",
     "express": "^5.2.1",
+    "framer-motion": "^12.34.0",
     "joi": "^18.0.2",
     "jsonwebtoken": "^9.0.3",
+    "lucide-react": "^0.563.0",
     "next": "16.1.6",
     "nodemon": "^3.1.11",
     "pg": "^8.18.0",

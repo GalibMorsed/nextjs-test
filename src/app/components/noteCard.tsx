@@ -3,7 +3,13 @@
 import { useState } from "react";
 import { updateNote, deleteNote } from "../services/notesService";
 
-export default function NoteCard({ note }: any) {
+interface Note {
+  id: string;
+  article_title: string;
+  content: string;
+}
+
+export default function NoteCard({ note }: { note: Note }) {
   const [isEditing, setIsEditing] = useState(false);
   const [content, setContent] = useState(note.content);
 

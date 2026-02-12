@@ -1,10 +1,8 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
 
 :root {
-  --background: #f8fafc; // slate-50
-  --foreground: #0f172a; // slate-900
+    --background: #f8fafc; /* slate-50 */
+  --foreground: #0f172a; /* slate-900 */
 }
 
 body {
@@ -16,10 +14,9 @@ body {
     sans-serif;
 }
 
-.line-clamp-3 {
+@utility line-clamp-3 {
   display: -webkit-box;
   -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
-// Add your global styles or SCSS variables here

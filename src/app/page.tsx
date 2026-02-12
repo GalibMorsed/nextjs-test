@@ -1,4 +1,3 @@
-import { notFound } from "next/navigation";
 import ArticleCard from "./components/artticalCart";
 
 // 1. Define types matching your API response

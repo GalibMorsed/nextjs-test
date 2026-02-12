@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import "./index.scss";
+import "./index.css";
 import Navbar from "./components/navbar";
 import Sidebar from "./components/sidebar";
 
@@ -14,8 +14,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html>
-      <body>
+    <html lang="en">
+      <body className="min-h-screen">
         <Navbar />
         <div className="flex">
           <Sidebar />
