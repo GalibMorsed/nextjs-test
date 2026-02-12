@@ -5,12 +5,18 @@ import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import {
+  Briefcase,
   ChevronDown,
+  Film,
+  FlaskConical,
+  Heart,
   Home,
   Laptop,
   LogOut,
+  Search,
   Settings,
   Trophy,
+  X,
 } from "lucide-react";
 import type { User } from "@supabase/supabase-js";
 import { supabase } from "../../../lib/superbaseClient";
@@ -126,14 +132,27 @@ function SidebarContent({
           DailyScoop
         </motion.h2>
 
-        <form onSubmit={handleSearch} className="mb-6">
+        <form onSubmit={handleSearch} className="mb-6 relative">
+          <Search
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+            size={18}
+          />
           <input
             type="text"
             placeholder="Search news..."
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            className="w-full px-4 py-2 rounded-xl bg-gray-100 focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm"
+            className="w-full pl-10 pr-10 py-2 rounded-xl bg-gray-100 focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm transition-all"
           />
+          {query && (
+            <button
+              type="button"
+              onClick={() => setQuery("")}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 p-1 rounded-full hover:bg-gray-200 transition-colors"
+            >
+              <X size={14} />
+            </button>
+          )}
         </form>
 
         <nav className="space-y-2">
@@ -154,6 +173,42 @@ function SidebarContent({
           >
             <Laptop size={18} />
             Technology
+          </Link>
+          <Link
+            href="/categories/business"
+            className={navItemClass(
+              pathname.startsWith("/categories/business"),
+            )}
+            onClick={closeAndNavigate}
+          >
+            <Briefcase size={18} />
+            Business
+          </Link>
+          <Link
+            href="/categories/entertainment"
+            className={navItemClass(
+              pathname.startsWith("/categories/entertainment"),
+            )}
+            onClick={closeAndNavigate}
+          >
+            <Film size={18} />
+            Entertainment
+          </Link>
+          <Link
+            href="/categories/health"
+            className={navItemClass(pathname.startsWith("/categories/health"))}
+            onClick={closeAndNavigate}
+          >
+            <Heart size={18} />
+            Health
+          </Link>
+          <Link
+            href="/categories/science"
+            className={navItemClass(pathname.startsWith("/categories/science"))}
+            onClick={closeAndNavigate}
+          >
+            <FlaskConical size={18} />
+            Science
           </Link>
           <Link
             href="/categories/sports"

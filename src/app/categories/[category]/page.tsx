@@ -63,7 +63,7 @@ export default async function CategoryPage({
                   rel="noopener noreferrer"
                   className="text-blue-600 hover:underline"
                 >
-                  Read more
+                  Read more ➡️
                 </Link>
               ) : (
                 <span className="text-gray-400">Link unavailable</span>

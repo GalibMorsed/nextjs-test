@@ -10,7 +10,10 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <>
-      <Navbar onMenuToggle={() => setIsSidebarOpen((prev) => !prev)} />
+      <Navbar
+        onMenuToggle={() => setIsSidebarOpen((prev) => !prev)}
+        isMobileOpen={isSidebarOpen}
+      />
       <div className="flex min-h-[calc(100vh-65px)]">
         <Sidebar
           isMobileOpen={isSidebarOpen}
