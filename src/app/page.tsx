@@ -30,7 +30,7 @@ async function getNews(): Promise<Article[]> {
 
   try {
     const res = await fetch(
-      `https://newsapi.org/v2/top-headlines?country=us&apiKey=${apiKey}`,
+      `https://newsapi.org/v2/top-headlines?country=us&pageSize=100&apiKey=${apiKey}`,
       {
         // Revalidate every hour (3600 seconds)
         next: { revalidate: 3600 },

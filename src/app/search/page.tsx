@@ -59,7 +59,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                     target="_blank"
                     className="text-blue-600 hover:underline text-sm"
                   >
-                    Read more
+                    Read more ➡️
                   </Link>
                 ) : (
                   <span className="text-gray-400 text-sm">Link unavailable</span>
