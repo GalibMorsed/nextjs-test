@@ -264,11 +264,11 @@ function SidebarContent({
           </>
         ) : (
           <Link
-            href="/auth/login"
+            href="/auth/register"
             className="block w-full text-center py-2 rounded-xl bg-blue-600 text-white hover:bg-blue-700 text-sm font-medium"
             onClick={closeAndNavigate}
           >
-            Login
+            Register
           </Link>
         )}
       </div>

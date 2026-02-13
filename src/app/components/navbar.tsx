@@ -49,7 +49,7 @@ export default function Navbar({ onMenuToggle, isMobileOpen }: NavbarProps) {
             </>
           ) : (
             <Link
-              href="/auth/login"
+              href="/auth/register"
               className="px-4 py-2 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white text-sm font-medium hover:opacity-90 transition-opacity shadow-sm"
             >
               Get Started

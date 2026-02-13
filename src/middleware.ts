@@ -7,7 +7,7 @@ export function middleware(req: NextRequest) {
   const isProtected = pathname.startsWith("/notes");
 
   if (isProtected && !accessToken) {
-    const loginUrl = new URL("/auth/login", req.url);
+    const loginUrl = new URL("/auth/register", req.url);
     loginUrl.searchParams.set("redirect", pathname);
     return NextResponse.redirect(loginUrl);
   }

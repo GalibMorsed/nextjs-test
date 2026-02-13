@@ -13,11 +13,14 @@
   "dependencies": {
     "@gnews-io/gnews-io-js": "^2.2.0",
     "@heroicons/react": "^2.2.0",
+    "@radix-ui/react-slot": "^1.2.4",
     "@supabase/supabase-js": "^2.94.1",
     "axios": "^1.13.4",
     "bcrypt": "^6.0.0",
     "body-parser": "^2.2.2",
     "bytez.js": "^3.0.0",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
     "cors": "^2.8.6",
     "dotenv": "^17.2.3",
     "express": "^5.2.1",
@@ -36,6 +39,7 @@
     "react-toastify": "^11.0.5",
     "scss": "^0.2.4",
     "tailwind": "^4.0.0",
+    "tailwind-merge": "^3.4.0",
     "web-vitals": "^5.1.0"
   },
   "devDependencies": {
