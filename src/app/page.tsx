@@ -1,4 +1,5 @@
 import ArticleCard from "./components/artticalCart";
+import RegisterReminder from "./components/registerReminder";
 
 // 1. Define types matching your API response
 interface Article {
@@ -63,12 +64,14 @@ export default async function Home() {
             No news available at the moment. Please check back later.
           </p>
         </div>
+        <RegisterReminder />
       </main>
     );
   }
 
   return (
     <main className="min-h-screen bg-gray-50 p-6 md:p-8 lg:p-12">
+      <RegisterReminder />
       <div className="max-w-7xl mx-auto">
         <header className="mb-10">
           <h1 className="text-4xl md:text-5xl font-extrabold text-gray-900 tracking-tight mb-2">
