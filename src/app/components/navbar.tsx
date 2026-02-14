@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import type { User } from "@supabase/supabase-js";
 import { Menu, Newspaper, X } from "lucide-react";
 import { supabase } from "../../../lib/superbaseClient";
+import { useRouter } from "next/navigation";
 
 interface NavbarProps {
   onMenuToggle: () => void;
@@ -13,12 +14,64 @@ interface NavbarProps {
 
 export default function Navbar({ onMenuToggle, isMobileOpen }: NavbarProps) {
   const [user, setUser] = useState<User | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [localEmail, setLocalEmail] = useState("");
+  const router = useRouter();
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
-      setUser(data.user);
+    supabase.auth.getSession().then(({ data }) => {
+      const sessionUser = data.session?.user ?? null;
+      setUser(sessionUser);
+      if (sessionUser) {
+        setIsAuthenticated(true);
+        localStorage.setItem("auth_email", sessionUser.email ?? "");
+        localStorage.setItem("auth_token", data.session?.access_token ?? "");
+        setLocalEmail(sessionUser.email ?? "");
+        return;
+      }
+
+      const storedToken = localStorage.getItem("auth_token");
+      const storedEmail = localStorage.getItem("auth_email");
+      setIsAuthenticated(Boolean(storedToken));
+      setLocalEmail(storedEmail ?? "");
     });
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      const nextUser = session?.user ?? null;
+      setUser(nextUser);
+
+      if (nextUser) {
+        setIsAuthenticated(true);
+        localStorage.setItem("auth_email", nextUser.email ?? "");
+        localStorage.setItem("auth_token", session?.access_token ?? "");
+        setLocalEmail(nextUser.email ?? "");
+      } else {
+        setIsAuthenticated(false);
+        setLocalEmail("");
+        localStorage.removeItem("auth_email");
+        localStorage.removeItem("auth_token");
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
+
+  const handleSignOut = async () => {
+    try {
+      await supabase.auth.signOut();
+    } finally {
+      setIsAuthenticated(false);
+      setLocalEmail("");
+      setUser(null);
+      localStorage.removeItem("auth_email");
+      localStorage.removeItem("auth_token");
+      router.replace("/");
+    }
+  };
 
   return (
     <nav className="sticky top-0 z-30 flex justify-between items-center px-4 md:px-6 py-4 border-b bg-white">
@@ -36,12 +89,12 @@ export default function Navbar({ onMenuToggle, isMobileOpen }: NavbarProps) {
 
       <div className="flex items-center gap-4">
         <div className="hidden md:flex items-center gap-4">
-          {user ? (
+          {isAuthenticated ? (
             <>
               <Link href="/notes">Notes</Link>
-              <span>{user.email}</span>
+              <span>{user?.email ?? localEmail}</span>
               <button
-                onClick={() => supabase.auth.signOut()}
+                onClick={handleSignOut}
                 className="text-red-500"
               >
                 Logout

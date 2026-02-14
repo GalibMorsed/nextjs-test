@@ -18,7 +18,6 @@ import {
   Trophy,
   X,
 } from "lucide-react";
-import type { User } from "@supabase/supabase-js";
 import { supabase } from "../../../lib/superbaseClient";
 
 interface SidebarProps {
@@ -28,12 +27,42 @@ interface SidebarProps {
 
 export default function Sidebar({ isMobileOpen, onCloseMobile }: SidebarProps) {
   const [query, setQuery] = useState("");
-  const [user, setUser] = useState<User | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => setUser(data.user));
+    const storedToken = localStorage.getItem("auth_token");
+    if (storedToken) setIsAuthenticated(true);
+
+    supabase.auth.getSession().then(({ data }) => {
+      const sessionUser = data.session?.user ?? null;
+      if (sessionUser) {
+        setIsAuthenticated(true);
+        localStorage.setItem("auth_email", sessionUser.email ?? "");
+        localStorage.setItem("auth_token", data.session?.access_token ?? "");
+      }
+    });
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      const nextUser = session?.user ?? null;
+
+      if (nextUser) {
+        setIsAuthenticated(true);
+        localStorage.setItem("auth_email", nextUser.email ?? "");
+        localStorage.setItem("auth_token", session?.access_token ?? "");
+      } else {
+        setIsAuthenticated(false);
+        localStorage.removeItem("auth_email");
+        localStorage.removeItem("auth_token");
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
   useEffect(() => {
@@ -63,7 +92,8 @@ export default function Sidebar({ isMobileOpen, onCloseMobile }: SidebarProps) {
       pathname={pathname}
       navItemClass={navItemClass}
       onCloseMobile={onCloseMobile}
-      user={user}
+      isAuthenticated={isAuthenticated}
+      router={router}
     />
   );
 
@@ -107,7 +137,8 @@ function SidebarContent({
   pathname,
   navItemClass,
   onCloseMobile,
-  user,
+  isAuthenticated,
+  router,
 }: {
   query: string;
   setQuery: React.Dispatch<React.SetStateAction<string>>;
@@ -115,9 +146,20 @@ function SidebarContent({
   pathname: string;
   navItemClass: (active: boolean) => string;
   onCloseMobile: () => void;
-  user: User | null;
+  isAuthenticated: boolean;
+  router: ReturnType<typeof useRouter>;
 }) {
   const closeAndNavigate = () => onCloseMobile();
+  const handleSignOut = async () => {
+    try {
+      await supabase.auth.signOut();
+    } finally {
+      localStorage.removeItem("auth_email");
+      localStorage.removeItem("auth_token");
+      onCloseMobile();
+      router.replace("/");
+    }
+  };
 
   return (
     <>
@@ -245,7 +287,7 @@ function SidebarContent({
       </div>
 
       <div className="p-4 border-t space-y-3">
-        {user ? (
+        {isAuthenticated ? (
           <>
             <Link
               href="/notes"
@@ -255,7 +297,7 @@ function SidebarContent({
               Notes
             </Link>
             <button
-              onClick={() => supabase.auth.signOut()}
+              onClick={handleSignOut}
               className="w-full flex items-center justify-center gap-2 py-2 rounded-xl bg-red-100 text-red-600 hover:bg-red-200 text-sm font-medium"
             >
               <LogOut size={16} />
