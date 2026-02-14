@@ -1,12 +1,105 @@
-import React from "react";
+import ArticleCard from "./components/artticalCart";
 
-export default function HomePage() {
-  return <div className="p-4">
-    <h1>Welcome to NextNews App</h1>
-    <p>Your source for the latest news articles.</p>
-  </div>;
+// 1. Define types matching your API response
+interface Article {
+  source: { id: string | null; name: string };
+  author: string | null;
+  title: string;
+  description: string | null;
+  url: string;
+  urlToImage: string | null;
+  publishedAt: string;
+  content: string | null;
 }
-export const metadata = {
-  title: "NewsApp – Trending & Latest News",
-  description: "Read trending news from technology, sports, business and more.",
-};
+
+interface NewsResponse {
+  status: string;
+  totalResults: number;
+  articles: Article[];
+}
+
+// 2. Create a data fetching function
+async function getNews(): Promise<Article[]> {
+  // Ensure you have this in your .env.local file
+  const apiKey = process.env.NEWS_API_KEY2;
+
+  if (!apiKey) {
+    console.error("NEWS_API_KEY is missing");
+    return []; // Or throw an error depending on desired behavior
+  }
+
+  try {
+    const res = await fetch(
+      `https://newsapi.org/v2/top-headlines?country=us&pageSize=100&apiKey=${apiKey}`,
+      {
+        // Revalidate every hour (3600 seconds)
+        next: { revalidate: 3600 },
+      },
+    );
+
+    if (!res.ok) {
+      throw new Error(`Failed to fetch news: ${res.status} ${res.statusText}`);
+    }
+
+    const data: NewsResponse = await res.json();
+    return data.articles;
+  } catch (error) {
+    console.error("Error fetching news:", error);
+    // Return empty array or rethrow to trigger error.tsx
+    return [];
+  }
+}
+
+// 3. Async Server Component
+export default async function Home() {
+  const articles = await getNews();
+
+  if (!articles || articles.length === 0) {
+    return (
+      <main className="flex min-h-screen flex-col items-center justify-center p-8 text-center bg-gray-50">
+        <div className="max-w-md">
+          <h1 className="text-3xl font-bold text-gray-800 mb-2">News Feed</h1>
+          <p className="text-gray-600">
+            No news available at the moment. Please check back later.
+          </p>
+        </div>
+      </main>
+    );
+  }
+
+  return (
+    <main className="min-h-screen bg-gray-50 p-6 md:p-8 lg:p-12">
+      <div className="max-w-7xl mx-auto">
+        <header className="mb-10">
+          <h1 className="text-4xl md:text-5xl font-extrabold text-gray-900 tracking-tight mb-2">
+            Top Headlines
+          </h1>
+          <p className="text-lg text-gray-600">
+            Stay updated with the latest stories from around the world.
+          </p>
+        </header>
+
+        <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          {articles.map((article, index) => {
+            const formattedDate = article.publishedAt
+              ? new Date(article.publishedAt).toLocaleDateString(undefined, {
+                  month: "short",
+                  day: "numeric",
+                  year: "numeric",
+                })
+              : "Date Not Available";
+
+            return (
+              <ArticleCard
+                key={article.url + index}
+                article={article}
+                index={index}
+                formattedDate={formattedDate}
+              />
+            );
+          })}
+        </div>
+      </div>
+    </main>
+  );
+}

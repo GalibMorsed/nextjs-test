@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
-import Navbar from "./components/navbar";
-import Sidebar from "./components/sidebar";
+import "./index.css";
+import AppShell from "./components/appShell";
 
 export const metadata: Metadata = {
   title: "NextNews App",
@@ -13,13 +13,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html>
-      <body>
-        <Navbar />
-        <div className="flex">
-          <Sidebar />
-          <main className="flex-1 p-4">{children}</main>
-        </div>
+    <html lang="en">
+      <body className="min-h-screen">
+        <AppShell>{children}</AppShell>
       </body>
     </html>
   );

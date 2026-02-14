@@ -1,0 +1,22 @@
+@import "tailwindcss";
+
+:root {
+    --background: #f8fafc; /* slate-50 */
+  --foreground: #0f172a; /* slate-900 */
+}
+
+body {
+  color: var(--foreground);
+  background: var(--background);
+  font-family:
+    system-ui,
+    -apple-system,
+    sans-serif;
+}
+
+@utility line-clamp-3 {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
