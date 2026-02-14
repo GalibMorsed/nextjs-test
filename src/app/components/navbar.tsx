@@ -3,9 +3,9 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import type { User } from "@supabase/supabase-js";
-import { Menu, Newspaper, X } from "lucide-react";
+import { Menu, Newspaper, X, StickyNote } from "lucide-react";
+import { usePathname } from "next/navigation";
 import { supabase } from "../../../lib/superbaseClient";
-import { useRouter } from "next/navigation";
 
 interface NavbarProps {
   onMenuToggle: () => void;
@@ -13,107 +13,101 @@ interface NavbarProps {
 }
 
 export default function Navbar({ onMenuToggle, isMobileOpen }: NavbarProps) {
-  const [user, setUser] = useState<User | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [localEmail, setLocalEmail] = useState("");
-  const router = useRouter();
+  const pathname = usePathname();
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
-      const sessionUser = data.session?.user ?? null;
-      setUser(sessionUser);
-      if (sessionUser) {
-        setIsAuthenticated(true);
-        localStorage.setItem("auth_email", sessionUser.email ?? "");
-        localStorage.setItem("auth_token", data.session?.access_token ?? "");
-        setLocalEmail(sessionUser.email ?? "");
-        return;
-      }
-
-      const storedToken = localStorage.getItem("auth_token");
-      const storedEmail = localStorage.getItem("auth_email");
-      setIsAuthenticated(Boolean(storedToken));
-      setLocalEmail(storedEmail ?? "");
+      setIsAuthenticated(Boolean(data.session?.user));
     });
 
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
-      const nextUser = session?.user ?? null;
-      setUser(nextUser);
-
-      if (nextUser) {
-        setIsAuthenticated(true);
-        localStorage.setItem("auth_email", nextUser.email ?? "");
-        localStorage.setItem("auth_token", session?.access_token ?? "");
-        setLocalEmail(nextUser.email ?? "");
-      } else {
-        setIsAuthenticated(false);
-        setLocalEmail("");
-        localStorage.removeItem("auth_email");
-        localStorage.removeItem("auth_token");
-      }
+      setIsAuthenticated(Boolean(session?.user));
     });
 
-    return () => {
-      subscription.unsubscribe();
-    };
+    return () => subscription.unsubscribe();
   }, []);
 
-  const handleSignOut = async () => {
-    try {
-      await supabase.auth.signOut();
-    } finally {
-      setIsAuthenticated(false);
-      setLocalEmail("");
-      setUser(null);
-      localStorage.removeItem("auth_email");
-      localStorage.removeItem("auth_token");
-      router.replace("/");
-    }
-  };
+  const isNotesActive = pathname === "/notes";
 
   return (
-    <nav className="sticky top-0 z-30 flex justify-between items-center px-4 md:px-6 py-4 border-b bg-white">
-      <div className="flex items-center gap-3">
-        <Link
-          href="/"
-          className="flex items-center gap-2 hover:opacity-80 transition-opacity"
-        >
-          <Newspaper className="w-6 h-8 text-gray-600" strokeWidth={1.5} />
-          <span className="text-2xl font-light italic tracking-wide bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-            NextNews
-          </span>
-        </Link>
-      </div>
+    <nav className="sticky top-0 z-30 flex items-center justify-between border-b bg-white px-4 py-4 md:px-6">
+      {/* Logo */}
+      <Link
+        href="/"
+        className="flex items-center gap-2 transition-opacity hover:opacity-80"
+      >
+        <Newspaper className="h-8 w-6 text-gray-600" strokeWidth={1.5} />
+        <span className="bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-2xl font-light italic tracking-wide text-transparent">
+          NextNews
+        </span>
+      </Link>
 
+      {/* Right Section */}
       <div className="flex items-center gap-4">
         <div className="hidden md:flex items-center gap-4">
           {isAuthenticated ? (
-            <>
-              <Link href="/notes">Notes</Link>
-              <span>{user?.email ?? localEmail}</span>
-              <button
-                onClick={handleSignOut}
-                className="text-red-500"
+            <div className="relative">
+              {/* Animated border */}
+              <div
+                className={`
+                  absolute inset-0 rounded-xl
+                  ${
+                    isNotesActive
+                      ? "opacity-100"
+                      : "opacity-0 hover:opacity-100"
+                  }
+                  transition-opacity duration-300
+                  overflow-hidden
+                `}
               >
-                Logout
-              </button>
-            </>
+                <span
+                  className="
+                    absolute inset-[-100%]
+                    bg-[conic-gradient(from_0deg,transparent,rgba(99,102,241,0.9),transparent)]
+                    animate-[spin_3s_linear_infinite]
+                  "
+                />
+              </div>
+
+              {/* Inner button */}
+              <Link
+                href="/notes"
+                className="
+                  relative z-10
+                  flex items-center gap-2
+                  rounded-xl
+                  bg-white
+                  px-4 py-2
+                  text-sm font-medium
+                  text-gray-700
+                  border border-gray-200
+                  transition-colors duration-300
+                  hover:text-indigo-600
+                "
+              >
+                <StickyNote size={18} className="text-indigo-500" />
+                Notes
+              </Link>
+            </div>
           ) : (
             <Link
               href="/auth/register"
-              className="px-4 py-2 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white text-sm font-medium hover:opacity-90 transition-opacity shadow-sm"
+              className="rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition-opacity hover:opacity-90"
             >
               Get Started
             </Link>
           )}
         </div>
+
+        {/* Mobile Menu Button */}
         <button
           type="button"
           onClick={onMenuToggle}
-          className="md:hidden inline-flex items-center justify-center rounded-lg border border-gray-200 p-2 text-gray-700"
           aria-label="Toggle sidebar"
+          className="inline-flex items-center justify-center rounded-lg border border-gray-200 p-2 text-gray-700 md:hidden"
         >
           {isMobileOpen ? <X size={18} /> : <Menu size={18} />}
         </button>
