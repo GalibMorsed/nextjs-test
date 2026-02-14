@@ -57,20 +57,42 @@ export default function RegisterPage() {
     setLoading(true);
     setErrorMessage("");
 
-    const { data, error } = await supabase.auth.signUp({
+    const { data: loginData } = await supabase.auth.signInWithPassword({
       email: trimmedEmail,
       password,
     });
 
-    if (error) {
+    if (loginData.session?.user) {
+      setLoading(false);
+      localStorage.setItem("auth_email", loginData.session.user.email ?? trimmedEmail);
+      localStorage.setItem("auth_token", loginData.session.access_token ?? "");
+      router.replace("/");
+      return;
+    }
+
+    const { data: signupData, error: signupError } = await supabase.auth.signUp({
+      email: trimmedEmail,
+      password,
+    });
+
+    if (signupError) {
       const isRateLimited =
-        (typeof (error as { status?: number }).status === "number" &&
-          (error as { status?: number }).status === 429) ||
-        error.message.toLowerCase().includes("too many requests");
+        (typeof (signupError as { status?: number }).status === "number" &&
+          (signupError as { status?: number }).status === 429) ||
+        signupError.message.toLowerCase().includes("too many requests");
 
       if (isRateLimited) {
         setSignupCooldownUntil(Date.now() + 60_000);
-        const { data: rateLimitSignInData, error: rateLimitSignInError } =
+        setLoading(false);
+        setErrorMessage("Too many signup attempts. Please wait and try again.");
+        return;
+      }
+
+      const isAlreadyRegistered = signupError.message
+        .toLowerCase()
+        .includes("already registered");
+      if (isAlreadyRegistered) {
+        const { data: existingLoginData, error: existingLoginError } =
           await supabase.auth.signInWithPassword({
             email: trimmedEmail,
             password,
@@ -78,44 +100,37 @@ export default function RegisterPage() {
 
         setLoading(false);
 
-        if (rateLimitSignInData.session?.user) {
+        if (existingLoginData.session?.user) {
           localStorage.setItem(
             "auth_email",
-            rateLimitSignInData.session.user.email ?? trimmedEmail,
+            existingLoginData.session.user.email ?? trimmedEmail,
           );
           localStorage.setItem(
             "auth_token",
-            rateLimitSignInData.session.access_token ?? "",
+            existingLoginData.session.access_token ?? "",
           );
           router.replace("/");
           return;
         }
 
-        if (rateLimitSignInError) {
-          localStorage.setItem("auth_email", trimmedEmail);
-          localStorage.setItem("auth_token", `local-auth-${Date.now()}`);
-          setErrorMessage(
-            "Supabase is temporarily rate-limiting signups, so local login was used for now.",
-          );
-          router.replace("/");
-          return;
-        }
+        setErrorMessage(existingLoginError?.message ?? "Invalid login credentials.");
+        return;
       }
 
       setLoading(false);
-      setErrorMessage(error.message);
+      setErrorMessage(signupError.message);
       return;
     }
 
-    if (data.session?.user) {
+    if (signupData.session?.user) {
       setLoading(false);
-      localStorage.setItem("auth_email", data.session.user.email ?? trimmedEmail);
-      localStorage.setItem("auth_token", data.session.access_token ?? "");
+      localStorage.setItem("auth_email", signupData.session.user.email ?? trimmedEmail);
+      localStorage.setItem("auth_token", signupData.session.access_token ?? "");
       router.replace("/");
       return;
     }
 
-    const { data: signInData, error: signInError } =
+    const { data: postSignupLoginData, error: postSignupLoginError } =
       await supabase.auth.signInWithPassword({
         email: trimmedEmail,
         password,
@@ -123,23 +138,20 @@ export default function RegisterPage() {
 
     setLoading(false);
 
-    if (signInData.session?.user) {
-      localStorage.setItem("auth_email", signInData.session.user.email ?? trimmedEmail);
-      localStorage.setItem("auth_token", signInData.session.access_token ?? "");
+    if (postSignupLoginData.session?.user) {
+      localStorage.setItem(
+        "auth_email",
+        postSignupLoginData.session.user.email ?? trimmedEmail,
+      );
+      localStorage.setItem("auth_token", postSignupLoginData.session.access_token ?? "");
       router.replace("/");
       return;
     }
 
-    if (signInError) {
-      localStorage.setItem("auth_email", trimmedEmail);
-      localStorage.setItem("auth_token", `local-auth-${Date.now()}`);
-      router.replace("/");
-      return;
-    }
-
-    localStorage.setItem("auth_email", trimmedEmail);
-    localStorage.setItem("auth_token", `local-auth-${Date.now()}`);
-    router.replace("/");
+    setErrorMessage(
+      postSignupLoginError?.message ??
+        "Account created. Please verify your email, then login.",
+    );
   };
 
   const handleGoogleRegister = async () => {

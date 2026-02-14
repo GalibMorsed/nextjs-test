@@ -16,6 +16,7 @@ import {
   Search,
   Settings,
   Trophy,
+  StickyNote,
   X,
 } from "lucide-react";
 import { supabase } from "../../../lib/superbaseClient";
@@ -28,17 +29,21 @@ interface SidebarProps {
 export default function Sidebar({ isMobileOpen, onCloseMobile }: SidebarProps) {
   const [query, setQuery] = useState("");
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [userEmail, setUserEmail] = useState("");
   const pathname = usePathname();
   const router = useRouter();
 
   useEffect(() => {
     const storedToken = localStorage.getItem("auth_token");
     if (storedToken) setIsAuthenticated(true);
+    const storedEmail = localStorage.getItem("auth_email");
+    if (storedEmail) setUserEmail(storedEmail);
 
     supabase.auth.getSession().then(({ data }) => {
       const sessionUser = data.session?.user ?? null;
       if (sessionUser) {
         setIsAuthenticated(true);
+        setUserEmail(sessionUser.email ?? "");
         localStorage.setItem("auth_email", sessionUser.email ?? "");
         localStorage.setItem("auth_token", data.session?.access_token ?? "");
       }
@@ -51,10 +56,12 @@ export default function Sidebar({ isMobileOpen, onCloseMobile }: SidebarProps) {
 
       if (nextUser) {
         setIsAuthenticated(true);
+        setUserEmail(nextUser.email ?? "");
         localStorage.setItem("auth_email", nextUser.email ?? "");
         localStorage.setItem("auth_token", session?.access_token ?? "");
       } else {
         setIsAuthenticated(false);
+        setUserEmail("");
         localStorage.removeItem("auth_email");
         localStorage.removeItem("auth_token");
       }
@@ -93,6 +100,7 @@ export default function Sidebar({ isMobileOpen, onCloseMobile }: SidebarProps) {
       navItemClass={navItemClass}
       onCloseMobile={onCloseMobile}
       isAuthenticated={isAuthenticated}
+      userEmail={userEmail}
       router={router}
     />
   );
@@ -138,6 +146,7 @@ function SidebarContent({
   navItemClass,
   onCloseMobile,
   isAuthenticated,
+  userEmail,
   router,
 }: {
   query: string;
@@ -147,9 +156,11 @@ function SidebarContent({
   navItemClass: (active: boolean) => string;
   onCloseMobile: () => void;
   isAuthenticated: boolean;
+  userEmail: string;
   router: ReturnType<typeof useRouter>;
 }) {
   const closeAndNavigate = () => onCloseMobile();
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
   const handleSignOut = async () => {
     try {
       await supabase.auth.signOut();
@@ -260,10 +271,38 @@ function SidebarContent({
             <Trophy size={18} />
             Sports
           </Link>
-          <button className="flex items-center gap-3 w-full px-4 py-2 rounded-xl hover:bg-gray-100 transition text-sm font-medium text-gray-700">
-            <Settings size={18} />
-            Settings
-          </button>
+          {isAuthenticated && (
+            <div className="relative md:hidden my-2">
+              {/* Animated border */}
+              <div
+                className={`
+                  absolute -inset-px rounded-xl
+                  ${
+                    pathname === "/notes"
+                      ? "opacity-100"
+                      : "opacity-0 group-hover:opacity-100"
+                  }
+                  transition-opacity duration-300
+                  overflow-hidden
+                `}
+              >
+                <span className="absolute inset-[-100%] bg-[conic-gradient(from_90deg_at_50%_50%,#e2e8f0_0%,#9333ea_50%,#e2e8f0_100%)] animate-[spin_4s_linear_infinite]" />
+              </div>
+
+              {/* Inner button */}
+              <Link
+                href="/notes"
+                onClick={closeAndNavigate}
+                className="relative group z-10 flex items-center gap-3 rounded-xl bg-white px-4 py-2.5 text-sm font-medium text-gray-800 border border-transparent hover:text-purple-700 transition-colors duration-300"
+              >
+                <StickyNote
+                  size={18}
+                  className="text-purple-600 group-hover:text-purple-700 transition-colors"
+                />
+                <span>Notes</span>
+              </Link>
+            </div>
+          )}
         </nav>
 
         {/* Collapsible Sections */}
@@ -286,24 +325,60 @@ function SidebarContent({
         </CollapsibleSection>
       </div>
 
-      <div className="p-4 border-t space-y-3">
+      <div className="p-4 border-t border-gray-200">
         {isAuthenticated ? (
-          <>
-            <Link
-              href="/notes"
-              className="block w-full text-center py-2 rounded-xl bg-blue-50 text-blue-700 hover:bg-blue-100 text-sm font-medium"
-              onClick={closeAndNavigate}
-            >
-              Notes
-            </Link>
+          <div className="relative">
             <button
-              onClick={handleSignOut}
-              className="w-full flex items-center justify-center gap-2 py-2 rounded-xl bg-red-100 text-red-600 hover:bg-red-200 text-sm font-medium"
+              onClick={() => setUserMenuOpen(!userMenuOpen)}
+              className="flex items-center gap-3 w-full px-2 py-2 rounded-xl hover:bg-gray-50 transition-colors text-left focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
             >
-              <LogOut size={16} />
-              Logout
+              <img
+                src="/imgs/userImg.avif"
+                alt="User Avatar"
+                className="w-9 h-9 rounded-full border-2 border-gray-200"
+                onError={(e) => {
+                  e.currentTarget.src = `https://ui-avatars.com/api/?name=${userEmail}&background=random`;
+                }}
+              />
+              <div className="flex-1 min-w-0">
+                <span className="font-medium text-sm text-gray-700 block truncate">
+                  {userEmail}
+                </span>
+              </div>
+              <ChevronDown
+                size={16}
+                className={`text-gray-500 transition-transform duration-200 ${
+                  userMenuOpen ? "rotate-180" : ""
+                }`}
+              />
             </button>
-          </>
+
+            {userMenuOpen && (
+              <div className="absolute bottom-full left-0 mb-2 w-full rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 py-1 z-50">
+                <div className="px-4 py-2 text-sm text-gray-500 border-b">
+                  Signed in as <br />
+                  <strong className="text-gray-800 truncate block">
+                    {userEmail}
+                  </strong>
+                </div>
+                <Link
+                  href="/Settings"
+                  className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                  onClick={closeAndNavigate}
+                >
+                  <Settings size={16} className="text-gray-500" />
+                  Settings
+                </Link>
+                <button
+                  onClick={handleSignOut}
+                  className="flex items-center gap-2 w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                >
+                  <LogOut size={16} className="text-red-500" />
+                  Logout
+                </button>
+              </div>
+            )}
+          </div>
         ) : (
           <Link
             href="/auth/register"
