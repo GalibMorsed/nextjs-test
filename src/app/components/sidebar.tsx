@@ -356,7 +356,7 @@ function SidebarContent({
               className="flex items-center gap-3 w-full px-2 py-2 rounded-xl hover:bg-gray-50 transition-colors text-left focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
             >
               <img
-                src="/imgs/userImg.avif"
+                src="/"
                 alt="User Avatar"
                 className="w-9 h-9 rounded-full border-2 border-gray-200"
                 onError={(e) => {
@@ -405,7 +405,7 @@ function SidebarContent({
         ) : (
           <Link
             href="/auth/register"
-            className="block w-full text-center py-2 rounded-xl bg-blue-600 text-white hover:bg-blue-700 text-sm font-medium"
+            className="block w-full text-center py-2 rounded-xl border border-blue-600 bg-transparent text-blue-600 text-sm font-medium transition-all duration-300 hover:bg-blue-600 hover:text-white hover:shadow-lg hover:scale-105 active:scale-95"
             onClick={closeAndNavigate}
           >
             Register

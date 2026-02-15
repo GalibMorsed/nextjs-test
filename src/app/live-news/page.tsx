@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { FormEvent, useCallback, useEffect, useState } from "react";
+import { AlertCircle, Search, X, ArrowUpRight } from "lucide-react";
 import { supabase } from "../../../lib/superbaseClient";
 
 interface YoutubeLiveItem {
@@ -64,7 +65,7 @@ export default function LiveNewsPage() {
 
     if (!apiKey) {
       setError(
-        "For a technical reason, we are currently unable to load the live stream.",
+        "API key is missing or invalid. Please check your configuration Developer. 👺",
       );
       setFallbackQuery(normalizedQuery);
       setLoading(false);
@@ -104,7 +105,7 @@ export default function LiveNewsPage() {
 
       if (nextVideos.length === 0) {
         setError(
-          "For a technical reason, we are currently unable to load the live stream.",
+          "Oops! 📡 We're having trouble connecting to the live streams right now. Please try again later! 📺",
         );
         setFallbackQuery(normalizedQuery);
         setLoading(false);
@@ -117,7 +118,7 @@ export default function LiveNewsPage() {
       setLoading(false);
     } catch {
       setError(
-        "For a technical reason, we are currently unable to load the live stream.",
+        "Oops! 📡 We're having trouble connecting to the live streams right now. Please try again later! 📺",
       );
       setFallbackQuery(normalizedQuery);
       setLoading(false);
@@ -162,23 +163,27 @@ export default function LiveNewsPage() {
         </p>
 
         {isAuthenticated && (
-          <form
-            onSubmit={handleSearch}
-            className="mb-6 flex flex-col gap-3 sm:flex-row"
-          >
+          <form onSubmit={handleSearch} className="mb-6 relative">
+            <Search
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+              size={18}
+            />
             <input
               type="text"
               value={searchQuery}
               onChange={(event) => setSearchQuery(event.target.value)}
               placeholder="Search live feeds (e.g. BBC live, India news live, Sports etc.)"
-              className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-gray-800 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100"
+              className="w-full pl-10 pr-10 py-2 rounded-xl bg-gray-100 focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm transition-all"
             />
-            <button
-              type="submit"
-              className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-700"
-            >
-              Search Live
-            </button>
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => setSearchQuery("")}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 p-1 rounded-full hover:bg-gray-200 transition-colors"
+              >
+                <X size={14} />
+              </button>
+            )}
           </form>
         )}
 
@@ -194,8 +199,8 @@ export default function LiveNewsPage() {
                     Unlock Custom Search
                   </h3>
                   <p className="text-sm text-gray-600 mt-1 max-w-md mx-auto">
-                    Sign in to search for specific live feeds. We've curated
-                    some popular live news streams for you below.
+                    Register to start search for specific live feeds. We've
+                    curated some popular live news streams for you below.
                   </p>
                 </div>
               </div>
@@ -204,24 +209,32 @@ export default function LiveNewsPage() {
         )}
 
         {error && (
-          <div className="mb-6 rounded-lg border border-red-200 bg-red-50 px-4 py-4 text-sm text-red-700">
-            <p className="mb-3">{error}</p>
-            <div className="flex flex-col gap-2 sm:flex-row">
-              <Link
-                href="/"
-                className="inline-flex items-center justify-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-700"
-              >
-                Go to Top Headlines
-              </Link>
-              <button
-                type="button"
-                onClick={() =>
-                  window.location.assign(getYoutubeResultsUrl(fallbackQuery))
-                }
-                className="inline-flex items-center justify-center rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-red-700"
-              >
-                Redirect to YouTube
-              </button>
+          <div className="mb-6 rounded-lg border border-red-200 bg-white-50 px-4 py-4 text-sm text-red-700">
+            <div className="flex items-start gap-3">
+              <AlertCircle className="h-5 w-5 shrink-0 text-red-600" />
+              <div className="flex-1">
+                <p className="mb-3 font-medium">{error}</p>
+                <div className="flex flex-col gap-2 sm:flex-row">
+                  <Link
+                    href="/"
+                    className="inline-flex items-center justify-center rounded-lg bg-black px-4 py-2 text-sm font-medium text-white transition hover:bg-gray-800"
+                  >
+                    Go to Top Headlines
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      window.location.assign(
+                        getYoutubeResultsUrl(fallbackQuery),
+                      )
+                    }
+                    className="inline-flex items-center justify-center rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-red-700"
+                  >
+                    Redirect to YouTube{" "}
+                    <ArrowUpRight className="ml-2 h-4 w-4" />
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         )}
