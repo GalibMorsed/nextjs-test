@@ -13,6 +13,7 @@ import {
   Home,
   Laptop,
   LogOut,
+  Radio,
   Search,
   Settings,
   Trophy,
@@ -218,6 +219,14 @@ function SidebarContent({
             Top Headlines
           </Link>
           <Link
+            href="/live-news"
+            className={navItemClass(pathname.startsWith("/live-news"))}
+            onClick={closeAndNavigate}
+          >
+            <Radio size={18} />
+            Live News Streaming
+          </Link>
+          <Link
             href="/categories/technology"
             className={navItemClass(
               pathname.startsWith("/categories/technology"),
@@ -247,30 +256,42 @@ function SidebarContent({
             <Film size={18} />
             Entertainment
           </Link>
-          <Link
-            href="/categories/health"
-            className={navItemClass(pathname.startsWith("/categories/health"))}
-            onClick={closeAndNavigate}
-          >
-            <Heart size={18} />
-            Health
-          </Link>
-          <Link
-            href="/categories/science"
-            className={navItemClass(pathname.startsWith("/categories/science"))}
-            onClick={closeAndNavigate}
-          >
-            <FlaskConical size={18} />
-            Science
-          </Link>
-          <Link
-            href="/categories/sports"
-            className={navItemClass(pathname.startsWith("/categories/sports"))}
-            onClick={closeAndNavigate}
-          >
-            <Trophy size={18} />
-            Sports
-          </Link>
+          {isAuthenticated && (
+            <Link
+              href="/categories/health"
+              className={navItemClass(
+                pathname.startsWith("/categories/health"),
+              )}
+              onClick={closeAndNavigate}
+            >
+              <Heart size={18} />
+              Health
+            </Link>
+          )}
+          {isAuthenticated && (
+            <Link
+              href="/categories/science"
+              className={navItemClass(
+                pathname.startsWith("/categories/science"),
+              )}
+              onClick={closeAndNavigate}
+            >
+              <FlaskConical size={18} />
+              Science
+            </Link>
+          )}
+          {isAuthenticated && (
+            <Link
+              href="/categories/sports"
+              className={navItemClass(
+                pathname.startsWith("/categories/sports"),
+              )}
+              onClick={closeAndNavigate}
+            >
+              <Trophy size={18} />
+              Sports
+            </Link>
+          )}
           {isAuthenticated && (
             <div className="relative md:hidden my-2">
               {/* Animated border */}
@@ -306,14 +327,16 @@ function SidebarContent({
         </nav>
 
         {/* Collapsible Sections */}
-        <CollapsibleSection title="Extra Options">
-          <p className="px-4 py-1 text-sm text-gray-600 hover:text-blue-600 cursor-pointer transition-colors">
-            Subscriptions
-          </p>
-          <p className="px-4 py-1 text-sm text-gray-600 hover:text-blue-600 cursor-pointer transition-colors">
-            Appearance
-          </p>
-        </CollapsibleSection>
+        {isAuthenticated && (
+          <CollapsibleSection title="Extra Options">
+            <p className="px-4 py-1 text-sm text-gray-600 hover:text-blue-600 cursor-pointer transition-colors">
+              Subscriptions
+            </p>
+            <p className="px-4 py-1 text-sm text-gray-600 hover:text-blue-600 cursor-pointer transition-colors">
+              Appearance
+            </p>
+          </CollapsibleSection>
+        )}
 
         <CollapsibleSection title="More Info">
           <p className="px-4 py-1 text-sm text-gray-600 hover:text-blue-600 cursor-pointer transition-colors">
@@ -333,7 +356,7 @@ function SidebarContent({
               className="flex items-center gap-3 w-full px-2 py-2 rounded-xl hover:bg-gray-50 transition-colors text-left focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
             >
               <img
-                src="/imgs/userImg.avif"
+                src="/"
                 alt="User Avatar"
                 className="w-9 h-9 rounded-full border-2 border-gray-200"
                 onError={(e) => {
@@ -382,7 +405,7 @@ function SidebarContent({
         ) : (
           <Link
             href="/auth/register"
-            className="block w-full text-center py-2 rounded-xl bg-blue-600 text-white hover:bg-blue-700 text-sm font-medium"
+            className="block w-full text-center py-2 rounded-xl border border-blue-600 bg-transparent text-blue-600 text-sm font-medium transition-all duration-300 hover:bg-blue-600 hover:text-white hover:shadow-lg hover:scale-105 active:scale-95"
             onClick={closeAndNavigate}
           >
             Register
