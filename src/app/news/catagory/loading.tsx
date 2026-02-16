@@ -1,7 +1,11 @@
+import LoadingState from "../../components/loadingState";
+
 export default function CategoryLoading() {
   return (
-    <main className="p-6">
-      <p className="text-gray-600">Loading category news...</p>
-    </main>
+    <LoadingState
+      title="Almost there, category page is loading"
+      description="We are setting up your category feed with relevant stories and quick access links."
+      emoji="🚀"
+    />
   );
 }

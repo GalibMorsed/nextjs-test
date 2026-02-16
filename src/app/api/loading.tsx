@@ -1,3 +1,11 @@
+import LoadingState from "../components/loadingState";
+
 export default function ApiSegmentLoading() {
-  return <div className="p-6 text-gray-600">Loading...</div>;
+  return (
+    <LoadingState
+      title="Syncing latest updates"
+      description="Our services are preparing fresh data for you right now. Thanks for your patience."
+      emoji="⚡"
+    />
+  );
 }

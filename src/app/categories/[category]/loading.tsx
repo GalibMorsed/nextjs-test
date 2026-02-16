@@ -1,3 +1,11 @@
+import LoadingState from "../../components/loadingState";
+
 export default function LoadingCategoryPage() {
-  return <main className="p-6">Loading category news...</main>;
+  return (
+    <LoadingState
+      title="Fetching category headlines"
+      description="Please hang tight while we collect the freshest stories for this category."
+      emoji="📰"
+    />
+  );
 }

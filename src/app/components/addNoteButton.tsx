@@ -1,7 +1,11 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import Link from "next/link";
+import { useMemo, useState, useRef, useEffect } from "react";
 import { saveNote } from "../services/notesService";
+import { AnimatePresence, motion } from "framer-motion";
+import { Notebook, X } from "lucide-react";
+import { supabase } from "../../../lib/superbaseClient";
 
 interface AddNoteButtonProps {
   title: string;
@@ -28,6 +32,32 @@ export default function AddNoteButton({
   const [content, setContent] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [message, setMessage] = useState("");
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      setIsAuthenticated(!!session);
+    };
+    checkAuth();
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setIsAuthenticated(!!session);
+    });
+
+    // Cleanup timeout on component unmount
+    return () => {
+      subscription.unsubscribe();
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, []);
 
   const formattedDate = useMemo(() => {
     if (!publishedAt) return "Date Not Available";
@@ -61,10 +91,13 @@ export default function AddNoteButton({
         return;
       }
 
-      setMessage("Note saved.");
+      setMessage("Note saved successfully!");
       setContent("");
       setIsSaving(false);
-      setIsOpen(false);
+      timeoutRef.current = setTimeout(() => {
+        setIsOpen(false);
+        setMessage(""); // Reset message when closing
+      }, 1500);
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : "Unable to save note.";
@@ -73,78 +106,192 @@ export default function AddNoteButton({
     }
   };
 
+  const handleOpen = () => {
+    setIsOpen(true);
+    if (isAuthenticated) {
+      setMessage("");
+      setContent("");
+    }
+  };
+
+  const handleClose = () => {
+    if (isSaving) return;
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
+    setIsOpen(false);
+  };
+
+  const isErrorMessage = message.toLowerCase().includes("unable");
+
   return (
     <>
       <button
         type="button"
-        onClick={() => {
-          setIsOpen(true);
-          setMessage("");
-        }}
-        className="inline-flex items-center rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50"
+        onClick={handleOpen}
+        className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 shadow-sm transition-all duration-200 hover:border-gray-300 hover:bg-gray-50 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 active:scale-95"
       >
-        + Add Notes
+        <Notebook size={16} className="text-blue-600" />
+        Add Note
       </button>
 
-      {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="w-full max-w-xl rounded-xl bg-white p-5 shadow-xl">
-            <div className="mb-4 flex items-start justify-between">
-              <h3 className="text-lg font-semibold text-gray-900">Article Notepad</h3>
-              <button
-                type="button"
-                onClick={() => setIsOpen(false)}
-                className="rounded-md px-2 py-1 text-sm text-gray-500 hover:bg-gray-100"
-              >
-                Close
-              </button>
-            </div>
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/30 backdrop-blur-md"
+          >
+            <motion.div
+              initial={{ opacity: 0, y: 20, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 20, scale: 0.95 }}
+              transition={{ ease: [0.16, 1, 0.3, 1], duration: 0.25 }}
+              className="relative w-full max-w-md sm:max-w-lg rounded-2xl bg-white p-5 sm:p-6 shadow-xl sm:shadow-2xl border border-gray-100"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="note-dialog-title"
+            >
+              <div className="flex items-center justify-between mb-5">
+                <h3
+                  id="note-dialog-title"
+                  className="text-lg sm:text-xl font-semibold text-gray-900"
+                >
+                  {isAuthenticated ? "Article Notepad" : "Member Feature"}
+                </h3>
+                <button
+                  type="button"
+                  onClick={handleClose}
+                  className="flex items-center justify-center w-8 h-8 rounded-full text-gray-500 hover:bg-gray-100 hover:text-gray-700 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 active:scale-95"
+                  aria-label="Close dialog"
+                >
+                  <X size={18} />
+                </button>
+              </div>
 
-            <div className="mb-4 space-y-2 rounded-lg border border-gray-200 bg-gray-50 p-3 text-sm">
-              <p>
-                <span className="font-semibold">Headline:</span> {title}
-              </p>
-              <p>
-                <span className="font-semibold">Date:</span> {formattedDate}
-              </p>
-              <p>
-                <span className="font-semibold">Source:</span>{" "}
-                {sourceName || "Unknown Source"}
-              </p>
-              <p className="break-all">
-                <span className="font-semibold">Original Link:</span> {link}
-              </p>
-            </div>
+              {isAuthenticated ? (
+                <>
+                  <div className="mb-5 space-y-3 rounded-xl border border-gray-200 bg-gray-50/50 p-4 text-xs sm:text-sm">
+                    <div className="flex flex-col sm:grid sm:grid-cols-2 gap-2 sm:gap-3">
+                      <p className="sm:col-span-2">
+                        <span className="font-medium text-gray-600">
+                          Headline:
+                        </span>
+                        <span className="block mt-1 text-gray-900 font-normal line-clamp-2 sm:line-clamp-1">
+                          {title}
+                        </span>
+                      </p>
+                      <p>
+                        <span className="font-medium text-gray-600">Date:</span>
+                        <span className="block mt-1 text-gray-900">
+                          {formattedDate}
+                        </span>
+                      </p>
+                      <p>
+                        <span className="font-medium text-gray-600">
+                          Source:
+                        </span>
+                        <span className="block mt-1 text-gray-900">
+                          {sourceName || "Unknown Source"}
+                        </span>
+                      </p>
+                      <p className="sm:col-span-2">
+                        <span className="font-medium text-gray-600">Link:</span>
+                        <span className="block mt-1">
+                          <a
+                            href={link}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-600 hover:text-blue-700 font-medium text-xs sm:text-sm break-all hover:underline transition-colors"
+                          >
+                            {link}
+                          </a>
+                        </span>
+                      </p>
+                    </div>
+                  </div>
 
-            <textarea
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              placeholder="Write your notes here..."
-              className="h-40 w-full rounded-lg border border-gray-300 p-3 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-            />
+                  <textarea
+                    value={content}
+                    onChange={(e) => setContent(e.target.value)}
+                    placeholder="Write your thoughts and notes here..."
+                    className="w-full h-32 sm:h-40 resize-none rounded-xl border border-gray-300 p-4 text-sm sm:text-base placeholder-gray-500 transition-all duration-200 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/10 bg-white shadow-sm"
+                    aria-label="Note content"
+                    rows={4}
+                  />
 
-            {message && <p className="mt-2 text-sm text-gray-700">{message}</p>}
+                  {message && (
+                    <motion.p
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className={`mt-4 text-sm font-medium px-3 py-2 rounded-lg ${
+                        isErrorMessage
+                          ? "bg-red-50 text-red-700 border border-red-200"
+                          : "bg-green-50 text-green-700 border border-green-200"
+                      }`}
+                    >
+                      {message}
+                    </motion.p>
+                  )}
 
-            <div className="mt-4 flex justify-end gap-2">
-              <button
-                type="button"
-                onClick={() => setIsOpen(false)}
-                className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={handleSave}
-                disabled={isSaving}
-                className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
-              >
-                {isSaving ? "Saving..." : "Save Note"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+                  <div className="mt-6 flex flex-col sm:flex-row gap-3 justify-end pt-2">
+                    <button
+                      type="button"
+                      onClick={handleClose}
+                      disabled={isSaving}
+                      className="flex-1 sm:flex-none rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 shadow-sm transition-all duration-200 hover:bg-gray-50 hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleSave}
+                      disabled={isSaving || !content.trim()}
+                      className="flex-1 sm:flex-none rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 disabled:bg-blue-400"
+                    >
+                      {isSaving ? (
+                        <span className="flex items-center justify-center gap-2">
+                          <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                          Saving...
+                        </span>
+                      ) : (
+                        "Save Note"
+                      )}
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-6 text-center">
+                  <div className="mb-4 rounded-full bg-blue-50 p-4">
+                    <Notebook size={32} className="text-blue-600" />
+                  </div>
+                  <p className="mb-6 max-w-xs text-sm text-gray-600">
+                    This functionality is only for registered members. Please
+                    log in or register to save notes.
+                  </p>
+                  <div className="flex w-full gap-3">
+                    <button
+                      type="button"
+                      onClick={handleClose}
+                      className="flex-1 rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 shadow-sm transition-all duration-200 hover:bg-gray-50"
+                    >
+                      Close
+                    </button>
+                    <Link
+                      href="/auth/register"
+                      className="flex-1 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:bg-blue-700 text-center"
+                    >
+                      Register
+                    </Link>
+                  </div>
+                </div>
+              )}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </>
   );
 }
