@@ -3,7 +3,8 @@ import type { NextRequest } from "next/server";
 
 export function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
-  const accessToken = req.cookies.get("sb-access-token");
+  const accessToken =
+    req.cookies.get("sb-access-token") ?? req.cookies.get("auth_token");
   const isProtected = pathname.startsWith("/notes");
 
   if (isProtected && !accessToken) {

@@ -1,5 +1,7 @@
 "use client";
 
+import AddNoteButton from "./addNoteButton";
+
 interface Article {
   source: { id: string | null; name: string };
   author: string | null;
@@ -13,13 +15,11 @@ interface Article {
 
 interface ArticleCardProps {
   article: Article;
-  index: number;
   formattedDate: string;
 }
 
 export default function ArticleCard({
   article,
-  index,
   formattedDate,
 }: ArticleCardProps) {
   return (
@@ -52,31 +52,40 @@ export default function ArticleCard({
           {article.description || "Click to read the full story."}
         </p>
         <div className="mt-auto pt-4 border-t border-gray-50">
-          <a
-            href={article.url || "#"}
-            target={article.url ? "_blank" : "_self"}
-            rel={article.url ? "noopener noreferrer" : ""}
-            className={`inline-flex items-center text-sm font-semibold transition-colors ${
-              article.url
-                ? "text-blue-600 hover:text-blue-700 cursor-pointer"
-                : "text-gray-400 cursor-not-allowed"
-            }`}
-          >
-            {article.url ? "Read Full Story" : "Link Not Available"}
-            <svg
-              className="w-4 h-4 ml-1"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
+          <div className="flex items-center justify-between gap-3">
+            <a
+              href={article.url || "#"}
+              target={article.url ? "_blank" : "_self"}
+              rel={article.url ? "noopener noreferrer" : ""}
+              className={`inline-flex items-center text-sm font-semibold transition-colors ${
+                article.url
+                  ? "text-blue-600 hover:text-blue-700 cursor-pointer"
+                  : "text-gray-400 cursor-not-allowed"
+              }`}
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M17 8l4 4m0 0l-4 4m4-4H3"
-              ></path>
-            </svg>
-          </a>
+              {article.url ? "Read Full Story" : "Link Not Available"}
+              <svg
+                className="w-4 h-4 ml-1"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M17 8l4 4m0 0l-4 4m4-4H3"
+                ></path>
+              </svg>
+            </a>
+
+            <AddNoteButton
+              title={article.title}
+              link={article.url}
+              publishedAt={article.publishedAt}
+              sourceName={article.source?.name}
+            />
+          </div>
         </div>
       </div>
     </article>
