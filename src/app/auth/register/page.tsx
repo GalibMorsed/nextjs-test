@@ -15,19 +15,43 @@ export default function RegisterPage() {
   const [signupCooldownUntil, setSignupCooldownUntil] = useState<number | null>(
     null,
   );
+  const [currentTime, setCurrentTime] = useState(() => Date.now());
   const router = useRouter();
+
+  const persistSession = (emailValue: string, tokenValue: string) => {
+    localStorage.setItem("auth_email", emailValue);
+    localStorage.setItem("auth_token", tokenValue);
+    document.cookie = `auth_token=${encodeURIComponent(tokenValue)}; path=/; max-age=604800; samesite=lax`;
+  };
+
+  const clearSession = () => {
+    localStorage.removeItem("auth_email");
+    localStorage.removeItem("auth_token");
+    document.cookie = "auth_token=; path=/; max-age=0; samesite=lax";
+  };
+
+  useEffect(() => {
+    if (signupCooldownUntil === null) return;
+
+    const interval = setInterval(() => {
+      setCurrentTime(Date.now());
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [signupCooldownUntil]);
+
+  const isCooldownActive =
+    signupCooldownUntil !== null && currentTime < signupCooldownUntil;
 
   useEffect(() => {
     const { data: authListener } = supabase.auth.onAuthStateChange(
       async (_event, session) => {
         if (!session?.user) {
-          localStorage.removeItem("auth_email");
-          localStorage.removeItem("auth_token");
+          clearSession();
           return;
         }
 
-        localStorage.setItem("auth_email", session.user.email ?? "");
-        localStorage.setItem("auth_token", session.access_token ?? "");
+        persistSession(session.user.email ?? "", session.access_token ?? "");
         router.replace("/");
       },
     );
@@ -64,8 +88,10 @@ export default function RegisterPage() {
 
     if (loginData.session?.user) {
       setLoading(false);
-      localStorage.setItem("auth_email", loginData.session.user.email ?? trimmedEmail);
-      localStorage.setItem("auth_token", loginData.session.access_token ?? "");
+      persistSession(
+        loginData.session.user.email ?? trimmedEmail,
+        loginData.session.access_token ?? "",
+      );
       router.replace("/");
       return;
     }
@@ -101,12 +127,8 @@ export default function RegisterPage() {
         setLoading(false);
 
         if (existingLoginData.session?.user) {
-          localStorage.setItem(
-            "auth_email",
+          persistSession(
             existingLoginData.session.user.email ?? trimmedEmail,
-          );
-          localStorage.setItem(
-            "auth_token",
             existingLoginData.session.access_token ?? "",
           );
           router.replace("/");
@@ -124,8 +146,10 @@ export default function RegisterPage() {
 
     if (signupData.session?.user) {
       setLoading(false);
-      localStorage.setItem("auth_email", signupData.session.user.email ?? trimmedEmail);
-      localStorage.setItem("auth_token", signupData.session.access_token ?? "");
+      persistSession(
+        signupData.session.user.email ?? trimmedEmail,
+        signupData.session.access_token ?? "",
+      );
       router.replace("/");
       return;
     }
@@ -139,11 +163,10 @@ export default function RegisterPage() {
     setLoading(false);
 
     if (postSignupLoginData.session?.user) {
-      localStorage.setItem(
-        "auth_email",
+      persistSession(
         postSignupLoginData.session.user.email ?? trimmedEmail,
+        postSignupLoginData.session.access_token ?? "",
       );
-      localStorage.setItem("auth_token", postSignupLoginData.session.access_token ?? "");
       router.replace("/");
       return;
     }
@@ -203,15 +226,12 @@ export default function RegisterPage() {
 
         <button
           onClick={handleRegister}
-          disabled={
-            loading ||
-            (signupCooldownUntil !== null && Date.now() < signupCooldownUntil)
-          }
+          disabled={loading || isCooldownActive}
           className="mb-4 w-full rounded-md bg-black py-2 text-sm font-medium text-white transition hover:bg-black/90 disabled:opacity-60"
         >
           {loading
             ? "Getting account..."
-            : signupCooldownUntil !== null && Date.now() < signupCooldownUntil
+            : isCooldownActive
               ? "Please wait..."
               : "Get Started"}
         </button>

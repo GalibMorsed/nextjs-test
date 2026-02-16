@@ -34,9 +34,24 @@ export default function Sidebar({ isMobileOpen, onCloseMobile }: SidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
 
+  const persistSession = (emailValue: string, tokenValue: string) => {
+    localStorage.setItem("auth_email", emailValue);
+    localStorage.setItem("auth_token", tokenValue);
+    document.cookie = `auth_token=${encodeURIComponent(tokenValue)}; path=/; max-age=604800; samesite=lax`;
+  };
+
+  const clearSession = () => {
+    localStorage.removeItem("auth_email");
+    localStorage.removeItem("auth_token");
+    document.cookie = "auth_token=; path=/; max-age=0; samesite=lax";
+  };
+
   useEffect(() => {
     const storedToken = localStorage.getItem("auth_token");
-    if (storedToken) setIsAuthenticated(true);
+    if (storedToken) {
+      setIsAuthenticated(true);
+      document.cookie = `auth_token=${encodeURIComponent(storedToken)}; path=/; max-age=604800; samesite=lax`;
+    }
     const storedEmail = localStorage.getItem("auth_email");
     if (storedEmail) setUserEmail(storedEmail);
 
@@ -45,8 +60,7 @@ export default function Sidebar({ isMobileOpen, onCloseMobile }: SidebarProps) {
       if (sessionUser) {
         setIsAuthenticated(true);
         setUserEmail(sessionUser.email ?? "");
-        localStorage.setItem("auth_email", sessionUser.email ?? "");
-        localStorage.setItem("auth_token", data.session?.access_token ?? "");
+        persistSession(sessionUser.email ?? "", data.session?.access_token ?? "");
       }
     });
 
@@ -58,13 +72,11 @@ export default function Sidebar({ isMobileOpen, onCloseMobile }: SidebarProps) {
       if (nextUser) {
         setIsAuthenticated(true);
         setUserEmail(nextUser.email ?? "");
-        localStorage.setItem("auth_email", nextUser.email ?? "");
-        localStorage.setItem("auth_token", session?.access_token ?? "");
+        persistSession(nextUser.email ?? "", session?.access_token ?? "");
       } else {
         setIsAuthenticated(false);
         setUserEmail("");
-        localStorage.removeItem("auth_email");
-        localStorage.removeItem("auth_token");
+        clearSession();
       }
     });
 
@@ -166,6 +178,7 @@ function SidebarContent({
     try {
       await supabase.auth.signOut();
     } finally {
+      document.cookie = "auth_token=; path=/; max-age=0; samesite=lax";
       localStorage.removeItem("auth_email");
       localStorage.removeItem("auth_token");
       onCloseMobile();

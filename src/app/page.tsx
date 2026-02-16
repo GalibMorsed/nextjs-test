@@ -96,7 +96,6 @@ export default async function Home() {
               <ArticleCard
                 key={article.url + index}
                 article={article}
-                index={index}
                 formattedDate={formattedDate}
               />
             );
