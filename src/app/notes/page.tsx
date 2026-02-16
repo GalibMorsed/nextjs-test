@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import NoteCard from "../components/noteCard";
+import NoteCard from "./noteCard";
 import { getUserNotes } from "../services/notesService";
 
 interface Note {

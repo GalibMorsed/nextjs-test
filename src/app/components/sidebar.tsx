@@ -352,9 +352,13 @@ function SidebarContent({
         )}
 
         <CollapsibleSection title="More Info">
-          <p className="px-4 py-1 text-sm text-gray-600 hover:text-blue-600 cursor-pointer transition-colors">
+          <Link
+            href="/about"
+            className="block px-4 py-1 text-sm text-gray-600 transition-colors hover:text-blue-600"
+            onClick={closeAndNavigate}
+          >
             About NextNews
-          </p>
+          </Link>
           <p className="px-4 py-1 text-sm text-gray-600 hover:text-blue-600 cursor-pointer transition-colors">
             Contact Support
           </p>

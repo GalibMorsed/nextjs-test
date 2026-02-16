@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import "./index.css";
 import AppShell from "./components/appShell";
+import AboutNextNews from "./about/page";
+import NotesPage from "./notes/page";
 
 export const metadata: Metadata = {
   title: "NextNews App",
@@ -16,6 +18,8 @@ export default function RootLayout({
     <html lang="en">
       <body className="min-h-screen">
         <AppShell>{children}</AppShell>
+        <AboutNextNews />
+        <NotesPage />
       </body>
     </html>
   );
