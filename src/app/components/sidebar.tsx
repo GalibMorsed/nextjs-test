@@ -371,7 +371,7 @@ function SidebarContent({
             About NextNews
           </Link>
           <Link
-            href="/contact"
+            href="/support"
             className="block px-4 py-1 text-sm text-gray-600 hover:text-blue-600 cursor-pointer transition-colors"
             onClick={closeAndNavigate}
           >

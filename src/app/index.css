@@ -7,6 +7,8 @@
     --background: #f8fafc; /* slate-50 */
   --background: #f8fafc; /* slate-50 */
   --foreground: #0f172a; /* slate-900 */
+  --primary: #22c55e; /* emerald-500 */
+        --primaryDark: #16a34a;
 }
 
 body {

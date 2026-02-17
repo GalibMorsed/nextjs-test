@@ -2,11 +2,13 @@
 
 import { useState } from "react";
 import clsx from "clsx";
-import { Building2, Globe, ShieldCheck } from "lucide-react";
+import { Building2, Globe, ShieldCheck, X } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 
 export default function PlansPage() {
   const [yearly, setYearly] = useState(false);
   const [subscribed, setSubscribed] = useState(false);
+  const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
 
   const plans = [
     {
@@ -141,11 +143,7 @@ export default function PlansPage() {
                 ))}
               </ul>
               <button
-                onClick={() =>
-                  alert(
-                    `Selected ${plan.name} plan! 🌟\n\nPayment integration will be available soon! 💳\nUntil then, enjoy everything as a registered partner. 🤝\nUpon payment, new features are also coming! ✨🚀`,
-                  )
-                }
+                onClick={() => setSelectedPlan(plan.name)}
                 className={clsx(
                   "mt-8 w-full rounded-xl px-5 py-3 text-sm font-semibold transition-all duration-300 focus:outline-none focus:ring-2",
                   plan.featured
@@ -239,6 +237,56 @@ export default function PlansPage() {
           </div>
         </div>
       </footer>
+
+      {/* Plan Selection Modal */}
+      <AnimatePresence>
+        {selectedPlan && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 p-0 sm:p-4 sm:items-center backdrop-blur-sm"
+            onClick={() => setSelectedPlan(null)}
+          >
+            <motion.div
+              initial={{ y: "100%", opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: "100%", opacity: 0 }}
+              transition={{ duration: 0.3, ease: "easeOut" }}
+              className="bg-white rounded-t-2xl sm:rounded-2xl p-6 max-w-full sm:max-w-md w-full relative shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button
+                onClick={() => setSelectedPlan(null)}
+                className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 transition-colors"
+              >
+                <X className="h-5 w-5" />
+              </button>
+              <div className="text-center space-y-4">
+                <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-teal-100">
+                  <ShieldCheck className="h-6 w-6 text-teal-600" />
+                </div>
+                <h3 className="text-xl font-bold text-slate-900">
+                  Selected {selectedPlan} plan! 🌟
+                </h3>
+                <p className="text-slate-600 leading-relaxed">
+                  Payment integration will be available soon!
+                  <br />
+                  Until then, enjoy everything as a registered partner. 🤝
+                  <br />
+                  Upon payment, new features are also coming! ✨🚀
+                </p>
+                <button
+                  onClick={() => setSelectedPlan(null)}
+                  className="w-full rounded-xl bg-teal-600 px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-teal-700 shadow-md hover:shadow-lg"
+                >
+                  Got it
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
