@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { updateNote, deleteNote } from "../services/notesService";
+import { ArrowUpRight } from "lucide-react";
 
 interface Note {
   id: string;
@@ -85,6 +86,7 @@ export default function NoteCard({
           className="mt-2 inline-flex max-w-full items-center gap-1 truncate text-sm font-medium text-blue-600 transition hover:text-blue-700 hover:underline"
         >
           Open article
+          <ArrowUpRight className="h-4 w-4" />
         </a>
       ) : null}
 

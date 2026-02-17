@@ -1,7 +1,11 @@
 @import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 :root {
     --background: #f8fafc; /* slate-50 */
+  --background: #f8fafc; /* slate-50 */
   --foreground: #0f172a; /* slate-900 */
 }
 
