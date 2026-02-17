@@ -28,6 +28,7 @@ export default function ArticleCard({
         <img
           src={article.urlToImage || "/news.avif"}
           alt={article.title || "News Article"}
+          loading="lazy"
           onError={(e) => {
             e.currentTarget.src = "/news.avif";
           }}

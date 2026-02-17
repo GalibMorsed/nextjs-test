@@ -60,7 +60,10 @@ export default function Sidebar({ isMobileOpen, onCloseMobile }: SidebarProps) {
       if (sessionUser) {
         setIsAuthenticated(true);
         setUserEmail(sessionUser.email ?? "");
-        persistSession(sessionUser.email ?? "", data.session?.access_token ?? "");
+        persistSession(
+          sessionUser.email ?? "",
+          data.session?.access_token ?? "",
+        );
       }
     });
 
@@ -373,12 +376,13 @@ function SidebarContent({
               className="flex items-center gap-3 w-full px-2 py-2 rounded-xl hover:bg-gray-50 transition-colors text-left focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
             >
               <img
-                src="/"
+                src={
+                  userEmail
+                    ? `https://ui-avatars.com/api/?name=${userEmail}&background=random`
+                    : `https://ui-avatars.com/api/?name=User&background=random`
+                }
                 alt="User Avatar"
                 className="w-9 h-9 rounded-full border-2 border-gray-200"
-                onError={(e) => {
-                  e.currentTarget.src = `https://ui-avatars.com/api/?name=${userEmail}&background=random`;
-                }}
               />
               <div className="flex-1 min-w-0">
                 <span className="font-medium text-sm text-gray-700 block truncate">
