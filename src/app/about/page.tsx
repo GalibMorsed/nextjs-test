@@ -1,140 +1,363 @@
 "use client";
 
+import Image from "next/image";
 import { motion } from "framer-motion";
+import {
+  Clock,
+  BookOpen,
+  Users,
+  Shield,
+  Zap,
+  Star,
+  Code,
+  Github,
+  Linkedin,
+  Instagram,
+  Mail,
+} from "lucide-react";
 
-export default function AboutNextNews() {
+/* ------------------ Motion Variants ------------------ */
+
+const pageVariant = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: { duration: 0.5, ease: "easeOut" },
+  },
+};
+
+const sectionVariant = {
+  hidden: { opacity: 0, y: 24 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      duration: 0.6,
+      ease: "easeOut",
+    },
+  },
+};
+
+const staggerContainer = {
+  hidden: {},
+  visible: {
+    transition: {
+      staggerChildren: 0.15,
+      delayChildren: 0.1,
+    },
+  },
+};
+
+const itemVariant = {
+  hidden: { opacity: 0, y: 20 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      duration: 0.4,
+      ease: "easeOut",
+    },
+  },
+};
+
+/* ------------------ Page ------------------ */
+
+export default function AboutPage() {
   return (
-    <main className="overflow-hidden bg-[#0b2233] text-white">
+    <motion.main
+      className="bg-gradient-to-br from-slate-50 via-white to-slate-100 text-slate-800 min-h-screen"
+      variants={pageVariant}
+      initial="hidden"
+      animate="visible"
+    >
       {/* HERO */}
-      <section className="relative bg-gradient-to-br from-[#0b2233] via-[#134e5e] to-[#0b2233] px-6 pt-32 pb-48">
-        <div className="mx-auto max-w-6xl">
-          <p className="mb-4 text-sm text-cyan-100/70">Home / About</p>
-
-          <motion.h1
-            initial={{ opacity: 0, y: 40 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7 }}
-            className="text-5xl font-semibold md:text-6xl"
-          >
-            Discover <span className="text-cyan-300">NextNews</span>
-          </motion.h1>
-        </div>
-
-        {/* Curved divider */}
-        <div className="absolute bottom-0 left-0 h-28 w-full rounded-t-[100%] bg-slate-50" />
-      </section>
-
-      {/* ABOUT */}
-      <section className="bg-slate-50 px-6 py-32 text-slate-900">
-        <div className="mx-auto grid max-w-6xl gap-20 md:grid-cols-2 items-center">
+      <motion.section
+        variants={sectionVariant}
+        className="relative overflow-hidden px-4 py-20 sm:px-6 lg:px-8 bg-gradient-to-r from-blue-50 via-white to-indigo-50"
+      >
+        <div className="mx-auto max-w-7xl text-center">
           <motion.div
-            initial={{ opacity: 0, x: -40 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.6 }}
-            viewport={{ once: true }}
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ duration: 0.6, delay: 0.2 }}
           >
-            <p className="mb-3 text-sm uppercase tracking-widest text-slate-500">
-              About Us
+            <Image
+              src="/logo1.png"
+              alt="NextNews Logo"
+              width={64}
+              height={64}
+              className="mx-auto mb-6 h-29 w-auto"
+            />
+            <h1 className="text-4xl font-bold tracking-tight text-slate-900 sm:text-5xl md:text-6xl">
+              About NextNews
+            </h1>
+            <p className="mt-6 text-lg leading-relaxed text-slate-600 max-w-3xl mx-auto">
+              NextNews is a modern, intelligent news platform built to help
+              users stay informed with accurate, relevant, and real-time content
+              — all in one place.
             </p>
+          </motion.div>
+        </div>
+      </motion.section>
 
-            <h2 className="mb-6 text-4xl font-semibold leading-tight">
-              Your Best Gateway to <br />
-              <span className="text-cyan-600">Trusted Digital News</span>
+      {/* PRODUCT VISION */}
+      <motion.section
+        variants={sectionVariant}
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true, margin: "-100px" }}
+        className="px-4 py-16 sm:px-6 lg:px-8"
+      >
+        <div className="mx-auto max-w-6xl grid gap-12 lg:gap-20 lg:grid-cols-2 lg:items-center">
+          <motion.div variants={itemVariant}>
+            <h2 className="text-3xl font-bold text-slate-900 mb-4">
+              A Smarter Way to Consume News
             </h2>
-
-            <p className="max-w-lg leading-relaxed text-slate-600">
-              NextNews is a modern, performance-focused news platform built with
-              Next.js. It delivers categorized, real-time news with a clean and
-              distraction-free reading experience.
+            <p className="leading-relaxed text-slate-600 text-base">
+              In today’s fast-paced digital world, information is everywhere —
+              but clarity is not. NextNews was created to cut through the noise
+              and deliver news that actually matters.
+            </p>
+            <p className="mt-4 leading-relaxed text-slate-600 text-base">
+              By organizing content across meaningful categories and surfacing
+              trending stories, the platform helps readers stay updated without
+              feeling overwhelmed.
             </p>
           </motion.div>
 
-          {/* Floating cards */}
-          <div className="relative h-[420px]">
-            <motion.div
-              whileHover={{ y: -12 }}
-              className="absolute left-10 top-0 h-44 w-64 rounded-2xl bg-white shadow-xl ring-1 ring-slate-200"
-            />
-            <motion.div
-              whileHover={{ y: -12 }}
-              className="absolute bottom-0 right-0 h-52 w-60 rounded-2xl bg-white shadow-xl ring-1 ring-slate-200"
-            />
-          </div>
-        </div>
-      </section>
-
-      {/* CORE PRINCIPLES */}
-      <section className="bg-slate-50 px-6 pb-32 text-slate-900">
-        <div className="mx-auto max-w-6xl text-center">
-          <p className="mb-3 text-sm uppercase tracking-widest text-slate-500">
-            Values
-          </p>
-
-          <h2 className="mb-16 text-4xl font-semibold">Our Core Principles</h2>
-
-          <div className="grid gap-8 md:grid-cols-4">
+          <motion.div
+            variants={staggerContainer}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+            className="space-y-4"
+          >
             {[
-              {
-                title: "Performance",
-                desc: "Fast rendering and optimized data fetching.",
-              },
-              {
-                title: "Reliability",
-                desc: "Stable architecture with consistent updates.",
-              },
-              {
-                title: "Clarity",
-                desc: "Minimal UI focused on readability.",
-              },
-              {
-                title: "Scalability",
-                desc: "Built to grow without complexity.",
-              },
-            ].map((item) => (
+              "Curated and category-based news",
+              "Clean, distraction-free reading experience",
+              "Built for speed and accessibility",
+            ].map((item, index) => (
               <motion.div
-                key={item.title}
-                whileHover={{ y: -10 }}
-                transition={{ type: "spring", stiffness: 180 }}
-                className="rounded-2xl bg-white p-8 shadow-lg ring-1 ring-slate-200"
+                key={item}
+                variants={itemVariant}
+                className="flex items-center gap-3 p-4 rounded-xl bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100"
               >
-                <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-cyan-100">
-                  <div className="h-5 w-5 rounded-full bg-cyan-500" />
-                </div>
-
-                <h3 className="mb-3 text-lg font-semibold">{item.title}</h3>
-
-                <p className="text-sm text-slate-600">{item.desc}</p>
+                <div className="w-2 h-2 bg-blue-600 rounded-full" />
+                <p className="text-sm font-medium text-slate-700 flex-1">
+                  {item}
+                </p>
               </motion.div>
             ))}
-          </div>
-        </div>
-      </section>
-
-      {/* TEAM */}
-      <section className="bg-[#0b2233] px-6 py-32 text-white">
-        <div className="mx-auto max-w-6xl">
-          <p className="mb-3 text-sm uppercase tracking-widest text-white/60">
-            Team
-          </p>
-
-          <h2 className="mb-14 text-4xl font-semibold">Meet the Creator</h2>
-
-          <motion.div
-            whileHover={{ y: -10 }}
-            className="max-w-sm rounded-2xl border border-white/10 bg-white/5 p-8 backdrop-blur-xl"
-          >
-            <div className="mb-4 h-20 w-20 rounded-full bg-gradient-to-br from-cyan-400 to-teal-500" />
-
-            <h3 className="text-xl font-semibold">Galib Morsed</h3>
-            <p className="mb-3 text-cyan-300">Full Stack Developer</p>
-
-            <p className="text-sm text-slate-300 leading-relaxed">
-              Creator of NextNews, focused on building scalable, modern, and
-              user-friendly applications using real-world development practices.
-            </p>
           </motion.div>
         </div>
-      </section>
-    </main>
+      </motion.section>
+
+      {/* FEATURES */}
+      <motion.section
+        className="relative overflow-hidden px-4 py-16 sm:px-6 lg:px-8 bg-gradient-to-b from-white to-slate-50"
+        variants={staggerContainer}
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true, margin: "-100px" }}
+      >
+        <div className="mx-auto max-w-6xl">
+          <motion.h2
+            variants={itemVariant}
+            className="text-center text-3xl font-bold text-slate-900 mb-12"
+          >
+            Key Features
+          </motion.h2>
+          <div className="grid gap-8 md:grid-cols-3">
+            {[
+              {
+                icon: Clock,
+                title: "Real-Time Updates",
+                desc: "News is fetched and updated dynamically, ensuring users always have access to the latest developments.",
+              },
+              {
+                icon: BookOpen,
+                title: "Organized by Categories",
+                desc: "Content is structured to make discovery intuitive and efficient across topics.",
+              },
+              {
+                icon: Users,
+                title: "Notes & Personalization",
+                desc: "Users can save notes and interact with content beyond passive reading.",
+              },
+            ].map((item, index) => {
+              const IconComponent = item.icon;
+              return (
+                <motion.div
+                  key={item.title}
+                  variants={itemVariant}
+                  whileHover={{ y: -4, scale: 1.02 }}
+                  className="group relative bg-white rounded-2xl p-6 shadow-lg border border-slate-100 hover:shadow-xl transition-shadow"
+                >
+                  <div className="absolute -inset-1 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl -z-10 group-hover:opacity-100 opacity-0 transition-opacity" />
+                  <IconComponent className="h-10 w-10 text-blue-600 mb-4 group-hover:scale-110 transition-transform" />
+                  <h3 className="text-xl font-semibold text-slate-900 mb-3">
+                    {item.title}
+                  </h3>
+                  <p className="text-sm leading-relaxed text-slate-600">
+                    {item.desc}
+                  </p>
+                </motion.div>
+              );
+            })}
+          </div>
+        </div>
+      </motion.section>
+
+      {/* CORE PRINCIPLES */}
+      <motion.section
+        variants={sectionVariant}
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true, margin: "-100px" }}
+        className="px-4 py-16 sm:px-6 lg:px-8"
+      >
+        <div className="mx-auto max-w-6xl">
+          <motion.h2
+            variants={itemVariant}
+            className="text-center text-3xl font-bold text-slate-900 mb-12"
+          >
+            Our Core Principles
+          </motion.h2>
+
+          <motion.div
+            variants={staggerContainer}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+            className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4"
+          >
+            {[
+              {
+                icon: Shield,
+                title: "Accuracy First",
+                desc: "Reliable sources over sensationalism.",
+              },
+              {
+                icon: Users,
+                title: "User-Centered Design",
+                desc: "Clarity, usability, accessibility.",
+              },
+              {
+                icon: Zap,
+                title: "Performance & Security",
+                desc: "Fast, scalable, and safe systems.",
+              },
+              {
+                icon: Star,
+                title: "Continuous Improvement",
+                desc: "Constant learning and iteration.",
+              },
+            ].map((item) => {
+              const IconComponent = item.icon;
+              return (
+                <motion.div
+                  key={item.title}
+                  variants={itemVariant}
+                  whileHover={{ y: -4, scale: 1.02 }}
+                  className="rounded-xl bg-white p-6 shadow-md border border-slate-100 hover:shadow-lg transition-all"
+                >
+                  <IconComponent className="h-8 w-8 text-indigo-600 mb-3" />
+                  <h4 className="font-semibold text-slate-900 mb-2">
+                    {item.title}
+                  </h4>
+                  <p className="text-sm text-slate-600">{item.desc}</p>
+                </motion.div>
+              );
+            })}
+          </motion.div>
+        </div>
+      </motion.section>
+
+      {/* ABOUT YOU */}
+      <motion.section
+        variants={sectionVariant}
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true }}
+        className="px-4 py-20 sm:px-6 lg:px-8 bg-gradient-to-br from-slate-900 via-gray-900 to-slate-800 text-slate-100 relative overflow-hidden"
+      >
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-blue-900/20 via-transparent to-transparent" />
+        <div className="mx-auto max-w-4xl text-center relative z-10">
+          <motion.div
+            initial={{ scale: 0.9 }}
+            whileInView={{ scale: 1 }}
+            viewport={{ once: true }}
+          >
+            <Code className="mx-auto h-12 w-12 text-blue-400 mb-6" />
+            <h2 className="text-3xl font-bold mb-6">Built by Galib Morsed</h2>
+          </motion.div>
+
+          <motion.p
+            variants={itemVariant}
+            className="text-lg leading-relaxed text-slate-300 mb-6 max-w-3xl mx-auto"
+          >
+            I’m Galib Morsed, a passionate full-stack developer focused on
+            building modern, scalable, and user-centric web applications.
+            NextNews reflects my approach to clean architecture and thoughtful
+            UI design.
+          </motion.p>
+
+          <motion.p
+            variants={itemVariant}
+            className="text-lg leading-relaxed text-slate-300 mb-8 max-w-3xl mx-auto"
+          >
+            This project combines real-world product thinking with strong
+            technical foundations — for developers, designers, and users alike.
+          </motion.p>
+
+          <motion.p
+            variants={itemVariant}
+            className="text-sm text-slate-400 italic"
+          >
+            A project built with purpose, precision, and professionalism.
+          </motion.p>
+
+          <motion.div
+            variants={itemVariant}
+            className="mt-12 flex justify-center items-center gap-8"
+          >
+            <a
+              href="https://github.com/GalibMorsed"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-slate-400 hover:text-blue-400 transition-colors duration-300"
+              aria-label="GitHub"
+            >
+              <Github className="h-6 w-6" />
+            </a>
+            <a
+              href="https://www.linkedin.com/in/galib-morsed"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-slate-400 hover:text-blue-400 transition-colors duration-300"
+              aria-label="LinkedIn"
+            >
+              <Linkedin className="h-6 w-6" />
+            </a>
+            <a
+              href="https://www.instagram.com/galib_morsed/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-slate-400 hover:text-blue-400 transition-colors duration-300"
+              aria-label="Instagram"
+            >
+              <Instagram className="h-6 w-6" />
+            </a>
+            <a
+              href="mailto:morsedgalib982@gmail.com"
+              className="text-slate-400 hover:text-blue-400 transition-colors duration-300"
+              aria-label="Email"
+            >
+              <Mail className="h-6 w-6" />
+            </a>
+          </motion.div>
+        </div>
+      </motion.section>
+    </motion.main>
   );
 }

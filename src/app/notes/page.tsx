@@ -76,39 +76,36 @@ export default function NotesPage() {
   return (
     <main className="min-h-screen bg-[radial-gradient(circle_at_top,_#e2e8f0,_#f8fafc_55%,_#ffffff)] px-4 py-10 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-5xl space-y-6">
-        <section className="rounded-3xl border border-slate-200 bg-white/90 p-6 shadow-sm backdrop-blur sm:p-8">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <section className="group relative overflow-hidden rounded-3xl border border-slate-200 bg-white/90 p-6 shadow-sm backdrop-blur transition hover:shadow-md sm:p-8">
+          {/* subtle animated background */}
+          <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-blue-50/0 via-blue-50/40 to-purple-50/0 opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
+
+          <div className="relative flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <p className="mb-2 inline-flex rounded-full border border-rose-200 bg-rose-50 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-rose-700">
+              <span className="mb-3 inline-flex rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-slate-600">
                 Saved Notes
-              </p>
+              </span>
+
               <h1 className="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
-                Your personal news notes
+                Your Notes
               </h1>
-              <p className="mt-2 text-sm text-slate-600 sm:text-base">
-                Keep your ideas, summaries, and key takeaways organized in one
-                place.
+
+              <p className="mt-2 max-w-xl text-sm text-slate-600 sm:text-base">
+                All your article highlights, summaries, and thoughts — neatly
+                organized and always accessible.
               </p>
             </div>
 
-            <div className="flex items-center gap-3">
-              <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-center">
-                <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
+            {/* count card */}
+            <div className="flex items-center justify-center rounded-2xl border border-slate-200 bg-slate-50 px-6 py-4 text-center transition hover:scale-[1.03]">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
                   Total Notes
                 </p>
-                <p className="text-2xl font-bold text-slate-900">
+                <p className="mt-1 text-3xl font-bold text-slate-900">
                   {notes.length}
                 </p>
               </div>
-
-              <button
-                type="button"
-                onClick={() => void loadNotes(true)}
-                disabled={isRefreshing}
-                className="rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {isRefreshing ? "Refreshing..." : "Refresh"}
-              </button>
             </div>
           </div>
         </section>

@@ -1,5 +1,6 @@
 "use client";
 
+import { ArrowUpRight } from "lucide-react";
 import AddNoteButton from "./addNoteButton";
 
 interface Article {
@@ -65,19 +66,7 @@ export default function ArticleCard({
               }`}
             >
               {article.url ? "Read Full Story" : "Link Not Available"}
-              <svg
-                className="w-4 h-4 ml-1"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M17 8l4 4m0 0l-4 4m4-4H3"
-                ></path>
-              </svg>
+              <ArrowUpRight className="w-4 h-4 ml-1" />
             </a>
 
             <AddNoteButton

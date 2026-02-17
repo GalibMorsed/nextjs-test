@@ -345,12 +345,20 @@ function SidebarContent({
         {/* Collapsible Sections */}
         {isAuthenticated && (
           <CollapsibleSection title="Extra Options">
-            <p className="px-4 py-1 text-sm text-gray-600 hover:text-blue-600 cursor-pointer transition-colors">
+            <Link
+              href="/plans"
+              className="block px-4 py-1 text-sm text-gray-600 hover:text-blue-600 cursor-pointer transition-colors"
+              onClick={closeAndNavigate}
+            >
               Subscriptions
-            </p>
-            <p className="px-4 py-1 text-sm text-gray-600 hover:text-blue-600 cursor-pointer transition-colors">
+            </Link>
+            <Link
+              href="/appearance"
+              className="block px-4 py-1 text-sm text-gray-600 hover:text-blue-600 cursor-pointer transition-colors"
+              onClick={closeAndNavigate}
+            >
               Appearance
-            </p>
+            </Link>
           </CollapsibleSection>
         )}
 
@@ -362,9 +370,13 @@ function SidebarContent({
           >
             About NextNews
           </Link>
-          <p className="px-4 py-1 text-sm text-gray-600 hover:text-blue-600 cursor-pointer transition-colors">
+          <Link
+            href="/contact"
+            className="block px-4 py-1 text-sm text-gray-600 hover:text-blue-600 cursor-pointer transition-colors"
+            onClick={closeAndNavigate}
+          >
             Contact Support
-          </p>
+          </Link>
         </CollapsibleSection>
       </div>
 
