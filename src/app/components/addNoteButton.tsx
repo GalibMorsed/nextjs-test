@@ -148,9 +148,9 @@ export default function AddNoteButton({
       <button
         type="button"
         onClick={handleOpen}
-        className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 shadow-sm transition-all duration-200 hover:border-gray-300 hover:bg-gray-50 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 active:scale-95"
+        className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-blue-200 hover:bg-blue-50/40 hover:text-blue-700 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 active:scale-95 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:border-blue-700 dark:hover:bg-slate-700"
       >
-        <Notebook size={16} className="text-blue-600" />
+        <Notebook size={16} className="text-blue-600 dark:text-blue-400" />
         Add Note
       </button>
 
@@ -168,7 +168,7 @@ export default function AddNoteButton({
               animate="animate"
               exit="exit"
               transition={{ ease: [0.16, 1, 0.3, 1], duration: 0.25 }}
-              className="relative w-full sm:max-w-lg rounded-t-2xl rounded-b-none sm:rounded-2xl bg-white p-5 sm:p-6 shadow-xl sm:shadow-2xl border border-gray-100"
+              className="relative w-full sm:max-w-lg rounded-t-2xl rounded-b-none sm:rounded-2xl border border-slate-200 bg-white p-5 shadow-xl sm:rounded-2xl sm:border-slate-200 sm:p-6 sm:shadow-2xl dark:border-slate-700 dark:bg-slate-800"
               role="dialog"
               aria-modal="true"
               aria-labelledby="note-dialog-title"
@@ -176,14 +176,14 @@ export default function AddNoteButton({
               <div className="flex items-center justify-between mb-5">
                 <h3
                   id="note-dialog-title"
-                  className="text-lg sm:text-xl font-semibold text-gray-900"
+                  className="text-lg sm:text-xl font-semibold text-slate-900 dark:text-slate-100"
                 >
                   {isAuthenticated ? "Article Notepad" : "Member Feature"}
                 </h3>
                 <button
                   type="button"
                   onClick={handleClose}
-                  className="flex items-center justify-center w-8 h-8 rounded-full text-gray-500 hover:bg-gray-100 hover:text-gray-700 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 active:scale-95"
+                  className="flex h-8 w-8 items-center justify-center rounded-full text-slate-500 transition-all duration-200 hover:bg-slate-100 hover:text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 active:scale-95 dark:text-slate-400 dark:hover:bg-slate-700 dark:hover:text-slate-100"
                   aria-label="Close dialog"
                 >
                   <X size={18} />
@@ -192,38 +192,38 @@ export default function AddNoteButton({
 
               {isAuthenticated ? (
                 <>
-                  <div className="mb-5 space-y-3 rounded-xl border border-gray-200 bg-gray-50/50 p-4 text-xs sm:text-sm">
+                  <div className="mb-5 space-y-3 rounded-xl border border-slate-200 bg-slate-50/80 p-4 text-xs sm:text-sm dark:border-slate-700 dark:bg-slate-900/40">
                     <div className="flex flex-col sm:grid sm:grid-cols-2 gap-2 sm:gap-3">
                       <p className="sm:col-span-2">
-                        <span className="font-medium text-gray-600">
+                        <span className="font-medium text-slate-500 dark:text-slate-400">
                           Headline:
                         </span>
-                        <span className="block mt-1 text-gray-900 font-normal line-clamp-2 sm:line-clamp-1">
+                        <span className="mt-1 block line-clamp-2 font-normal text-slate-900 dark:text-slate-100 sm:line-clamp-1">
                           {title}
                         </span>
                       </p>
                       <p>
-                        <span className="font-medium text-gray-600">Date:</span>
-                        <span className="block mt-1 text-gray-900">
+                        <span className="font-medium text-slate-500 dark:text-slate-400">Date:</span>
+                        <span className="mt-1 block text-slate-900 dark:text-slate-100">
                           {formattedDate}
                         </span>
                       </p>
                       <p>
-                        <span className="font-medium text-gray-600">
+                        <span className="font-medium text-slate-500 dark:text-slate-400">
                           Source:
                         </span>
-                        <span className="block mt-1 text-gray-900">
+                        <span className="mt-1 block text-slate-900 dark:text-slate-100">
                           {sourceName || "Unknown Source"}
                         </span>
                       </p>
                       <p className="sm:col-span-2">
-                        <span className="font-medium text-gray-600">Link:</span>
+                        <span className="font-medium text-slate-500 dark:text-slate-400">Link:</span>
                         <span className="block mt-1">
                           <a
                             href={link}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-blue-600 hover:text-blue-700 font-medium text-xs sm:text-sm break-all hover:underline transition-colors"
+                            className="break-all text-xs font-medium text-blue-600 transition-colors hover:text-blue-700 hover:underline dark:text-blue-400 dark:hover:text-blue-300 sm:text-sm"
                           >
                             {link}
                           </a>
@@ -236,7 +236,7 @@ export default function AddNoteButton({
                     value={content}
                     onChange={(e) => setContent(e.target.value)}
                     placeholder="Write your thoughts and notes here..."
-                    className="w-full h-32 sm:h-40 resize-none rounded-xl border border-gray-300 p-4 text-sm sm:text-base placeholder-gray-500 transition-all duration-200 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/10 bg-white shadow-sm"
+                    className="h-32 w-full resize-none rounded-xl border border-slate-300 bg-white p-4 text-sm text-slate-800 shadow-sm transition-all duration-200 placeholder:text-slate-500 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/10 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-400 sm:h-40 sm:text-base"
                     aria-label="Note content"
                     rows={4}
                   />
@@ -283,10 +283,10 @@ export default function AddNoteButton({
                 </>
               ) : (
                 <div className="flex flex-col items-center justify-center py-6 text-center">
-                  <div className="mb-4 rounded-full bg-blue-50 p-4">
-                    <Notebook size={32} className="text-blue-600" />
+                  <div className="mb-4 rounded-full bg-blue-50 p-4 dark:bg-blue-950/40">
+                    <Notebook size={32} className="text-blue-600 dark:text-blue-300" />
                   </div>
-                  <p className="mb-6 max-w-xs text-sm text-gray-600">
+                  <p className="mb-6 max-w-xs text-sm text-slate-600 dark:text-slate-300">
                     This functionality is only for registered members. Please
                     log in or register to save notes.
                   </p>
@@ -294,7 +294,7 @@ export default function AddNoteButton({
                     <button
                       type="button"
                       onClick={handleClose}
-                      className="flex-1 rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 shadow-sm transition-all duration-200 hover:bg-gray-50"
+                      className="flex-1 rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 shadow-sm transition-all duration-200 hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
                     >
                       Close
                     </button>

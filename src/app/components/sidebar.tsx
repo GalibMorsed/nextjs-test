@@ -21,6 +21,11 @@ import {
   X,
 } from "lucide-react";
 import { supabase } from "../../../lib/superbaseClient";
+import {
+  DEFAULT_APPEARANCE_SETTINGS,
+  applyAppearanceSettings,
+} from "@/lib/appearance";
+import { applyDarkMode } from "@/lib/accountSettings";
 
 interface SidebarProps {
   isMobileOpen: boolean;
@@ -123,7 +128,10 @@ export default function Sidebar({ isMobileOpen, onCloseMobile }: SidebarProps) {
 
   return (
     <>
-      <aside className="hidden md:flex fixed left-0 top-[65px] h-[calc(100vh-65px)] w-72 bg-[var(--card)] border-r border-[var(--border)] shadow-sm flex-col">
+      <aside
+        className="hidden md:flex fixed left-0 top-[65px] h-[calc(100vh-65px)] w-72 bg-white border-r border-[var(--border)] shadow-sm flex-col"
+        style={{ backgroundColor: "var(--card)" }}
+      >
         {content}
       </aside>
 
@@ -143,7 +151,8 @@ export default function Sidebar({ isMobileOpen, onCloseMobile }: SidebarProps) {
               animate={{ x: 0 }}
               exit={{ x: "-100%" }}
               transition={{ duration: 0.25 }}
-              className="fixed inset-y-0 left-0 z-50 w-72 bg-[var(--card)] shadow-xl md:hidden flex flex-col"
+              className="fixed inset-y-0 left-0 z-50 w-72 bg-white shadow-xl md:hidden flex flex-col"
+              style={{ backgroundColor: "var(--card)" }}
             >
               {content}
             </motion.aside>
@@ -182,8 +191,9 @@ function SidebarContent({
       await supabase.auth.signOut();
     } finally {
       document.cookie = "auth_token=; path=/; max-age=0; samesite=lax";
-      localStorage.removeItem("auth_email");
-      localStorage.removeItem("auth_token");
+      localStorage.clear();
+      applyDarkMode(false);
+      applyAppearanceSettings(DEFAULT_APPEARANCE_SETTINGS);
       onCloseMobile();
       router.replace("/");
     }
@@ -442,7 +452,7 @@ function SidebarContent({
                   </strong>
                 </div>
                 <Link
-                  href="/Settings"
+                  href="/settings"
                   className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                   onClick={closeAndNavigate}
                 >

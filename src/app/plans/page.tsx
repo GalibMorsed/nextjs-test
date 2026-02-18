@@ -63,27 +63,27 @@ export default function PlansPage() {
   };
 
   return (
-    <div className="min-h-screen overflow-x-hidden bg-gradient-to-br from-indigo-50 via-blue-50 to-purple-50 text-slate-900">
+    <div className="min-h-screen overflow-x-hidden bg-gradient-to-br from-indigo-50 via-blue-50 to-purple-50 text-slate-900 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 dark:text-slate-100">
       {/* Hero Section */}
       <section className="relative overflow-hidden px-4 py-14 sm:px-6 sm:py-16 lg:px-8">
         <div className="mx-auto max-w-5xl text-center relative z-10">
           <h1 className="text-4xl font-bold tracking-tight sm:text-5xl lg:text-6xl mb-4">
             Subscribe to <span className="text-teal-600">NextNews</span>
           </h1>
-          <p className="text-xl text-slate-600 mb-8 max-w-2xl mx-auto">
+          <p className="text-xl text-slate-600 mb-8 max-w-2xl mx-auto dark:text-slate-300">
             Unlock exclusive news content with premium features and access.
           </p>
           <div className="mb-12 flex flex-wrap items-center justify-center gap-4 sm:mb-16">
             <span
               className={
-                !yearly ? "text-teal-600 font-semibold" : "text-slate-500"
+                !yearly ? "text-teal-600 font-semibold" : "text-slate-500 dark:text-slate-400"
               }
             >
               Monthly
             </span>
             <button
               onClick={() => setYearly((p) => !p)}
-              className="relative w-20 h-10 rounded-full bg-slate-200 p-1 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-teal-500"
+              className="relative w-20 h-10 rounded-full bg-slate-200 p-1 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-teal-500 dark:bg-slate-700"
               aria-label={yearly ? "Switch to monthly" : "Switch to yearly"}
             >
               <span
@@ -97,7 +97,7 @@ export default function PlansPage() {
             </button>
             <span
               className={
-                yearly ? "text-teal-600 font-semibold" : "text-slate-500"
+                yearly ? "text-teal-600 font-semibold" : "text-slate-500 dark:text-slate-400"
               }
             >
               Yearly
@@ -115,20 +115,20 @@ export default function PlansPage() {
               className={clsx(
                 "relative rounded-2xl p-6 border w-full max-w-sm transition-all duration-300 hover:shadow-lg",
                 plan.featured
-                  ? "bg-teal-50 border-teal-200 ring-1 ring-teal-200/50 lg:scale-105"
-                  : "bg-white border-slate-200",
+                  ? "bg-teal-50 border-teal-200 ring-1 ring-teal-200/50 dark:bg-teal-950/40 dark:border-teal-700 lg:scale-105"
+                  : "bg-white border-slate-200 dark:bg-slate-800 dark:border-slate-700",
               )}
               style={{ animationDelay: `${index * 150}ms` }}
             >
               <div className="text-center">
-                <h3 className="text-2xl font-bold text-slate-900 mb-2">
+                <h3 className="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-2">
                   {plan.name}
                 </h3>
-                <p className="text-sm text-slate-600 mb-4">{plan.desc}</p>
+                <p className="text-sm text-slate-600 dark:text-slate-300 mb-4">{plan.desc}</p>
                 <p className="text-4xl font-bold text-teal-600 mb-1">
                   ${plan.price}.00
                 </p>
-                <p className="text-sm text-slate-500">
+                <p className="text-sm text-slate-500 dark:text-slate-400">
                   /{yearly ? "year" : "month"}
                 </p>
                 {yearly && (
@@ -137,7 +137,7 @@ export default function PlansPage() {
                   </p>
                 )}
               </div>
-              <ul className="mt-6 space-y-3 text-sm text-slate-700">
+              <ul className="mt-6 space-y-3 text-sm text-slate-700 dark:text-slate-300">
                 {plan.features.map((f) => (
                   <li key={f} className="flex items-start gap-2">
                     <span className="mt-1 text-teal-600 font-bold">✓</span>
@@ -151,14 +151,14 @@ export default function PlansPage() {
                   "mt-8 w-full rounded-xl px-5 py-3 text-sm font-semibold transition-all duration-300 focus:outline-none focus:ring-2",
                   plan.featured
                     ? "bg-teal-600 text-white hover:bg-teal-700 focus:ring-teal-500"
-                    : "bg-white text-teal-600 border border-teal-300 hover:bg-teal-50 focus:ring-teal-500",
+                    : "bg-white text-teal-600 border border-teal-300 hover:bg-teal-50 focus:ring-teal-500 dark:bg-slate-900 dark:text-teal-300 dark:border-teal-700 dark:hover:bg-teal-950/40",
                 )}
               >
                 Get This Package
               </button>
               {/* Partner Logos */}
-              <div className="mt-6 pt-4 border-t border-slate-100 w-full">
-                <p className="text-xs text-center text-slate-400 mb-2">
+              <div className="mt-6 pt-4 border-t border-slate-100 dark:border-slate-700 w-full">
+                <p className="text-xs text-center text-slate-400 dark:text-slate-500 mb-2">
                   Trusted by partners
                 </p>
                 <div className="flex justify-center space-x-4 opacity-60">
@@ -173,7 +173,7 @@ export default function PlansPage() {
       </section>
 
       {/* Footer */}
-      <footer className="bg-slate-900 px-4 py-12 text-white sm:px-6 lg:px-8">
+      <footer className="bg-slate-900 px-4 py-12 text-white dark:bg-slate-950 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-6xl">
           <div className="mb-8 grid grid-cols-1 gap-8 md:grid-cols-2">
             <div className="text-center md:text-left">
@@ -225,7 +225,7 @@ export default function PlansPage() {
                   <input
                     type="email"
                     placeholder="Enter your email"
-                    className="w-full px-4 py-2 rounded-full bg-white text-slate-900 pr-20 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                    className="w-full px-4 py-2 rounded-full bg-white text-slate-900 pr-20 focus:outline-none focus:ring-2 focus:ring-teal-500 dark:bg-slate-800 dark:text-slate-100"
                     required
                   />
                   <button
@@ -256,12 +256,12 @@ export default function PlansPage() {
               animate={{ y: 0, opacity: 1 }}
               exit={{ y: "100%", opacity: 0 }}
               transition={{ duration: 0.3, ease: "easeOut" }}
-              className="bg-white rounded-t-2xl sm:rounded-2xl p-6 max-w-full sm:max-w-md w-full relative shadow-2xl"
+              className="bg-white rounded-t-2xl sm:rounded-2xl p-6 max-w-full sm:max-w-md w-full relative shadow-2xl dark:bg-slate-800"
               onClick={(e) => e.stopPropagation()}
             >
               <button
                 onClick={() => setSelectedPlan(null)}
-                className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 transition-colors"
+                className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
               >
                 <X className="h-5 w-5" />
               </button>
@@ -269,10 +269,10 @@ export default function PlansPage() {
                 <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-teal-100">
                   <ShieldCheck className="h-6 w-6 text-teal-600" />
                 </div>
-                <h3 className="text-xl font-bold text-slate-900">
+                <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100">
                   Selected {selectedPlan} plan! 🌟
                 </h3>
-                <p className="text-slate-600 leading-relaxed">
+                <p className="text-slate-600 dark:text-slate-300 leading-relaxed">
                   Payment integration will be available soon!
                   <br />
                   Until then, enjoy everything as a registered partner. 🤝

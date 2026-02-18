@@ -63,46 +63,47 @@ export default function NotesPage() {
 
   if (isLoading) {
     return (
-      <main className="min-h-screen bg-slate-50 px-4 py-10 sm:px-6 lg:px-8">
+      <main className="min-h-screen bg-slate-50 px-4 py-10 dark:bg-slate-900 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-5xl animate-pulse space-y-5">
-          <div className="h-28 rounded-3xl bg-white" />
-          <div className="h-40 rounded-2xl bg-white" />
-          <div className="h-40 rounded-2xl bg-white" />
+          <div className="h-28 rounded-3xl bg-white dark:bg-slate-800" />
+          <div className="h-40 rounded-2xl bg-white dark:bg-slate-800" />
+          <div className="h-40 rounded-2xl bg-white dark:bg-slate-800" />
         </div>
       </main>
     );
   }
 
   return (
-    <main className="min-h-screen bg-[radial-gradient(circle_at_top,_#e2e8f0,_#f8fafc_55%,_#ffffff)] px-4 py-10 sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-5xl space-y-6">
-        <section className="group relative overflow-hidden rounded-3xl border border-slate-200 bg-white/90 p-6 shadow-sm backdrop-blur transition hover:shadow-md sm:p-8">
+    <main className="relative min-h-screen bg-slate-50 px-4 py-10 dark:bg-slate-950 sm:px-6 lg:px-8">
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,_#e2e8f0,_#f8fafc_55%,_#ffffff)] dark:hidden" />
+      <div className="relative mx-auto max-w-5xl space-y-6">
+        <section className="group relative overflow-hidden rounded-3xl border border-slate-200 bg-white/90 p-6 shadow-sm backdrop-blur transition hover:shadow-md dark:border-slate-700 dark:bg-slate-800/90 sm:p-8">
           {/* subtle animated background */}
-          <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-blue-50/0 via-blue-50/40 to-purple-50/0 opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
+          <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-blue-50/0 via-blue-50/40 to-purple-50/0 opacity-0 transition-opacity duration-500 group-hover:opacity-100 dark:via-slate-700/40" />
 
           <div className="relative flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <span className="mb-3 inline-flex rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-slate-600">
+              <span className="mb-3 inline-flex rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-slate-600 dark:bg-slate-700 dark:text-slate-300">
                 Saved Notes
               </span>
 
-              <h1 className="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
+              <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-slate-100 sm:text-4xl">
                 Your Notes
               </h1>
 
-              <p className="mt-2 max-w-xl text-sm text-slate-600 sm:text-base">
+              <p className="mt-2 max-w-xl text-sm text-slate-600 dark:text-slate-300 sm:text-base">
                 All your article highlights, summaries, and thoughts — neatly
                 organized and always accessible.
               </p>
             </div>
 
             {/* count card */}
-            <div className="flex items-center justify-center rounded-2xl border border-slate-200 bg-slate-50 px-6 py-4 text-center transition hover:scale-[1.03]">
+            <div className="flex items-center justify-center rounded-2xl border border-slate-200 bg-slate-50 px-6 py-4 text-center transition hover:scale-[1.03] dark:border-slate-700 dark:bg-slate-700/60">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-300">
                   Total Notes
                 </p>
-                <p className="mt-1 text-3xl font-bold text-slate-900">
+                <p className="mt-1 text-3xl font-bold text-slate-900 dark:text-slate-100">
                   {notes.length}
                 </p>
               </div>
@@ -111,13 +112,13 @@ export default function NotesPage() {
         </section>
 
         {error ? (
-          <section className="rounded-2xl border border-red-200 bg-red-50 p-5 text-red-700">
+          <section className="rounded-2xl border border-red-200 bg-red-50 p-5 text-red-700 dark:border-red-800 dark:bg-red-950/40 dark:text-red-300">
             <p className="font-semibold">Unable to load notes</p>
             <p className="mt-1 text-sm">{error}</p>
             <button
               type="button"
               onClick={() => void loadNotes(true)}
-              className="mt-3 rounded-lg border border-red-300 bg-white px-4 py-2 text-sm font-medium text-red-700 transition hover:bg-red-100"
+              className="mt-3 rounded-lg border border-red-300 bg-white px-4 py-2 text-sm font-medium text-red-700 transition hover:bg-red-100 dark:border-red-700 dark:bg-slate-900 dark:text-red-300 dark:hover:bg-red-900/40"
             >
               Try Again
             </button>
@@ -125,11 +126,11 @@ export default function NotesPage() {
         ) : null}
 
         {!error && sortedNotes.length === 0 ? (
-          <section className="rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-sm">
-            <h2 className="text-xl font-semibold text-slate-900">
+          <section className="rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-sm dark:border-slate-700 dark:bg-slate-800">
+            <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-100">
               No notes yet
             </h2>
-            <p className="mt-2 text-slate-600">
+            <p className="mt-2 text-slate-600 dark:text-slate-300">
               Save notes from any article and they will appear here.
             </p>
           </section>
