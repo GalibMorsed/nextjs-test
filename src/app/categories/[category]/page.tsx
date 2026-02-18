@@ -49,13 +49,11 @@ export default async function CategoryPage({
               key={`${article.url ?? "article"}-${index}`}
               className="rounded-lg border p-4 transition-shadow hover:shadow-lg"
             >
-              {article.urlToImage && (
-                <img
-                  src={article.urlToImage}
-                  alt={article.title ?? "News image"}
-                  className="mb-4 h-48 w-full rounded object-cover"
-                />
-              )}
+              <img
+                src={article.urlToImage || "/news.avif"}
+                alt={article.title ?? "News image"}
+                className="mb-4 h-48 w-full rounded object-cover"
+              />
               <h2 className="mb-2 text-xl font-semibold">
                 {article.title ?? "Untitled article"}
               </h2>
@@ -70,7 +68,7 @@ export default async function CategoryPage({
                     rel="noopener noreferrer"
                     className="text-blue-600 hover:underline"
                   >
-                    Read more
+                    Read more ➡️
                   </Link>
                 ) : (
                   <span className="text-gray-400">Link unavailable</span>

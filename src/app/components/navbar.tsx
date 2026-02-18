@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import type { User } from "@supabase/supabase-js";
 import { Menu, Newspaper, X, StickyNote } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { supabase } from "../../../lib/superbaseClient";
@@ -33,14 +32,14 @@ export default function Navbar({ onMenuToggle, isMobileOpen }: NavbarProps) {
   const isNotesActive = pathname === "/notes";
 
   return (
-    <nav className="sticky top-0 z-30 flex items-center justify-between border-b bg-white px-4 py-4 md:px-6">
+    <nav className="sticky top-0 z-30 flex items-center justify-between border-b border-[var(--border)] bg-[var(--card)] px-4 py-4 md:px-6">
       {/* Logo */}
       <Link
         href="/"
         className="flex items-center gap-2 transition-opacity hover:opacity-80"
       >
-        <Newspaper className="h-8 w-6 text-gray-600" strokeWidth={1.5} />
-        <span className="bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-2xl font-light italic tracking-wide text-transparent">
+        <Newspaper className="h-8 w-6 text-[var(--primary)]" strokeWidth={1.5} />
+        <span className="text-2xl font-light italic tracking-wide text-[var(--foreground)]">
           NextNews
         </span>
       </Link>
@@ -49,53 +48,41 @@ export default function Navbar({ onMenuToggle, isMobileOpen }: NavbarProps) {
       <div className="flex items-center gap-4">
         <div className="hidden md:flex items-center gap-4">
           {isAuthenticated ? (
-            <div className="relative">
-              {/* Animated border */}
-              <div
+            <Link
+              href="/notes"
+              className={`
+                group relative inline-flex items-center gap-2
+                rounded-xl border border-gray-200
+                px-4 py-2 text-sm font-medium text-gray-700
+                transition-all duration-300 ease-out
+                hover:border-[var(--primary)] hover:text-[var(--primary)] hover:shadow-md
+                ${isNotesActive ? "border-[var(--primary)] text-[var(--primary)] shadow-sm" : ""}
+              `}
+            >
+              <StickyNote
+                size={18}
                 className={`
-                  absolute inset-0 rounded-xl
-                  ${
-                    isNotesActive
-                      ? "opacity-100"
-                      : "opacity-0 hover:opacity-100"
-                  }
-                  transition-opacity duration-300
-                  overflow-hidden
+                  text-[var(--primary)] transition-transform duration-300
+                  group-hover:scale-110 group-hover:rotate-6
                 `}
-              >
-                <span
-                  className="
-                    absolute inset-[-100%]
-                    bg-[conic-gradient(from_0deg,transparent,rgba(99,102,241,0.9),transparent)]
-                    animate-[spin_3s_linear_infinite]
-                  "
-                />
-              </div>
-
-              {/* Inner button */}
-              <Link
-                href="/notes"
-                className="
-                  relative z-10
-                  flex items-center gap-2
-                  rounded-xl
-                  bg-white
-                  px-4 py-2
-                  text-sm font-medium
-                  text-gray-700
-                  border border-gray-200
-                  transition-colors duration-300
-                  hover:text-indigo-600
-                "
-              >
-                <StickyNote size={18} className="text-indigo-500" />
-                Notes
-              </Link>
-            </div>
+              />
+              Notes
+              {/* Subtle underline indicator when active or hovered */}
+              <span
+                className={`
+                  absolute bottom-0 left-4 right-4 h-0.5 
+                  bg-[var(--primary)] 
+                  scale-x-0 transform origin-center
+                  transition-transform duration-300 ease-out
+                  group-hover:scale-x-100
+                  ${isNotesActive ? "scale-x-100" : ""}
+                `}
+              />
+            </Link>
           ) : (
             <Link
               href="/auth/register"
-              className="rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition-opacity hover:opacity-90"
+              className="rounded-xl bg-[var(--primary)] px-4 py-2 text-sm font-medium text-white shadow-sm transition-all duration-300 hover:shadow-md hover:brightness-110 hover:scale-[1.02]"
             >
               Get Started
             </Link>
@@ -107,7 +94,7 @@ export default function Navbar({ onMenuToggle, isMobileOpen }: NavbarProps) {
           type="button"
           onClick={onMenuToggle}
           aria-label="Toggle sidebar"
-          className="inline-flex items-center justify-center rounded-lg border border-gray-200 p-2 text-gray-700 md:hidden"
+          className="inline-flex items-center justify-center rounded-lg border border-[var(--border)] p-2 text-[var(--foreground)] md:hidden transition-colors hover:bg-gray-50"
         >
           {isMobileOpen ? <X size={18} /> : <Menu size={18} />}
         </button>

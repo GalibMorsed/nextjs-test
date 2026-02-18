@@ -1,15 +1,41 @@
 "use client";
 
-import { useState } from "react";
+import { MotionConfig } from "framer-motion";
+import { useEffect, useState } from "react";
 import Navbar from "./navbar";
 import Sidebar from "./sidebar";
 import Template from "../template";
+import {
+  APPEARANCE_EVENT,
+  applyAppearanceSettings,
+  readAppearanceSettings,
+  type AppearanceSettings,
+} from "@/lib/appearance";
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [appearance, setAppearance] = useState<AppearanceSettings>(() =>
+    readAppearanceSettings(),
+  );
+
+  useEffect(() => {
+    const nextAppearance = readAppearanceSettings();
+    applyAppearanceSettings(nextAppearance);
+  }, []);
+
+  useEffect(() => {
+    const handleAppearanceChange = (event: Event) => {
+      const customEvent = event as CustomEvent<AppearanceSettings>;
+      applyAppearanceSettings(customEvent.detail);
+      setAppearance(customEvent.detail);
+    };
+
+    window.addEventListener(APPEARANCE_EVENT, handleAppearanceChange);
+    return () => window.removeEventListener(APPEARANCE_EVENT, handleAppearanceChange);
+  }, []);
 
   return (
-    <>
+    <MotionConfig reducedMotion={appearance.reducedMotion ? "always" : "never"}>
       <Navbar
         onMenuToggle={() => setIsSidebarOpen((prev) => !prev)}
         isMobileOpen={isSidebarOpen}
@@ -23,6 +49,6 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           <Template>{children}</Template>
         </main>
       </div>
-    </>
+    </MotionConfig>
   );
 }
