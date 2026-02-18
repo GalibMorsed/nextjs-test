@@ -33,6 +33,7 @@ export default function AddNoteButton({
   const [isSaving, setIsSaving] = useState(false);
   const [message, setMessage] = useState("");
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
@@ -50,9 +51,14 @@ export default function AddNoteButton({
       setIsAuthenticated(!!session);
     });
 
+    const checkMobile = () => setIsMobile(window.innerWidth < 640);
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+
     // Cleanup timeout on component unmount
     return () => {
       subscription.unsubscribe();
+      window.removeEventListener("resize", checkMobile);
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
       }
@@ -125,6 +131,18 @@ export default function AddNoteButton({
 
   const isErrorMessage = message.toLowerCase().includes("unable");
 
+  const desktopVariants = {
+    initial: { opacity: 0, y: 20, scale: 0.95 },
+    animate: { opacity: 1, y: 0, scale: 1 },
+    exit: { opacity: 0, y: 20, scale: 0.95 },
+  };
+
+  const mobileVariants = {
+    initial: { opacity: 0, y: "100%" },
+    animate: { opacity: 1, y: 0 },
+    exit: { opacity: 0, y: "100%" },
+  };
+
   return (
     <>
       <button
@@ -142,14 +160,15 @@ export default function AddNoteButton({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/30 backdrop-blur-md"
+            className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-6 bg-black/30 backdrop-blur-md"
           >
             <motion.div
-              initial={{ opacity: 0, y: 20, scale: 0.95 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 20, scale: 0.95 }}
+              variants={isMobile ? mobileVariants : desktopVariants}
+              initial="initial"
+              animate="animate"
+              exit="exit"
               transition={{ ease: [0.16, 1, 0.3, 1], duration: 0.25 }}
-              className="relative w-full max-w-md sm:max-w-lg rounded-2xl bg-white p-5 sm:p-6 shadow-xl sm:shadow-2xl border border-gray-100"
+              className="relative w-full sm:max-w-lg rounded-t-2xl rounded-b-none sm:rounded-2xl bg-white p-5 sm:p-6 shadow-xl sm:shadow-2xl border border-gray-100"
               role="dialog"
               aria-modal="true"
               aria-labelledby="note-dialog-title"

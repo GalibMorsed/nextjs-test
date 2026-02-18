@@ -101,10 +101,10 @@ export default function Sidebar({ isMobileOpen, onCloseMobile }: SidebarProps) {
   };
 
   const navItemClass = (active: boolean) =>
-    `flex items-center gap-3 px-4 py-2 rounded-xl transition text-sm font-medium ${
+    `group flex items-center gap-3 px-4 py-2 rounded-xl transition text-sm font-medium ${
       active
-        ? "bg-blue-100 text-blue-700"
-        : "text-gray-700 hover:bg-blue-50 hover:text-blue-700"
+        ? "bg-[var(--card)] text-[var(--primary)] border border-[var(--primary)]"
+        : "text-gray-700 hover:bg-gray-100 hover:text-[var(--primary)]"
     }`;
 
   const content = (
@@ -123,7 +123,7 @@ export default function Sidebar({ isMobileOpen, onCloseMobile }: SidebarProps) {
 
   return (
     <>
-      <aside className="hidden md:flex fixed left-0 top-[65px] h-[calc(100vh-65px)] w-72 bg-white border-r shadow-sm flex-col">
+      <aside className="hidden md:flex fixed left-0 top-[65px] h-[calc(100vh-65px)] w-72 bg-[var(--card)] border-r border-[var(--border)] shadow-sm flex-col">
         {content}
       </aside>
 
@@ -143,7 +143,7 @@ export default function Sidebar({ isMobileOpen, onCloseMobile }: SidebarProps) {
               animate={{ x: 0 }}
               exit={{ x: "-100%" }}
               transition={{ duration: 0.25 }}
-              className="fixed inset-y-0 left-0 z-50 w-72 bg-white shadow-xl md:hidden flex flex-col"
+              className="fixed inset-y-0 left-0 z-50 w-72 bg-[var(--card)] shadow-xl md:hidden flex flex-col"
             >
               {content}
             </motion.aside>
@@ -212,7 +212,7 @@ function SidebarContent({
             placeholder="Search news..."
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            className="w-full pl-10 pr-10 py-2 rounded-xl bg-gray-100 focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm transition-all"
+          className="w-full pl-10 pr-10 py-2 rounded-xl bg-gray-100 focus:ring-2 focus:ring-[var(--primary)] focus:outline-none text-sm transition-all"
           />
           {query && (
             <button
@@ -231,7 +231,10 @@ function SidebarContent({
             className={navItemClass(pathname === "/")}
             onClick={closeAndNavigate}
           >
-            <Home size={18} />
+            <Home
+              size={18}
+              className="transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6"
+            />
             Top Headlines
           </Link>
           <Link
@@ -239,7 +242,10 @@ function SidebarContent({
             className={navItemClass(pathname.startsWith("/live-news"))}
             onClick={closeAndNavigate}
           >
-            <Radio size={18} />
+            <Radio
+              size={18}
+              className="transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6"
+            />
             Live News Streaming
           </Link>
           <Link
@@ -249,7 +255,10 @@ function SidebarContent({
             )}
             onClick={closeAndNavigate}
           >
-            <Laptop size={18} />
+            <Laptop
+              size={18}
+              className="transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6"
+            />
             Technology
           </Link>
           <Link
@@ -259,7 +268,10 @@ function SidebarContent({
             )}
             onClick={closeAndNavigate}
           >
-            <Briefcase size={18} />
+            <Briefcase
+              size={18}
+              className="transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6"
+            />
             Business
           </Link>
           <Link
@@ -269,7 +281,10 @@ function SidebarContent({
             )}
             onClick={closeAndNavigate}
           >
-            <Film size={18} />
+            <Film
+              size={18}
+              className="transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6"
+            />
             Entertainment
           </Link>
           {isAuthenticated && (
@@ -280,7 +295,10 @@ function SidebarContent({
               )}
               onClick={closeAndNavigate}
             >
-              <Heart size={18} />
+              <Heart
+                size={18}
+                className="transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6"
+              />
               Health
             </Link>
           )}
@@ -292,7 +310,10 @@ function SidebarContent({
               )}
               onClick={closeAndNavigate}
             >
-              <FlaskConical size={18} />
+              <FlaskConical
+                size={18}
+                className="transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6"
+              />
               Science
             </Link>
           )}
@@ -304,7 +325,10 @@ function SidebarContent({
               )}
               onClick={closeAndNavigate}
             >
-              <Trophy size={18} />
+              <Trophy
+                size={18}
+                className="transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6"
+              />
               Sports
             </Link>
           )}
@@ -334,7 +358,7 @@ function SidebarContent({
               >
                 <StickyNote
                   size={18}
-                  className="text-purple-600 group-hover:text-purple-700 transition-colors"
+                  className="text-purple-600 group-hover:text-purple-700 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6"
                 />
                 <span>Notes</span>
               </Link>
@@ -347,14 +371,14 @@ function SidebarContent({
           <CollapsibleSection title="Extra Options">
             <Link
               href="/plans"
-              className="block px-4 py-1 text-sm text-gray-600 hover:text-blue-600 cursor-pointer transition-colors"
+              className="block px-4 py-1 text-sm text-gray-600 hover:text-[var(--primary)] cursor-pointer transition-colors"
               onClick={closeAndNavigate}
             >
               Subscriptions
             </Link>
             <Link
               href="/appearance"
-              className="block px-4 py-1 text-sm text-gray-600 hover:text-blue-600 cursor-pointer transition-colors"
+              className="block px-4 py-1 text-sm text-gray-600 hover:text-[var(--primary)] cursor-pointer transition-colors"
               onClick={closeAndNavigate}
             >
               Appearance
@@ -365,14 +389,14 @@ function SidebarContent({
         <CollapsibleSection title="More Info">
           <Link
             href="/about"
-            className="block px-4 py-1 text-sm text-gray-600 transition-colors hover:text-blue-600"
+            className="block px-4 py-1 text-sm text-gray-600 transition-colors hover:text-[var(--primary)]"
             onClick={closeAndNavigate}
           >
             About NextNews
           </Link>
           <Link
-            href="/contact"
-            className="block px-4 py-1 text-sm text-gray-600 hover:text-blue-600 cursor-pointer transition-colors"
+            href="/support"
+            className="block px-4 py-1 text-sm text-gray-600 hover:text-[var(--primary)] cursor-pointer transition-colors"
             onClick={closeAndNavigate}
           >
             Contact Support
@@ -380,12 +404,12 @@ function SidebarContent({
         </CollapsibleSection>
       </div>
 
-      <div className="p-4 border-t border-gray-200">
+      <div className="p-4 border-t border-[var(--border)]">
         {isAuthenticated ? (
           <div className="relative">
             <button
               onClick={() => setUserMenuOpen(!userMenuOpen)}
-              className="flex items-center gap-3 w-full px-2 py-2 rounded-xl hover:bg-gray-50 transition-colors text-left focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              className="flex items-center gap-3 w-full px-2 py-2 rounded-xl hover:bg-gray-50 transition-colors text-left focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--primary)]"
             >
               <img
                 src={
@@ -438,7 +462,7 @@ function SidebarContent({
         ) : (
           <Link
             href="/auth/register"
-            className="block w-full text-center py-2 rounded-xl border border-blue-600 bg-transparent text-blue-600 text-sm font-medium transition-all duration-300 hover:bg-blue-600 hover:text-white hover:shadow-lg hover:scale-105 active:scale-95"
+            className="block w-full text-center py-2 rounded-xl border border-[var(--primary)] bg-transparent text-[var(--primary)] text-sm font-medium transition-all duration-300 hover:bg-[var(--primary)] hover:text-white hover:shadow-lg hover:scale-105 active:scale-95"
             onClick={closeAndNavigate}
           >
             Register

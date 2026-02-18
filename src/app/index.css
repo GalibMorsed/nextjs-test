@@ -4,20 +4,70 @@
 @tailwind utilities;
 
 :root {
-    --background: #f8fafc; /* slate-50 */
-  --background: #f8fafc; /* slate-50 */
-  --foreground: #0f172a; /* slate-900 */
+  /* Light mode defaults */
+  --background: #f8fafc;       /* slate-50 */
+  --foreground: #0f172a;       /* slate-900 */
+  font-family: system-ui, -apple-system, sans-serif;
+  --card: #ffffff;
+  --border: #e5e7eb;           /* gray-200 */
+  --muted: #64748b;            /* slate-500 */
+
+  /* Primary - controlled by Appearance page */
+  --primary: #34d399;
+  --primaryDark: #10b981;
+}
+
+.dark {
+  --background: #0f172a;       /* slate-900 */
+  --foreground: #f8fafc;       /* slate-50 */
+  --card: #1e293b;             /* slate-800 */
+  --border: #334155;           /* slate-700 */
+  --muted: #94a3b8;            /* slate-400 */
+}
+
+/* High contrast adjustments */
+.high-contrast {
+  --background: #ffffff;
+  --foreground: #000000;
+  --card: #ffffff;
+  --border: #000000;
+  --muted: #333333;
+}
+
+.high-contrast.dark {
+  --background: #000000;
+  --foreground: #ffffff;
+  --card: #000000;
+  --border: #ffffff;
+  --muted: #cccccc;
+}
+
+/* Respect user's reduced motion preference */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+.reduced-motion *,
+.reduced-motion *::before,
+.reduced-motion *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  scroll-behavior: auto !important;
 }
 
 body {
   color: var(--foreground);
   background: var(--background);
-  font-family:
-    system-ui,
-    -apple-system,
-    sans-serif;
+  font-family: inherit;
 }
 
+/* Utility for line clamp */
 @utility line-clamp-3 {
   display: -webkit-box;
   -webkit-line-clamp: 3;

@@ -1,12 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type FormEvent } from "react";
 import clsx from "clsx";
-import { Building2, Globe, ShieldCheck } from "lucide-react";
+import { Building2, Globe, ShieldCheck, X } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 
 export default function PlansPage() {
   const [yearly, setYearly] = useState(false);
   const [subscribed, setSubscribed] = useState(false);
+  const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
 
   const plans = [
     {
@@ -45,12 +47,15 @@ export default function PlansPage() {
     },
   ];
 
-  const handleSubscribe = (e: any) => {
+  const handleSubscribe = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const email = e.target.querySelector('input[type="email"]').value;
+    const emailInput = e.currentTarget.querySelector(
+      'input[type="email"]',
+    ) as HTMLInputElement | null;
+    const email = emailInput?.value ?? "";
     if (email) {
       setSubscribed(true);
-      e.target.reset();
+      e.currentTarget.reset();
       setTimeout(() => setSubscribed(false), 5000);
     } else {
       alert("Please enter a valid email address.");
@@ -58,9 +63,9 @@ export default function PlansPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-blue-50 to-purple-50 text-slate-900">
+    <div className="min-h-screen overflow-x-hidden bg-gradient-to-br from-indigo-50 via-blue-50 to-purple-50 text-slate-900">
       {/* Hero Section */}
-      <section className="px-4 py-16 sm:px-6 lg:px-8 relative overflow-hidden">
+      <section className="relative overflow-hidden px-4 py-14 sm:px-6 sm:py-16 lg:px-8">
         <div className="mx-auto max-w-5xl text-center relative z-10">
           <h1 className="text-4xl font-bold tracking-tight sm:text-5xl lg:text-6xl mb-4">
             Subscribe to <span className="text-teal-600">NextNews</span>
@@ -68,7 +73,7 @@ export default function PlansPage() {
           <p className="text-xl text-slate-600 mb-8 max-w-2xl mx-auto">
             Unlock exclusive news content with premium features and access.
           </p>
-          <div className="flex items-center justify-center gap-4 mb-16">
+          <div className="mb-12 flex flex-wrap items-center justify-center gap-4 sm:mb-16">
             <span
               className={
                 !yearly ? "text-teal-600 font-semibold" : "text-slate-500"
@@ -102,15 +107,15 @@ export default function PlansPage() {
       </section>
 
       {/* Plans Section */}
-      <section className="px-4 py-16 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-6xl grid gap-8 lg:grid-cols-3 justify-items-center">
+      <section className="px-4 py-14 sm:px-6 sm:py-16 lg:px-8">
+        <div className="mx-auto grid max-w-6xl justify-items-center gap-8 md:grid-cols-2 lg:grid-cols-3">
           {plans.map((plan, index) => (
             <div
               key={plan.name}
               className={clsx(
                 "relative rounded-2xl p-6 border w-full max-w-sm transition-all duration-300 hover:shadow-lg",
                 plan.featured
-                  ? "bg-teal-50 border-teal-200 ring-1 ring-teal-200/50 scale-105"
+                  ? "bg-teal-50 border-teal-200 ring-1 ring-teal-200/50 lg:scale-105"
                   : "bg-white border-slate-200",
               )}
               style={{ animationDelay: `${index * 150}ms` }}
@@ -141,11 +146,7 @@ export default function PlansPage() {
                 ))}
               </ul>
               <button
-                onClick={() =>
-                  alert(
-                    `Selected ${plan.name} plan! 🌟\n\nPayment integration will be available soon! 💳\nUntil then, enjoy everything as a registered partner. 🤝\nUpon payment, new features are also coming! ✨🚀`,
-                  )
-                }
+                onClick={() => setSelectedPlan(plan.name)}
                 className={clsx(
                   "mt-8 w-full rounded-xl px-5 py-3 text-sm font-semibold transition-all duration-300 focus:outline-none focus:ring-2",
                   plan.featured
@@ -172,17 +173,17 @@ export default function PlansPage() {
       </section>
 
       {/* Footer */}
-      <footer className="bg-slate-900 text-white px-4 py-12 sm:px-6 lg:px-8">
+      <footer className="bg-slate-900 px-4 py-12 text-white sm:px-6 lg:px-8">
         <div className="mx-auto max-w-6xl">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
-            <div>
+          <div className="mb-8 grid grid-cols-1 gap-8 md:grid-cols-2">
+            <div className="text-center md:text-left">
               <h3 className="text-lg font-bold mb-4">NextNews</h3>
               <p className="text-sm text-slate-300">
                 Your gateway to trusted and reliable news.
               </p>
             </div>
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-              <div className="flex space-x-6">
+            <div className="flex flex-col items-center justify-center md:items-end">
+              <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 md:justify-end">
                 <a
                   href="tel:+918100684108"
                   className="text-sm text-slate-300 hover:text-teal-400"
@@ -210,11 +211,11 @@ export default function PlansPage() {
               </div>
             </div>
           </div>
-          <div className="border-t border-slate-800 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
-            <p className="text-sm text-slate-300 order-2 md:order-1">
+          <div className="flex flex-col items-center justify-between gap-4 border-t border-slate-800 pt-8 md:flex-row md:items-center">
+            <p className="order-2 text-center text-sm text-slate-300 md:order-1 md:text-left">
               © 2023 DaliyScoop [NextNews]. All rights reserved.
             </p>
-            <div className="order-1 md:order-2 flex-1 max-w-md w-full">
+            <div className="order-1 w-full max-w-md md:order-2">
               {subscribed ? (
                 <div className="bg-teal-600 text-white px-6 py-2 rounded-full text-center text-sm font-medium animate-pulse">
                   Response saved and will be notified.
@@ -239,6 +240,56 @@ export default function PlansPage() {
           </div>
         </div>
       </footer>
+
+      {/* Plan Selection Modal */}
+      <AnimatePresence>
+        {selectedPlan && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 p-0 sm:p-4 sm:items-center backdrop-blur-sm"
+            onClick={() => setSelectedPlan(null)}
+          >
+            <motion.div
+              initial={{ y: "100%", opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: "100%", opacity: 0 }}
+              transition={{ duration: 0.3, ease: "easeOut" }}
+              className="bg-white rounded-t-2xl sm:rounded-2xl p-6 max-w-full sm:max-w-md w-full relative shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button
+                onClick={() => setSelectedPlan(null)}
+                className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 transition-colors"
+              >
+                <X className="h-5 w-5" />
+              </button>
+              <div className="text-center space-y-4">
+                <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-teal-100">
+                  <ShieldCheck className="h-6 w-6 text-teal-600" />
+                </div>
+                <h3 className="text-xl font-bold text-slate-900">
+                  Selected {selectedPlan} plan! 🌟
+                </h3>
+                <p className="text-slate-600 leading-relaxed">
+                  Payment integration will be available soon!
+                  <br />
+                  Until then, enjoy everything as a registered partner. 🤝
+                  <br />
+                  Upon payment, new features are also coming! ✨🚀
+                </p>
+                <button
+                  onClick={() => setSelectedPlan(null)}
+                  className="w-full rounded-xl bg-teal-600 px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-teal-700 shadow-md hover:shadow-lg"
+                >
+                  Got it
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
