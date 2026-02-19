@@ -601,8 +601,8 @@ export default function AccountSettingsPage() {
           transition={{ delay: 0.05 }}
           className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-5 shadow-sm sm:p-6"
         >
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div>
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <div className="sm:flex-1">
               <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
                 Actions
               </h3>
@@ -611,7 +611,7 @@ export default function AccountSettingsPage() {
               </p>
             </div>
 
-            <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
+            <div className="flex w-full flex-col gap-3 lg:w-auto lg:flex-row">
               <button
                 type="button"
                 onClick={handleSaveAll}
