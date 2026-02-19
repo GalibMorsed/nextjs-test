@@ -1,5 +1,6 @@
 import Link from "next/link";
 import AddNoteButton from "@/app/components/addNoteButton";
+import { getNewsImageSrc } from "@/lib/newsImage";
 
 interface Article {
   source?: { id?: string | null; name?: string };
@@ -43,14 +44,14 @@ export default async function CategoryPage({
     <main className="p-6">
       <h1 className="mb-6 text-4xl font-bold capitalize">{category}</h1>
       {articles.length > 0 ? (
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
           {articles.map((article, index) => (
             <article
               key={`${article.url ?? "article"}-${index}`}
               className="rounded-lg border p-4 transition-shadow hover:shadow-lg"
             >
               <img
-                src={article.urlToImage || "/news.avif"}
+                src={getNewsImageSrc(article.urlToImage)}
                 alt={article.title ?? "News image"}
                 className="mb-4 h-48 w-full rounded object-cover"
               />

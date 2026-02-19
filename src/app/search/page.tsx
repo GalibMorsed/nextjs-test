@@ -81,7 +81,7 @@ export default async function SearchPage({
         </header>
 
         {articles.length > 0 ? (
-          <div className="grid gap-8 grid-cols-1 md:grid-cols-2">
+          <div className="grid gap-8 grid-cols-1 lg:grid-cols-2">
             {articles.map((article, index) => {
               const formattedDate = article.publishedAt
                 ? new Date(article.publishedAt).toLocaleDateString(undefined, {
