@@ -4,6 +4,7 @@ import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import {
+  AlertTriangle,
   BellRing,
   CheckCircle2,
   Globe,
@@ -13,6 +14,7 @@ import {
   Shield,
   Trash2,
   UserRound,
+  X,
 } from "lucide-react";
 import { supabase } from "../../../lib/superbaseClient";
 import {
@@ -45,7 +47,7 @@ type AccountSettings = {
 };
 
 type FlashMessage = {
-  tone: "success" | "error";
+  tone: "success" | "error" | "info";
   text: string;
 } | null;
 
@@ -72,7 +74,12 @@ const LANGUAGES = [
   { code: "fr", label: "French" },
 ];
 
-const GENDERS = ["Male", "Female", "Non-binary", "Prefer not to say"];
+const GENDERS = [
+  "Male 🗿",
+  "Female 👗",
+  "Non-binary (Chakka👺)",
+  "Prefer not to say 🏳️‍🌈",
+];
 
 function mergeSettings(raw: unknown): AccountSettings {
   if (!raw || typeof raw !== "object") return DEFAULT_SETTINGS;
@@ -109,6 +116,9 @@ export default function AccountSettingsPage() {
   }));
   const [password, setPassword] = useState({ next: "", confirm: "" });
   const [flash, setFlash] = useState<FlashMessage>(null);
+  const [isDeletePopupOpen, setIsDeletePopupOpen] = useState(false);
+  const [deleteConfirmationText, setDeleteConfirmationText] = useState("");
+  const [isMobile, setIsMobile] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
 
@@ -127,7 +137,9 @@ export default function AccountSettingsPage() {
 
     const bootstrap = async () => {
       const emailFromLocal =
-        localStorage.getItem("auth_email") || localStorage.getItem("userEmail") || "";
+        localStorage.getItem("auth_email") ||
+        localStorage.getItem("userEmail") ||
+        "";
 
       const raw = localStorage.getItem(getAccountSettingsStorageKey());
       if (raw) {
@@ -148,7 +160,10 @@ export default function AccountSettingsPage() {
           }
         } catch {
           if (mounted) {
-            setFlash({ tone: "error", text: "Failed to read previous settings." });
+            setFlash({
+              tone: "error",
+              text: "Failed to read previous settings.",
+            });
           }
         }
       } else if (mounted && emailFromLocal) {
@@ -165,8 +180,10 @@ export default function AccountSettingsPage() {
           ...prev,
           profile: {
             ...prev.profile,
-            name: (user.user_metadata?.full_name as string) || prev.profile.name,
-            gender: (user.user_metadata?.gender as string) || prev.profile.gender,
+            name:
+              (user.user_metadata?.full_name as string) || prev.profile.name,
+            gender:
+              (user.user_metadata?.gender as string) || prev.profile.gender,
             age: user.user_metadata?.age
               ? String(user.user_metadata.age)
               : prev.profile.age,
@@ -210,6 +227,25 @@ export default function AccountSettingsPage() {
     const timer = window.setTimeout(() => setFlash(null), 3500);
     return () => window.clearTimeout(timer);
   }, [flash]);
+
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 640);
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
+
+  const desktopPopupVariants = {
+    initial: { opacity: 0, y: 20, scale: 0.95 },
+    animate: { opacity: 1, y: 0, scale: 1 },
+    exit: { opacity: 0, y: 20, scale: 0.95 },
+  };
+
+  const mobilePopupVariants = {
+    initial: { opacity: 0, y: "100%" },
+    animate: { opacity: 1, y: 0 },
+    exit: { opacity: 0, y: "100%" },
+  };
 
   const updateProfile = <K extends keyof ProfileSettings>(
     key: K,
@@ -280,7 +316,10 @@ export default function AccountSettingsPage() {
           text: `Saved locally, but account sync failed: ${error.message}`,
         });
       } else {
-        setFlash({ tone: "success", text: "Settings saved successfully." });
+        setFlash({
+          tone: "success",
+          text: "Settings saved successfully! 🎉 Language preferences are coming soon for select members. Stay tuned! 🌍✨",
+        });
       }
 
       localStorage.setItem(
@@ -297,19 +336,76 @@ export default function AccountSettingsPage() {
   };
 
   const handleDeleteAccount = async () => {
-    const confirmed = window.confirm(
-      "This will sign you out and open a delete-account support request. Continue?",
-    );
-    if (!confirmed) return;
+    if (deleteConfirmationText !== "DELETE") {
+      setFlash({
+        tone: "error",
+        text: "Please type DELETE exactly to confirm account deletion.",
+      });
+      return;
+    }
 
-    await supabase.auth.signOut();
-    localStorage.removeItem("auth_email");
-    localStorage.removeItem("auth_token");
-    localStorage.removeItem("userEmail");
-    localStorage.removeItem(getAccountSettingsStorageKey());
-    broadcastAccountSettings({ darkMode: false });
-    window.location.href =
-      "mailto:morsedgalib982@gmail.com?subject=Account%20Deletion%20Request";
+    setIsSaving(true);
+    try {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      const accessToken = session?.access_token;
+      if (!accessToken) {
+        setFlash({
+          tone: "error",
+          text: "You must be logged in to delete your account.",
+        });
+        return;
+      }
+
+      const response = await fetch("/api/account/delete", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({ confirmation: "DELETE" }),
+      });
+
+      const payload = (await response.json()) as { error?: string };
+      if (!response.ok) {
+        setFlash({
+          tone: "error",
+          text: payload.error || "Failed to delete account.",
+        });
+        return;
+      }
+
+      const keysToRemove = ["auth_email", "auth_token", "userEmail"];
+      for (const key of keysToRemove) localStorage.removeItem(key);
+
+      for (let i = localStorage.length - 1; i >= 0; i -= 1) {
+        const key = localStorage.key(i);
+        if (!key) continue;
+        if (
+          key.startsWith("accountSettings_") ||
+          key.startsWith("appearanceSettings_")
+        ) {
+          localStorage.removeItem(key);
+        }
+      }
+      localStorage.removeItem("app_dark_mode");
+
+      broadcastAccountSettings({ darkMode: false });
+      await supabase.auth.signOut();
+
+      window.location.href = "/auth/register";
+    } catch {
+      setFlash({
+        tone: "error",
+        text: "Something went wrong while deleting your account.",
+      });
+    } finally {
+      setIsSaving(false);
+      setIsDeletePopupOpen(false);
+      setDeleteConfirmationText("");
+    }
   };
 
   return (
@@ -390,7 +486,9 @@ export default function AccountSettingsPage() {
                   placeholder="Your full name"
                 />
                 <div>
-                  <label className="text-sm font-medium text-slate-600">Gender</label>
+                  <label className="text-sm font-medium text-slate-600">
+                    Gender
+                  </label>
                   <select
                     value={settings.profile.gender}
                     onChange={(e) => updateProfile("gender", e.target.value)}
@@ -430,7 +528,10 @@ export default function AccountSettingsPage() {
               label="Enable notifications"
               checked={settings.notificationsEnabled}
               onChange={(checked) =>
-                setSettings((prev) => ({ ...prev, notificationsEnabled: checked }))
+                setSettings((prev) => ({
+                  ...prev,
+                  notificationsEnabled: checked,
+                }))
               }
             />
 
@@ -477,7 +578,9 @@ export default function AccountSettingsPage() {
               label="New password"
               type="password"
               value={password.next}
-              onChange={(value) => setPassword((prev) => ({ ...prev, next: value }))}
+              onChange={(value) =>
+                setPassword((prev) => ({ ...prev, next: value }))
+              }
               placeholder="At least 6 characters"
             />
             <InputField
@@ -500,7 +603,9 @@ export default function AccountSettingsPage() {
         >
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Actions</h3>
+              <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+                Actions
+              </h3>
               <p className="text-sm text-slate-600 dark:text-slate-300">
                 Save your preferences or request account deletion support.
               </p>
@@ -518,7 +623,11 @@ export default function AccountSettingsPage() {
               </button>
               <button
                 type="button"
-                onClick={handleDeleteAccount}
+                onClick={() => {
+                  setDeleteConfirmationText("");
+                  setIsDeletePopupOpen(true);
+                }}
+                disabled={!isLoaded || isSaving}
                 className="inline-flex items-center justify-center gap-2 rounded-xl border border-red-300 bg-red-50 px-5 py-2.5 text-sm font-semibold text-red-700 transition hover:bg-red-100"
               >
                 <Trash2 className="h-4 w-4" />
@@ -528,7 +637,10 @@ export default function AccountSettingsPage() {
           </div>
           <div className="mt-4 text-sm text-slate-600 dark:text-slate-300">
             Need help? Visit{" "}
-            <Link href="/support" className="font-medium text-[var(--primary)] underline">
+            <Link
+              href="/support"
+              className="font-medium text-[var(--primary)] underline"
+            >
               Support
             </Link>
             .
@@ -539,27 +651,140 @@ export default function AccountSettingsPage() {
       <AnimatePresence>
         {flash && (
           <motion.div
-            initial={{ opacity: 0, y: 24 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 24 }}
-            className="fixed bottom-5 right-4 z-50 w-[calc(100%-2rem)] max-w-sm sm:right-6"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-6 bg-black/30 backdrop-blur-sm"
+            onClick={() => setFlash(null)}
           >
-            <div
-              className={`rounded-xl border p-4 shadow-lg ${
-                flash.tone === "success"
-                  ? "border-emerald-200 bg-emerald-50 text-emerald-800"
-                  : "border-red-200 bg-red-50 text-red-800"
-              }`}
+            <motion.div
+              variants={isMobile ? mobilePopupVariants : desktopPopupVariants}
+              initial="initial"
+              animate="animate"
+              exit="exit"
+              transition={{ ease: [0.16, 1, 0.3, 1], duration: 0.3 }}
+              className="relative w-full sm:max-w-md rounded-t-2xl sm:rounded-xl bg-white dark:bg-slate-800 p-5 sm:p-6 shadow-xl"
+              onClick={(e) => e.stopPropagation()}
             >
               <div className="flex items-start gap-3">
-                {flash.tone === "success" ? (
-                  <CheckCircle2 className="mt-0.5 h-5 w-5" />
-                ) : (
-                  <BellRing className="mt-0.5 h-5 w-5" />
-                )}
-                <p className="text-sm font-medium">{flash.text}</p>
+                <div
+                  className={`mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${
+                    flash.tone === "success"
+                      ? "bg-emerald-100 text-emerald-600"
+                      : flash.tone === "info"
+                        ? "bg-sky-100 text-sky-600"
+                        : "bg-red-100 text-red-600"
+                  }`}
+                >
+                  {flash.tone === "success" ? (
+                    <CheckCircle2 className="h-5 w-5" />
+                  ) : flash.tone === "info" ? (
+                    <BellRing className="h-5 w-5" />
+                  ) : (
+                    <AlertTriangle className="h-5 w-5" />
+                  )}
+                </div>
+                <p className="flex-1 text-sm font-medium text-slate-800 dark:text-slate-100">
+                  {flash.text}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setFlash(null)}
+                  className="flex h-7 w-7 items-center justify-center rounded-full text-slate-400 transition hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-700 dark:hover:text-slate-200"
+                  aria-label="Close message"
+                >
+                  <X className="h-4 w-4" />
+                </button>
               </div>
-            </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {isDeletePopupOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-6 bg-black/30 backdrop-blur-sm"
+            onClick={() => {
+              if (!isSaving) {
+                setIsDeletePopupOpen(false);
+                setDeleteConfirmationText("");
+              }
+            }}
+          >
+            <motion.div
+              variants={isMobile ? mobilePopupVariants : desktopPopupVariants}
+              initial="initial"
+              animate="animate"
+              exit="exit"
+              transition={{ ease: [0.16, 1, 0.3, 1], duration: 0.3 }}
+              className="relative w-full sm:max-w-md rounded-t-2xl sm:rounded-xl bg-white dark:bg-slate-800 p-5 sm:p-6 shadow-xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="mb-4 flex items-start gap-3">
+                <div className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-red-100 text-red-600">
+                  <AlertTriangle className="h-5 w-5" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100">
+                    Confirm account deletion
+                  </h3>
+                  <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
+                    This action is permanent and removes your account and saved
+                    data.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (isSaving) return;
+                    setIsDeletePopupOpen(false);
+                    setDeleteConfirmationText("");
+                  }}
+                  className="flex h-7 w-7 items-center justify-center rounded-full text-slate-400 transition hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-700 dark:hover:text-slate-200"
+                  aria-label="Close delete confirmation"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+
+              <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-200">
+                Type <span className="font-bold">DELETE</span> to confirm
+              </label>
+              <input
+                type="text"
+                value={deleteConfirmationText}
+                onChange={(e) => setDeleteConfirmationText(e.target.value)}
+                placeholder="DELETE"
+                disabled={isSaving}
+                className="w-full rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 px-3 py-2 text-sm text-slate-800 dark:text-slate-100 outline-none transition focus:ring-2 focus:ring-[var(--primary)] disabled:opacity-70"
+              />
+
+              <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:justify-end">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsDeletePopupOpen(false);
+                    setDeleteConfirmationText("");
+                  }}
+                  disabled={isSaving}
+                  className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleDeleteAccount}
+                  disabled={isSaving}
+                  className="rounded-xl bg-red-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {isSaving ? "Deleting..." : "Delete permanently"}
+                </button>
+              </div>
+            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
@@ -593,8 +818,12 @@ function SettingsCard({
           {icon}
         </span>
         <div>
-          <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">{title}</h2>
-          <p className="text-sm text-slate-600 dark:text-slate-300">{description}</p>
+          <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+            {title}
+          </h2>
+          <p className="text-sm text-slate-600 dark:text-slate-300">
+            {description}
+          </p>
         </div>
       </div>
       <div className="space-y-4">{children}</div>
@@ -613,7 +842,9 @@ function ToggleRow({
 }) {
   return (
     <div className="flex items-center justify-between gap-3">
-      <span className="text-sm font-medium text-slate-700 dark:text-slate-200">{label}</span>
+      <span className="text-sm font-medium text-slate-700 dark:text-slate-200">
+        {label}
+      </span>
       <button
         type="button"
         onClick={() => onChange(!checked)}
@@ -648,7 +879,9 @@ function InputField({
 }) {
   return (
     <div>
-      <label className="text-sm font-medium text-slate-600 dark:text-slate-300">{label}</label>
+      <label className="text-sm font-medium text-slate-600 dark:text-slate-300">
+        {label}
+      </label>
       <input
         type={type}
         value={value}
