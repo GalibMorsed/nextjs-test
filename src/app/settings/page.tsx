@@ -734,7 +734,7 @@ export default function AccountSettingsPage() {
                   </h3>
                   <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
                     This action is permanent and removes your account and saved
-                    data.
+                    data from our servers 😥.
                   </p>
                 </div>
                 <button
