@@ -2,6 +2,7 @@
 
 import { ArrowUpRight } from "lucide-react";
 import AddNoteButton from "./addNoteButton";
+import { getNewsImageSrc } from "@/lib/newsImage";
 
 interface Article {
   source: { id: string | null; name: string };
@@ -27,7 +28,7 @@ export default function ArticleCard({
     <article className="flex flex-col bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden group border border-gray-100">
       <div className="relative h-52 w-full overflow-hidden bg-gray-200">
         <img
-          src={article.urlToImage || "/news.avif"}
+          src={getNewsImageSrc(article.urlToImage)}
           alt={article.title || "News Article"}
           loading="lazy"
           onError={(e) => {

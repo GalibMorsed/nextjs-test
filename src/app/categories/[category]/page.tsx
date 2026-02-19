@@ -1,5 +1,6 @@
 import Link from "next/link";
 import AddNoteButton from "@/app/components/addNoteButton";
+import { getNewsImageSrc } from "@/lib/newsImage";
 
 interface Article {
   source?: { id?: string | null; name?: string };
@@ -50,7 +51,7 @@ export default async function CategoryPage({
               className="rounded-lg border p-4 transition-shadow hover:shadow-lg"
             >
               <img
-                src={article.urlToImage || "/news.avif"}
+                src={getNewsImageSrc(article.urlToImage)}
                 alt={article.title ?? "News image"}
                 className="mb-4 h-48 w-full rounded object-cover"
               />
