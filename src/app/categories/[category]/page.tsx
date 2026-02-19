@@ -44,7 +44,7 @@ export default async function CategoryPage({
     <main className="p-6">
       <h1 className="mb-6 text-4xl font-bold capitalize">{category}</h1>
       {articles.length > 0 ? (
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
           {articles.map((article, index) => (
             <article
               key={`${article.url ?? "article"}-${index}`}
