@@ -133,7 +133,7 @@ export default function AppearancePage() {
       <motion.div
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
-        className="w-full mx-auto bg-white dark:bg-slate-900 rounded-2xl lg:rounded-none shadow-xl lg:shadow-none p-4 sm:p-6 md:p-8 lg:p-10 lg:min-h-[calc(100vh-65px)]"
+        className="w-full mx-auto bg-white dark:bg-slate-900 lg:rounded-none shadow-xl lg:shadow-none p-4 sm:p-6 md:p-8 lg:p-10 lg:min-h-[calc(100vh-65px)]"
       >
         <section className="mb-6 md:mb-8 rounded-2xl border border-gray-200 dark:border-slate-700 bg-gradient-to-r from-slate-50 via-white to-slate-50 dark:from-slate-800 dark:via-slate-900 dark:to-slate-800 p-4 sm:p-6">
           <span className="mb-3 inline-flex rounded-full bg-slate-100 dark:bg-slate-700 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-300">
