@@ -11,6 +11,12 @@ import {
   readAppearanceSettings,
   type AppearanceSettings,
 } from "@/lib/appearance";
+import {
+  ACCOUNT_SETTINGS_EVENT,
+  applyDarkMode,
+  readDarkModeSetting,
+  type StoredAccountSettings,
+} from "@/lib/accountSettings";
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -21,6 +27,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const nextAppearance = readAppearanceSettings();
     applyAppearanceSettings(nextAppearance);
+    applyDarkMode(readDarkModeSetting());
   }, []);
 
   useEffect(() => {
@@ -32,6 +39,27 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
     window.addEventListener(APPEARANCE_EVENT, handleAppearanceChange);
     return () => window.removeEventListener(APPEARANCE_EVENT, handleAppearanceChange);
+  }, []);
+
+  useEffect(() => {
+    const handleAccountSettingsChange = (event: Event) => {
+      const customEvent = event as CustomEvent<StoredAccountSettings>;
+      applyDarkMode(Boolean(customEvent.detail.darkMode));
+    };
+
+    const handleStorageChange = () => {
+      applyDarkMode(readDarkModeSetting());
+    };
+
+    window.addEventListener(ACCOUNT_SETTINGS_EVENT, handleAccountSettingsChange);
+    window.addEventListener("storage", handleStorageChange);
+    return () => {
+      window.removeEventListener(
+        ACCOUNT_SETTINGS_EVENT,
+        handleAccountSettingsChange,
+      );
+      window.removeEventListener("storage", handleStorageChange);
+    };
   }, []);
 
   return (

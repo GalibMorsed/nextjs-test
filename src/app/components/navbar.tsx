@@ -32,7 +32,10 @@ export default function Navbar({ onMenuToggle, isMobileOpen }: NavbarProps) {
   const isNotesActive = pathname === "/notes";
 
   return (
-    <nav className="sticky top-0 z-30 flex items-center justify-between border-b border-[var(--border)] bg-[var(--card)] px-4 py-4 md:px-6">
+    <nav
+      className="sticky top-0 z-30 flex items-center justify-between border-b border-[var(--border)] bg-white px-4 py-4 md:px-6"
+      style={{ backgroundColor: "var(--card)" }}
+    >
       {/* Logo */}
       <Link
         href="/"

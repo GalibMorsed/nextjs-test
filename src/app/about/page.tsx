@@ -65,7 +65,7 @@ const itemVariant = {
 export default function AboutPage() {
   return (
     <motion.main
-      className="bg-gradient-to-br from-slate-50 via-white to-slate-100 text-slate-800 min-h-screen"
+      className="bg-gradient-to-br from-slate-50 via-white to-slate-100 text-slate-800 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 dark:text-slate-200 min-h-screen"
       variants={pageVariant}
       initial="hidden"
       animate="visible"
@@ -73,7 +73,7 @@ export default function AboutPage() {
       {/* HERO */}
       <motion.section
         variants={sectionVariant}
-        className="relative overflow-hidden px-4 py-20 sm:px-6 lg:px-8 bg-gradient-to-r from-blue-50 via-white to-indigo-50"
+        className="relative overflow-hidden px-4 py-20 sm:px-6 lg:px-8 bg-gradient-to-r from-blue-50 via-white to-indigo-50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900"
       >
         <div className="mx-auto max-w-7xl text-center">
           <motion.div
@@ -88,10 +88,10 @@ export default function AboutPage() {
               height={64}
               className="mx-auto mb-6 h-29 w-auto"
             />
-            <h1 className="text-4xl font-bold tracking-tight text-slate-900 sm:text-5xl md:text-6xl">
+            <h1 className="text-4xl font-bold tracking-tight text-slate-900 dark:text-slate-100 sm:text-5xl md:text-6xl">
               About NextNews
             </h1>
-            <p className="mt-6 text-lg leading-relaxed text-slate-600 max-w-3xl mx-auto">
+            <p className="mt-6 text-lg leading-relaxed text-slate-600 dark:text-slate-300 max-w-3xl mx-auto">
               NextNews is a modern, intelligent news platform built to help
               users stay informed with accurate, relevant, and real-time content
               — all in one place.
@@ -110,15 +110,15 @@ export default function AboutPage() {
       >
         <div className="mx-auto max-w-6xl grid gap-12 lg:gap-20 lg:grid-cols-2 lg:items-center">
           <motion.div variants={itemVariant}>
-            <h2 className="text-3xl font-bold text-slate-900 mb-4">
+            <h2 className="text-3xl font-bold text-slate-900 dark:text-slate-100 mb-4">
               A Smarter Way to Consume News
             </h2>
-            <p className="leading-relaxed text-slate-600 text-base">
+            <p className="leading-relaxed text-slate-600 dark:text-slate-300 text-base">
               In today’s fast-paced digital world, information is everywhere —
               but clarity is not. NextNews was created to cut through the noise
               and deliver news that actually matters.
             </p>
-            <p className="mt-4 leading-relaxed text-slate-600 text-base">
+            <p className="mt-4 leading-relaxed text-slate-600 dark:text-slate-300 text-base">
               By organizing content across meaningful categories and surfacing
               trending stories, the platform helps readers stay updated without
               feeling overwhelmed.
@@ -140,10 +140,10 @@ export default function AboutPage() {
               <motion.div
                 key={item}
                 variants={itemVariant}
-                className="flex items-center gap-3 p-4 rounded-xl bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100"
+                className="flex items-center gap-3 p-4 rounded-xl bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100 dark:from-slate-800 dark:to-slate-700 dark:border-slate-600"
               >
                 <div className="w-2 h-2 bg-blue-600 rounded-full" />
-                <p className="text-sm font-medium text-slate-700 flex-1">
+                <p className="text-sm font-medium text-slate-700 dark:text-slate-200 flex-1">
                   {item}
                 </p>
               </motion.div>
@@ -154,7 +154,7 @@ export default function AboutPage() {
 
       {/* FEATURES */}
       <motion.section
-        className="relative overflow-hidden px-4 py-16 sm:px-6 lg:px-8 bg-gradient-to-b from-white to-slate-50"
+        className="relative overflow-hidden px-4 py-16 sm:px-6 lg:px-8 bg-gradient-to-b from-white to-slate-50 dark:from-slate-900 dark:to-slate-950"
         variants={staggerContainer}
         initial="hidden"
         whileInView="visible"
@@ -163,7 +163,7 @@ export default function AboutPage() {
         <div className="mx-auto max-w-6xl">
           <motion.h2
             variants={itemVariant}
-            className="text-center text-3xl font-bold text-slate-900 mb-12"
+            className="text-center text-3xl font-bold text-slate-900 dark:text-slate-100 mb-12"
           >
             Key Features
           </motion.h2>
@@ -191,14 +191,14 @@ export default function AboutPage() {
                   key={item.title}
                   variants={itemVariant}
                   whileHover={{ y: -4, scale: 1.02 }}
-                  className="group relative bg-white rounded-2xl p-6 shadow-lg border border-slate-100 hover:shadow-xl transition-shadow"
+                  className="group relative bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-lg border border-slate-100 dark:border-slate-700 hover:shadow-xl transition-shadow"
                 >
-                  <div className="absolute -inset-1 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl -z-10 group-hover:opacity-100 opacity-0 transition-opacity" />
+                  <div className="absolute -inset-1 -z-10 rounded-2xl bg-gradient-to-r from-blue-50 to-indigo-50 opacity-0 transition-opacity group-hover:opacity-100 dark:from-slate-800 dark:to-slate-700 dark:group-hover:opacity-90" />
                   <IconComponent className="h-10 w-10 text-blue-600 mb-4 group-hover:scale-110 transition-transform" />
-                  <h3 className="text-xl font-semibold text-slate-900 mb-3">
+                  <h3 className="text-xl font-semibold text-slate-900 dark:text-slate-100 mb-3">
                     {item.title}
                   </h3>
-                  <p className="text-sm leading-relaxed text-slate-600">
+                  <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-300">
                     {item.desc}
                   </p>
                 </motion.div>
@@ -219,7 +219,7 @@ export default function AboutPage() {
         <div className="mx-auto max-w-6xl">
           <motion.h2
             variants={itemVariant}
-            className="text-center text-3xl font-bold text-slate-900 mb-12"
+            className="text-center text-3xl font-bold text-slate-900 dark:text-slate-100 mb-12"
           >
             Our Core Principles
           </motion.h2>
@@ -259,13 +259,13 @@ export default function AboutPage() {
                   key={item.title}
                   variants={itemVariant}
                   whileHover={{ y: -4, scale: 1.02 }}
-                  className="rounded-xl bg-white p-6 shadow-md border border-slate-100 hover:shadow-lg transition-all"
+                  className="rounded-xl bg-white dark:bg-slate-800 p-6 shadow-md border border-slate-100 dark:border-slate-700 hover:shadow-lg transition-all"
                 >
                   <IconComponent className="h-8 w-8 text-indigo-600 mb-3" />
-                  <h4 className="font-semibold text-slate-900 mb-2">
+                  <h4 className="font-semibold text-slate-900 dark:text-slate-100 mb-2">
                     {item.title}
                   </h4>
-                  <p className="text-sm text-slate-600">{item.desc}</p>
+                  <p className="text-sm text-slate-600 dark:text-slate-300">{item.desc}</p>
                 </motion.div>
               );
             })}
