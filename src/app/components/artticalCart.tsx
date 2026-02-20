@@ -32,7 +32,7 @@ export default function ArticleCard({
           alt={article.title || "News Article"}
           loading="lazy"
           onError={(e) => {
-            e.currentTarget.src = "/news.avif";
+            e.currentTarget.src = "/news1.jpg";
           }}
           className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
         />

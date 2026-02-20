@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-const FALLBACK_IMAGE_PATH = "/news.avif";
+const FALLBACK_IMAGE_PATH = "/news1.jpg";
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
