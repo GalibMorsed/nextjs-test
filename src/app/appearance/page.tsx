@@ -144,7 +144,7 @@ export default function AppearancePage() {
           </h1>
           <p className="mt-2 text-xs sm:text-sm text-gray-600 dark:text-slate-300 text-center md:text-left">
             Customize theme color, typography, and accessibility preferences to
-            make the app look and feel the way you prefer.
+            make the app look and feel the way you prefer. 😉
           </p>
         </section>
 

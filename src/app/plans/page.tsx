@@ -2,13 +2,25 @@
 
 import { useState, type FormEvent } from "react";
 import clsx from "clsx";
-import { Building2, Globe, ShieldCheck, X } from "lucide-react";
+import {
+  Building2,
+  Globe,
+  HandCoins,
+  HeartHandshake,
+  PartyPopper,
+  ShieldCheck,
+  Sparkles,
+  X,
+} from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 export default function PlansPage() {
   const [yearly, setYearly] = useState(false);
   const [subscribed, setSubscribed] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
+  const [showChaiPopup, setShowChaiPopup] = useState(false);
+  const [showCelebration, setShowCelebration] = useState(false);
+  const [paymentImageError, setPaymentImageError] = useState(false);
 
   const plans = [
     {
@@ -16,10 +28,10 @@ export default function PlansPage() {
       price: yearly ? 290 : 29,
       desc: "Silver Reader, designed for informed citizens.",
       features: [
-        "Unlimited article access",
-        "Daily morning newsletter",
+        "Unlimited access to premium articles",
+        "Daily briefing newsletter",
         "Ad-free reading experience",
-        "Priority support",
+        "Access to comments section",
       ],
     },
     {
@@ -28,10 +40,10 @@ export default function PlansPage() {
       desc: "Gold Member for serious readers and enthusiasts.",
       featured: true,
       features: [
-        "All Silver Reader features",
-        "Exclusive investigative reports",
-        "Weekly expert analysis",
-        "Offline reading mode",
+        "All Silver Reader benefits",
+        "Exclusive investigative journalism",
+        "Weekly expert columns & analysis",
+        "Audio articles & offline reading",
       ],
     },
     {
@@ -39,10 +51,10 @@ export default function PlansPage() {
       price: yearly ? 1990 : 199,
       desc: "Platinum Insider for connoisseurs, offering top-tier benefits.",
       features: [
-        "All Gold Member features",
-        "Direct Q&A with journalists",
-        "Early access to podcasts",
-        "VIP event invitations",
+        "All Gold Member benefits",
+        "Live Q&A with top journalists",
+        "Early access to podcasts & videos",
+        "VIP invitations to editorial events",
       ],
     },
   ];
@@ -71,12 +83,16 @@ export default function PlansPage() {
             Subscribe to <span className="text-teal-600">NextNews</span>
           </h1>
           <p className="text-xl text-slate-600 mb-8 max-w-2xl mx-auto dark:text-slate-300">
-            Unlock exclusive news content with premium features and access.
+            Unlock exclusive news content with premium features and access. Best
+            for news enthusiasts and professionals. Choose your plan and stay
+            informed with NextNews!
           </p>
           <div className="mb-12 flex flex-wrap items-center justify-center gap-4 sm:mb-16">
             <span
               className={
-                !yearly ? "text-teal-600 font-semibold" : "text-slate-500 dark:text-slate-400"
+                !yearly
+                  ? "text-teal-600 font-semibold"
+                  : "text-slate-500 dark:text-slate-400"
               }
             >
               Monthly
@@ -97,7 +113,9 @@ export default function PlansPage() {
             </button>
             <span
               className={
-                yearly ? "text-teal-600 font-semibold" : "text-slate-500 dark:text-slate-400"
+                yearly
+                  ? "text-teal-600 font-semibold"
+                  : "text-slate-500 dark:text-slate-400"
               }
             >
               Yearly
@@ -124,9 +142,11 @@ export default function PlansPage() {
                 <h3 className="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-2">
                   {plan.name}
                 </h3>
-                <p className="text-sm text-slate-600 dark:text-slate-300 mb-4">{plan.desc}</p>
+                <p className="text-sm text-slate-600 dark:text-slate-300 mb-4">
+                  {plan.desc}
+                </p>
                 <p className="text-4xl font-bold text-teal-600 mb-1">
-                  ${plan.price}.00
+                  ₹{plan.price}.00
                 </p>
                 <p className="text-sm text-slate-500 dark:text-slate-400">
                   /{yearly ? "year" : "month"}
@@ -179,7 +199,7 @@ export default function PlansPage() {
             <div className="text-center md:text-left">
               <h3 className="text-lg font-bold mb-4">NextNews</h3>
               <p className="text-sm text-slate-300">
-                Your gateway to trusted and reliable news.
+                Your gateway to trusted and reliable news.⚡
               </p>
             </div>
             <div className="flex flex-col items-center justify-center md:items-end">
@@ -285,7 +305,162 @@ export default function PlansPage() {
                 >
                   Got it
                 </button>
+                <button
+                  onClick={() => {
+                    setSelectedPlan(null);
+                    setShowChaiPopup(true);
+                  }}
+                  className="w-full rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-900 transition-colors hover:bg-amber-100 shadow-sm"
+                >
+                  <span className="inline-flex items-center justify-center gap-2">
+                    <HeartHandshake className="h-4 w-4" />
+                    Help Me 😋
+                  </span>
+                </button>
               </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Chai Support Popup */}
+      <AnimatePresence>
+        {showChaiPopup && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[60] flex items-end justify-center bg-black/70 p-0 sm:p-4 sm:items-center backdrop-blur-sm"
+            onClick={() => setShowChaiPopup(false)}
+          >
+            <motion.div
+              initial={{ y: "100%", opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: "100%", opacity: 0 }}
+              transition={{ duration: 0.3, ease: "easeOut" }}
+              className="bg-white rounded-t-2xl sm:rounded-2xl p-6 max-w-full sm:max-w-md w-full relative shadow-2xl dark:bg-slate-800"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button
+                onClick={() => setShowChaiPopup(false)}
+                className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
+                aria-label="Close support popup"
+              >
+                <X className="h-5 w-5" />
+              </button>
+
+              <div className="space-y-4 text-center">
+                <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-amber-100">
+                  <HandCoins className="h-6 w-6 text-amber-600" />
+                </div>
+                <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100">
+                  Chai Treat ☕🤝
+                </h3>
+                <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-300">
+                  I&apos;m Galib! If you&apos;ve enjoyed your visit and had a
+                  great experience on my website, consider buying me a Chai as
+                  a friend. Your support could make my day! 🥰💛
+                </p>
+
+                {!paymentImageError ? (
+                  <img
+                    src="/payment.jpeg"
+                    alt="Payment QR"
+                    className="mx-auto w-full max-w-xs rounded-xl border border-amber-200 shadow-sm"
+                    onError={() => setPaymentImageError(true)}
+                  />
+                ) : (
+                  <div className="mx-auto w-full max-w-xs rounded-xl border border-dashed border-amber-300 bg-amber-50 p-4 text-sm text-amber-800">
+                    Please add <code>public/payment.jpeg</code> to show the
+                    payment image.
+                  </div>
+                )}
+
+                <button
+                  onClick={() => {
+                    setShowChaiPopup(false);
+                    setShowCelebration(true);
+                    setTimeout(() => setShowCelebration(false), 4200);
+                  }}
+                  className="w-full rounded-xl bg-amber-500 px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-amber-600 shadow-md hover:shadow-lg"
+                >
+                  <span className="inline-flex items-center justify-center gap-2">
+                    <Sparkles className="h-4 w-4" />
+                    Done
+                  </span>
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Thank You Firecracker Animation */}
+      <AnimatePresence>
+        {showCelebration && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[70] overflow-hidden bg-slate-950/95 backdrop-blur-sm"
+          >
+            <div className="absolute inset-0">
+              {Array.from({ length: 26 }).map((_, i) => {
+                const left = (i * 17) % 100;
+                const top = (i * 29) % 100;
+                const delay = (i % 9) * 0.14;
+                const duration = 1.4 + (i % 4) * 0.35;
+                const size = 8 + (i % 3) * 8;
+                const colors = [
+                  "bg-amber-300",
+                  "bg-teal-300",
+                  "bg-rose-300",
+                  "bg-sky-300",
+                ];
+                const color = colors[i % colors.length];
+
+                return (
+                  <motion.span
+                    key={`spark-${i}`}
+                    className={clsx(
+                      "absolute rounded-full shadow-[0_0_16px_rgba(255,255,255,0.8)]",
+                      color,
+                    )}
+                    style={{
+                      left: `${left}%`,
+                      top: `${top}%`,
+                      width: `${size}px`,
+                      height: `${size}px`,
+                    }}
+                    initial={{ scale: 0, opacity: 0 }}
+                    animate={{
+                      scale: [0, 1.6, 0],
+                      opacity: [0, 1, 0],
+                    }}
+                    transition={{
+                      duration,
+                      delay,
+                      repeat: 2,
+                      ease: "easeOut",
+                    }}
+                  />
+                );
+              })}
+            </div>
+
+            <motion.div
+              initial={{ scale: 0.8, opacity: 0, y: 24 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              transition={{ duration: 0.45, ease: "easeOut" }}
+              className="relative z-10 flex h-full flex-col items-center justify-center px-6 text-center"
+            >
+              <PartyPopper className="mb-4 h-14 w-14 text-amber-300" />
+              <h2 className="text-3xl font-extrabold tracking-tight text-white sm:text-5xl">
+                Thank You So Much! 🎉
+              </h2>
+              <p className="mt-3 text-base text-slate-200 sm:text-lg">
+                Your kindness means a lot. Have an amazing day! 🛐✨
+              </p>
             </motion.div>
           </motion.div>
         )}
