@@ -3,13 +3,17 @@
 import { useState, type FormEvent } from "react";
 import clsx from "clsx";
 import {
+  CheckCircle2,
+  ChevronRight,
+  CreditCard,
   Building2,
   Globe,
   HandCoins,
   HeartHandshake,
+  Landmark,
   PartyPopper,
+  Copy,
   ShieldCheck,
-  Sparkles,
   X,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -20,7 +24,30 @@ export default function PlansPage() {
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
   const [showChaiPopup, setShowChaiPopup] = useState(false);
   const [showCelebration, setShowCelebration] = useState(false);
-  const [paymentImageError, setPaymentImageError] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState<"bank" | "online">(
+    "bank",
+  );
+
+  // Update these payment values with your production account details.
+  const upiVpa = "morsedgalib982@oksbi";
+  const payeeName = "Galib";
+  const amount = "25";
+
+  const transactionNote = encodeURIComponent(
+    `Chai treat via ${paymentMethod === "bank" ? "e-Transfer" : "Online"}`,
+  );
+  const upiString = `upi://pay?pa=${upiVpa}&pn=${encodeURIComponent(payeeName)}&am=${amount}&cu=INR&tn=${transactionNote}`;
+  const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(upiString)}`;
+
+  const handleProcessPayment = () => {
+    if (typeof window !== "undefined") {
+      window.location.href = upiString;
+    }
+
+    setShowChaiPopup(false);
+    setShowCelebration(true);
+    setTimeout(() => setShowCelebration(false), 4200);
+  };
 
   const plans = [
     {
@@ -126,7 +153,7 @@ export default function PlansPage() {
 
       {/* Plans Section */}
       <section className="px-4 py-14 sm:px-6 sm:py-16 lg:px-8">
-        <div className="mx-auto grid max-w-6xl justify-items-center gap-8 md:grid-cols-2 lg:grid-cols-3">
+        <div className="mx-auto grid max-w-6xl justify-items-center gap-8 lg:grid-cols-3">
           {plans.map((plan, index) => (
             <div
               key={plan.name}
@@ -308,6 +335,7 @@ export default function PlansPage() {
                 <button
                   onClick={() => {
                     setSelectedPlan(null);
+                    setPaymentMethod("bank");
                     setShowChaiPopup(true);
                   }}
                   className="w-full rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-900 transition-colors hover:bg-amber-100 shadow-sm"
@@ -323,7 +351,7 @@ export default function PlansPage() {
         )}
       </AnimatePresence>
 
-      {/* Chai Support Popup */}
+            {/* Chai Support Popup */}
       <AnimatePresence>
         {showChaiPopup && (
           <motion.div
@@ -353,42 +381,96 @@ export default function PlansPage() {
                 <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-amber-100">
                   <HandCoins className="h-6 w-6 text-amber-600" />
                 </div>
-                <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100">
-                  Chai Treat ☕🤝
-                </h3>
                 <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-300">
-                  I&apos;m Galib! If you&apos;ve enjoyed your visit and had a
-                  great experience on my website, consider buying me a Chai as
-                  a friend. Your support could make my day! 🥰💛
+                  Im Galib and if this website experience feels good for you,
+                  you can buy me a Chai as a friend. ?
                 </p>
+                <div className="mx-auto w-full max-w-sm rounded-[30px] bg-slate-100 p-4 text-left">
+                  <div className="rounded-3xl bg-white p-4 shadow-sm">
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <p className="text-base font-semibold text-slate-900">
+                          Galib Morsed
+                        </p>
+                        <p className="text-xs text-slate-500">India</p>
+                        <p className="text-xs text-slate-500">{upiVpa}</p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          navigator.clipboard.writeText(upiVpa);
+                          alert("UPI ID copied!");
+                        }}
+                        className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700 hover:bg-slate-200 transition-colors"
+                      >
+                        <Copy className="h-3.5 w-3.5" />
+                        Copy
+                      </button>
+                    </div>
 
-                {!paymentImageError ? (
-                  <img
-                    src="/payment.jpeg"
-                    alt="Payment QR"
-                    className="mx-auto w-full max-w-xs rounded-xl border border-amber-200 shadow-sm"
-                    onError={() => setPaymentImageError(true)}
-                  />
-                ) : (
-                  <div className="mx-auto w-full max-w-xs rounded-xl border border-dashed border-amber-300 bg-amber-50 p-4 text-sm text-amber-800">
-                    Please add <code>public/payment.jpeg</code> to show the
-                    payment image.
+                    <div className="mt-5 flex flex-col items-center justify-center">
+                      <p className="mb-2 text-xs text-slate-500">Scan to pay via UPI</p>
+                      <div className="overflow-hidden rounded-lg border border-slate-200">
+                        <img src={qrCodeUrl} alt="UPI QR Code" width={150} height={150} />
+                      </div>
+                    </div>
+
+                    <div className="mt-5">
+                      <p className="text-sm font-semibold text-slate-900">
+                        Payment method
+                      </p>
+                      <div className="mt-3 grid grid-cols-2 gap-3">
+                        <button
+                          type="button"
+                          onClick={() => setPaymentMethod("bank")}
+                          className={clsx(
+                            "rounded-xl border p-3 text-center transition-colors",
+                            paymentMethod === "bank"
+                              ? "border-emerald-200 bg-emerald-50"
+                              : "border-slate-200 bg-slate-50 hover:bg-slate-100",
+                          )}
+                        >
+                          <div className="mb-1 flex items-center justify-center gap-1 text-emerald-700">
+                            <Landmark className="h-4 w-4" />
+                            {paymentMethod === "bank" && (
+                              <CheckCircle2 className="h-4 w-4" />
+                            )}
+                          </div>
+                          <p className="text-sm font-medium text-emerald-700">
+                            e-Transfer
+                          </p>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => setPaymentMethod("online")}
+                          className={clsx(
+                            "rounded-xl border p-3 text-center transition-colors",
+                            paymentMethod === "online"
+                              ? "border-emerald-200 bg-emerald-50"
+                              : "border-slate-200 bg-slate-50 hover:bg-slate-100",
+                          )}
+                        >
+                          <div className="mb-1 flex items-center justify-center text-slate-700">
+                            <CreditCard className="h-4 w-4" />
+                          </div>
+                          <p className="text-sm font-medium text-slate-800">
+                            Online
+                          </p>
+                        </button>
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={handleProcessPayment}
+                      className="mt-5 flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-slate-800"
+                    >
+                      Process Payment
+                      <ChevronRight className="h-4 w-4" />
+                    </button>
                   </div>
-                )}
-
-                <button
-                  onClick={() => {
-                    setShowChaiPopup(false);
-                    setShowCelebration(true);
-                    setTimeout(() => setShowCelebration(false), 4200);
-                  }}
-                  className="w-full rounded-xl bg-amber-500 px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-amber-600 shadow-md hover:shadow-lg"
-                >
-                  <span className="inline-flex items-center justify-center gap-2">
-                    <Sparkles className="h-4 w-4" />
-                    Done
-                  </span>
-                </button>
+                </div>
               </div>
             </motion.div>
           </motion.div>
