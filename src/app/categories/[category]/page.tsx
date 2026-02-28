@@ -13,6 +13,19 @@ interface Article {
   publishedAt?: string;
 }
 
+function formatPublishedDate(date?: string) {
+  if (!date) return "Date Not Available";
+  const parsed = new Date(date);
+  if (Number.isNaN(parsed.getTime())) return "Date Not Available";
+  return parsed.toLocaleString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+}
+
 async function getCategoryNews(category: string, country = "us") {
   const baseUrl = process.env.NEWS_API_BASE_URL || "https://newsapi.org/v2";
   const apiKey = process.env.NEWS_API_KEY2 || process.env.NEWS_API_KEY;
@@ -58,6 +71,9 @@ export default async function CategoryPage({
                 className="h-48 w-full object-cover"
               />
               <div className="flex flex-1 flex-col p-5">
+                <div className="mb-2 text-xs font-medium uppercase tracking-wider text-gray-500">
+                  {formatPublishedDate(article.publishedAt)}
+                </div>
                 <h2 className="mb-2 text-xl font-semibold text-gray-900">
                   {article.title ?? "Untitled article"}
                 </h2>
@@ -73,7 +89,7 @@ export default async function CategoryPage({
                         rel="noopener noreferrer"
                         className="inline-flex items-center text-sm font-semibold text-blue-600 transition-colors hover:text-blue-700 lg:flex-shrink-0"
                       >
-                        Read Full Story
+                        Read Full Story ➡️
                       </Link>
                     ) : (
                       <span className="text-sm font-semibold text-gray-400 lg:flex-shrink-0">
