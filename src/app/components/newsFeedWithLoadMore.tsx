@@ -2,6 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import ArticleCard from "./articleCart";
+import { motion } from "framer-motion";
+import { ArrowDown, Loader2 } from "lucide-react";
 
 interface Article {
   source?: { id?: string | null; name?: string };
@@ -158,18 +160,40 @@ export default function NewsFeedWithLoadMore({
 
       <div className="mt-10 flex flex-col items-center gap-3">
         {hasMore ? (
-          <button
+          <motion.button
             type="button"
             onClick={handleLoadMore}
             disabled={isLoadingMore}
-            className="inline-flex min-w-36 items-center justify-center rounded-full border border-black/10 bg-[var(--primary)] px-6 py-3 text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:bg-[var(--primaryDark)] hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-black/20 disabled:cursor-not-allowed disabled:opacity-60 dark:border-white/15 dark:focus-visible:ring-white/30"
+            whileHover={isLoadingMore ? undefined : { y: -1 }}
+            whileTap={isLoadingMore ? undefined : { scale: 0.98 }}
+            transition={{ type: "spring", stiffness: 360, damping: 26 }}
+            className="group relative inline-flex min-w-44 items-center justify-center gap-2 overflow-hidden rounded-xl border px-7 py-3 text-sm font-semibold text-white shadow-sm transition-all duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-70"
+            style={{
+              backgroundColor: "var(--primary)",
+              borderColor: "color-mix(in srgb, var(--primary) 55%, black 10%)",
+              boxShadow:
+                "0 8px 20px -12px color-mix(in srgb, var(--primary) 70%, transparent)",
+            }}
           >
-            {isLoadingMore ? "Loading..." : "Load More"}
-          </button>
+            <span className="absolute inset-0 bg-gradient-to-b from-white/20 via-transparent to-black/10 opacity-90" />
+            <span className="absolute inset-x-6 top-0 h-px bg-white/50" />
+            <span className="absolute -left-20 top-0 h-full w-16 -skew-x-12 bg-white/25 transition-transform duration-700 group-hover:translate-x-[320px]" />
+            <span className="relative flex items-center gap-2">
+              {isLoadingMore ? (
+                <Loader2 size={16} className="animate-spin" />
+              ) : (
+                <ArrowDown
+                  size={16}
+                  className="transition-transform duration-300 group-hover:translate-y-0.5"
+                />
+              )}
+              <span>{isLoadingMore ? "Loading..." : "Load More Articles"}</span>
+            </span>
+          </motion.button>
         ) : (
           <p className="text-sm text-gray-500">
             No more news to load, Feel free to search for other
-            topics to find more news.
+            topics to find more news. 😶‍🌫️
           </p>
         )}
 
