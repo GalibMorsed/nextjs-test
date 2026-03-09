@@ -1,9 +1,9 @@
 "use client";
+
 import { useEffect, useState } from "react";
 import { Loader2, RefreshCw } from "lucide-react";
-import NewsFeedWithLoadMore from "@/app/components/newsFeedWithLoadMore";
-import { getCategoryDisplayName } from "@/lib/newsCategories";
-import { supabase } from "../../../../lib/superbaseClient";
+import NewsFeedWithLoadMore from "./newsFeedWithLoadMore";
+import { supabase } from "../../../lib/superbaseClient";
 
 interface Article {
   source?: { id?: string | null; name?: string };
@@ -16,8 +16,7 @@ interface Article {
   publishedAt?: string;
 }
 
-interface CategoryContentProps {
-  category: string;
+interface TopHeadlinesContentProps {
   initialArticles: Article[];
   pageSize?: number;
 }
@@ -44,12 +43,10 @@ function RefreshSkeleton() {
   );
 }
 
-export default function CategoryContent({
-  category,
+export default function TopHeadlinesContent({
   initialArticles,
   pageSize = 20,
-}: CategoryContentProps) {
-  const categoryDisplayName = getCategoryDisplayName(category);
+}: TopHeadlinesContentProps) {
   const [articles, setArticles] = useState<Article[]>(initialArticles ?? []);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -84,7 +81,6 @@ export default function CategoryContent({
     try {
       const params = new URLSearchParams({
         country: "us",
-        category,
         page: "1",
         pageSize: String(pageSize),
       });
@@ -100,9 +96,7 @@ export default function CategoryContent({
       setArticles(latestArticles);
       setRefreshKey((prev) => prev + 1);
     } catch {
-      setRefreshError(
-        "Could not refresh this category right now. Please try again.",
-      );
+      setRefreshError("Could not refresh top headlines right now. Please try again.");
     } finally {
       setIsRefreshing(false);
     }
@@ -110,14 +104,6 @@ export default function CategoryContent({
 
   return (
     <section className="relative">
-      {/* Header */}
-      <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-4xl font-bold capitalize tracking-tighter text-slate-900">
-          {categoryDisplayName}
-        </h1>
-      </div>
-
-      {/* ✨ NEW: Animated Loading Content Directly Under H1 ✨ */}
       {isRefreshing && (
         <div
           className="mb-8 flex items-center gap-3 rounded-2xl border bg-gradient-to-r px-6 py-4 shadow-sm backdrop-blur-xl transition-all"
@@ -150,11 +136,9 @@ export default function CategoryContent({
               className="text-xs"
               style={{ color: "color-mix(in srgb, var(--primary) 70%, #475569)" }}
             >
-              Pulling fresh news just for you
+              Pulling fresh top headlines for you
             </p>
           </div>
-
-          {/* Bouncing dots animation */}
           <div className="flex gap-1.5">
             <div
               className="h-1.5 w-1.5 animate-bounce rounded-full"
@@ -172,14 +156,13 @@ export default function CategoryContent({
         </div>
       )}
 
-      {/* Premium Floating Refresh Button (unchanged – still 🔥) */}
       {isAuthenticated && (
         <button
           type="button"
           onClick={handleRefresh}
           disabled={isRefreshing}
           className="fixed bottom-8 right-6 z-50 group flex h-14 items-center overflow-hidden rounded-3xl border border-slate-200 bg-white px-5 py-4 shadow-2xl backdrop-blur-xl transition-all duration-300 hover:-translate-y-1 hover:shadow-3xl active:scale-[0.96] disabled:cursor-not-allowed disabled:opacity-75 md:right-8"
-          aria-label={isRefreshing ? "Refreshing news feed" : "Refresh news feed"}
+          aria-label={isRefreshing ? "Refreshing top headlines" : "Refresh top headlines"}
         >
           <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-slate-100 transition-colors group-hover:bg-violet-100">
             {isRefreshing ? (
@@ -204,17 +187,15 @@ export default function CategoryContent({
         </button>
       )}
 
-      {/* Main Content */}
       {isRefreshing ? (
         <RefreshSkeleton />
       ) : (
         <NewsFeedWithLoadMore
           key={refreshKey}
           initialArticles={articles}
-          category={category}
           country="us"
           pageSize={pageSize}
-          emptyMessage="No articles found for this category."
+          emptyMessage="No news available at the moment. Please check back later."
         />
       )}
 
