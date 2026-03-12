@@ -1,9 +1,14 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
-import { Loader2, RefreshCw } from "lucide-react";
+import { Loader2, RefreshCw, X } from "lucide-react";
 import NewsFeedWithLoadMore from "./newsFeedWithLoadMore";
 import { supabase } from "../../../lib/superbaseClient";
+import {
+  getUserPersonalization,
+  PERSONALIZATION_UPDATED_EVENT,
+} from "../services/personalizationService";
 
 interface Article {
   source?: { id?: string | null; name?: string };
@@ -20,6 +25,12 @@ interface TopHeadlinesContentProps {
   initialArticles: Article[];
   pageSize?: number;
 }
+
+const PERSONALIZATION_REMINDER_DISMISS_KEY =
+  "top_headlines_personalization_reminder_until";
+const TWO_HOURS_MS = 2 * 60 * 60 * 1000;
+const PERSONALIZATION_REQUIRED_TOPICS = 10;
+const PERSONALIZATION_REQUIRED_SOURCES = 1;
 
 function RefreshSkeleton() {
   return (
@@ -64,6 +75,8 @@ export default function TopHeadlinesContent({
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [refreshError, setRefreshError] = useState<string | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [showPersonalizationReminder, setShowPersonalizationReminder] =
+    useState(false);
 
   useEffect(() => {
     const localToken = localStorage.getItem("auth_token");
@@ -86,6 +99,69 @@ export default function TopHeadlinesContent({
       subscription.unsubscribe();
     };
   }, []);
+
+  useEffect(() => {
+    let mounted = true;
+
+    const syncPersonalizationReminder = async () => {
+      if (!isAuthenticated) {
+        if (mounted) setShowPersonalizationReminder(false);
+        return;
+      }
+
+      const dismissedUntilRaw = localStorage.getItem(
+        PERSONALIZATION_REMINDER_DISMISS_KEY,
+      );
+      const dismissedUntil = dismissedUntilRaw ? Number(dismissedUntilRaw) : 0;
+      if (Number.isFinite(dismissedUntil) && dismissedUntil > Date.now()) {
+        if (mounted) setShowPersonalizationReminder(false);
+        return;
+      }
+
+      try {
+        const { data, error } = await getUserPersonalization();
+        if (!mounted) return;
+        if (error) {
+          setShowPersonalizationReminder(true);
+          return;
+        }
+        const topicsCount = Array.isArray(data?.favorite_topics)
+          ? data.favorite_topics.length
+          : 0;
+        const sourcesCount = Array.isArray(data?.favorite_sources)
+          ? data.favorite_sources.length
+          : 0;
+        const isCompleted =
+          topicsCount >= PERSONALIZATION_REQUIRED_TOPICS &&
+          sourcesCount >= PERSONALIZATION_REQUIRED_SOURCES;
+        setShowPersonalizationReminder(!isCompleted);
+      } catch {
+        if (mounted) setShowPersonalizationReminder(true);
+      }
+    };
+
+    void syncPersonalizationReminder();
+    window.addEventListener(
+      PERSONALIZATION_UPDATED_EVENT,
+      syncPersonalizationReminder,
+    );
+
+    return () => {
+      mounted = false;
+      window.removeEventListener(
+        PERSONALIZATION_UPDATED_EVENT,
+        syncPersonalizationReminder,
+      );
+    };
+  }, [isAuthenticated]);
+
+  const dismissPersonalizationReminder = () => {
+    localStorage.setItem(
+      PERSONALIZATION_REMINDER_DISMISS_KEY,
+      String(Date.now() + TWO_HOURS_MS),
+    );
+    setShowPersonalizationReminder(false);
+  };
 
   const handleRefresh = async () => {
     if (isRefreshing) return;
@@ -120,6 +196,38 @@ export default function TopHeadlinesContent({
 
   return (
     <section className="relative">
+      {showPersonalizationReminder && (
+        <div className="fixed bottom-4 left-4 right-4 z-40 rounded-2xl border border-amber-200 bg-amber-50/95 px-4 py-4 shadow-xl backdrop-blur-sm dark:border-amber-900/70 dark:bg-amber-950/40 sm:bottom-6 sm:left-auto sm:right-6 sm:w-[360px]">
+          <div className="flex items-start gap-3">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-amber-600 dark:bg-slate-900 dark:text-amber-300">
+              <span aria-hidden="true">!</span>
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-semibold text-amber-900 dark:text-amber-200">
+                Personalize your feed for a better experience
+              </p>
+              <p className="mt-1 text-xs text-amber-800/90 dark:text-amber-300/90">
+                Select at least 10 topics and 1 source for better headlines.
+              </p>
+              <Link
+                href="/personalization"
+                className="mt-3 inline-flex items-center rounded-lg bg-[var(--primary)] px-3 py-2 text-xs font-semibold text-white transition hover:brightness-110"
+              >
+                Complete personalization
+              </Link>
+            </div>
+            <button
+              type="button"
+              onClick={dismissPersonalizationReminder}
+              className="flex h-7 w-7 items-center justify-center rounded-full text-amber-700 transition hover:bg-amber-100 dark:text-amber-300 dark:hover:bg-amber-900/50"
+              aria-label="Dismiss personalization reminder"
+            >
+              <X size={16} />
+            </button>
+          </div>
+        </div>
+      )}
+
       {isAuthenticated && (
         <div className="mb-8 flex flex-wrap items-center justify-end gap-4 sm:gap-6">
           <button

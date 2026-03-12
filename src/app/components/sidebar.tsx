@@ -7,8 +7,23 @@ import { AnimatePresence, motion } from "framer-motion";
 import {
   Briefcase,
   ChevronDown,
+  Clapperboard,
+  Palette,
+  BookOpen,
+  Car,
+  Sprout,
+  Shield,
+  Gamepad2,
+  Gem,
+  GraduationCap,
+  Info,
+  Leaf,
+  LifeBuoy,
+  Map,
+  Music2,
   Film,
   FlaskConical,
+  Shirt,
   Heart,
   Home,
   Laptop,
@@ -19,12 +34,19 @@ import {
   Search,
   Settings,
   ShieldAlert,
+  SlidersHorizontal,
   Trophy,
+  UtensilsCrossed,
+  Wallet,
   StickyNote,
   UserPlus,
   X,
 } from "lucide-react";
 import { supabase } from "../../../lib/superbaseClient";
+import {
+  PERSONALIZATION_UPDATED_EVENT,
+  getUserPersonalization,
+} from "../services/personalizationService";
 import {
   DEFAULT_APPEARANCE_SETTINGS,
   applyAppearanceSettings,
@@ -36,10 +58,76 @@ interface SidebarProps {
   onCloseMobile: () => void;
 }
 
+type CategoryNavItem = {
+  topic: string;
+  href: string;
+  icon: React.ComponentType<{ size?: number; className?: string }>;
+};
+
+const CATEGORY_NAV_ITEMS: CategoryNavItem[] = [
+  { topic: "Top Headlines", href: "/", icon: Home },
+  { topic: "Technology", href: "/categories/technology", icon: Laptop },
+  { topic: "Business", href: "/categories/business", icon: Briefcase },
+  { topic: "Entertainment", href: "/categories/entertainment", icon: Film },
+  { topic: "Sports", href: "/categories/sports", icon: Trophy },
+  { topic: "Health", href: "/categories/health", icon: Heart },
+  { topic: "Science", href: "/categories/science", icon: FlaskConical },
+  { topic: "Politics", href: "/categories/politics", icon: Landmark },
+  { topic: "Tourism", href: "/categories/tourism", icon: Plane },
+  { topic: "Crime", href: "/categories/crime", icon: ShieldAlert },
+  { topic: "Environment", href: "/categories/environment", icon: Leaf },
+  { topic: "Education", href: "/categories/education", icon: GraduationCap },
+  { topic: "Travel", href: "/categories/travel", icon: Map },
+  { topic: "Food", href: "/categories/food", icon: UtensilsCrossed },
+  { topic: "Fashion", href: "/categories/fashion", icon: Shirt },
+  { topic: "Finance", href: "/categories/finance", icon: Wallet },
+  { topic: "Automotive", href: "/categories/automotive", icon: Car },
+  { topic: "Music", href: "/categories/music", icon: Music2 },
+  { topic: "Movies", href: "/categories/movies", icon: Clapperboard },
+  { topic: "Books", href: "/categories/books", icon: BookOpen },
+  { topic: "Art", href: "/categories/art", icon: Palette },
+  { topic: "Culture", href: "/categories/culture", icon: Palette },
+  { topic: "Gaming", href: "/categories/gaming", icon: Gamepad2 },
+  {
+    topic: "Spirituality & Religion",
+    href: "/categories/spirituality-religion",
+    icon: Gem,
+  },
+  { topic: "Mental Health", href: "/categories/mental-health", icon: Heart },
+  {
+    topic: "Artificial Intelligence",
+    href: "/categories/artificial-intelligence",
+    icon: Laptop,
+  },
+  { topic: "Cybersecurity", href: "/categories/cybersecurity", icon: ShieldAlert },
+  { topic: "Space & Astronomy", href: "/categories/space-astronomy", icon: Info },
+  { topic: "Stock Market", href: "/categories/stock-market", icon: Wallet },
+  { topic: "Trade & Economy", href: "/categories/trade-economy", icon: Landmark },
+  { topic: "Real Estate", href: "/categories/real-estate", icon: Home },
+  { topic: "Defense & Military", href: "/categories/defense-military", icon: Shield },
+  {
+    topic: "Agriculture & Farming",
+    href: "/categories/agriculture-farming",
+    icon: Sprout,
+  },
+];
+
+const DEFAULT_TOPIC_SELECTION = [
+  "top headlines",
+  "technology",
+  "business",
+  "entertainment",
+  "sports",
+  "health",
+  "science",
+];
+
 export default function Sidebar({ isMobileOpen, onCloseMobile }: SidebarProps) {
   const [query, setQuery] = useState("");
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [userEmail, setUserEmail] = useState("");
+  const [selectedTopics, setSelectedTopics] = useState<string[]>([]);
+  const [isPersonalizationLoaded, setIsPersonalizationLoaded] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
 
@@ -56,6 +144,20 @@ export default function Sidebar({ isMobileOpen, onCloseMobile }: SidebarProps) {
   };
 
   useEffect(() => {
+    const loadPersonalization = async () => {
+      setIsPersonalizationLoaded(false);
+      try {
+        const { data } = await getUserPersonalization();
+        setSelectedTopics(
+          Array.isArray(data?.favorite_topics) ? data.favorite_topics : [],
+        );
+      } catch {
+        setSelectedTopics([]);
+      } finally {
+        setIsPersonalizationLoaded(true);
+      }
+    };
+
     const storedToken = localStorage.getItem("auth_token");
     if (storedToken) {
       setIsAuthenticated(true);
@@ -73,6 +175,10 @@ export default function Sidebar({ isMobileOpen, onCloseMobile }: SidebarProps) {
           sessionUser.email ?? "",
           data.session?.access_token ?? "",
         );
+        void loadPersonalization();
+      } else {
+        setSelectedTopics([]);
+        setIsPersonalizationLoaded(true);
       }
     });
 
@@ -85,15 +191,30 @@ export default function Sidebar({ isMobileOpen, onCloseMobile }: SidebarProps) {
         setIsAuthenticated(true);
         setUserEmail(nextUser.email ?? "");
         persistSession(nextUser.email ?? "", session?.access_token ?? "");
+        void loadPersonalization();
       } else {
         setIsAuthenticated(false);
         setUserEmail("");
+        setSelectedTopics([]);
+        setIsPersonalizationLoaded(true);
         clearSession();
       }
     });
 
+    const handlePersonalizationUpdated = () => {
+      void loadPersonalization();
+    };
+    window.addEventListener(
+      PERSONALIZATION_UPDATED_EVENT,
+      handlePersonalizationUpdated,
+    );
+
     return () => {
       subscription.unsubscribe();
+      window.removeEventListener(
+        PERSONALIZATION_UPDATED_EVENT,
+        handlePersonalizationUpdated,
+      );
     };
   }, []);
 
@@ -126,6 +247,8 @@ export default function Sidebar({ isMobileOpen, onCloseMobile }: SidebarProps) {
       onCloseMobile={onCloseMobile}
       isAuthenticated={isAuthenticated}
       userEmail={userEmail}
+      selectedTopics={selectedTopics}
+      isPersonalizationLoaded={isPersonalizationLoaded}
       router={router}
     />
   );
@@ -320,6 +443,8 @@ function SidebarContent({
   onCloseMobile,
   isAuthenticated,
   userEmail,
+  selectedTopics,
+  isPersonalizationLoaded,
   router,
 }: {
   query: string;
@@ -330,10 +455,31 @@ function SidebarContent({
   onCloseMobile: () => void;
   isAuthenticated: boolean;
   userEmail: string;
+  selectedTopics: string[];
+  isPersonalizationLoaded: boolean;
   router: ReturnType<typeof useRouter>;
 }) {
   const closeAndNavigate = () => onCloseMobile();
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const selectedTopicSet = new Set(
+    selectedTopics.map((topic) => topic.trim().toLowerCase()),
+  );
+  const effectiveTopicSet = new Set<string>();
+  effectiveTopicSet.add("top headlines");
+
+  if (isAuthenticated) {
+    if (selectedTopicSet.size > 0) {
+      for (const topic of selectedTopicSet) effectiveTopicSet.add(topic);
+    } else {
+      for (const topic of DEFAULT_TOPIC_SELECTION) effectiveTopicSet.add(topic);
+    }
+  } else {
+    for (const topic of DEFAULT_TOPIC_SELECTION) effectiveTopicSet.add(topic);
+  }
+
+  const visibleCategoryItems = CATEGORY_NAV_ITEMS.filter((item) =>
+    effectiveTopicSet.has(item.topic.toLowerCase()),
+  );
   const handleSignOut = async () => {
     try {
       await supabase.auth.signOut();
@@ -385,17 +531,6 @@ function SidebarContent({
 
         <nav className="space-y-2">
           <Link
-            href="/"
-            className={navItemClass(pathname === "/")}
-            onClick={closeAndNavigate}
-          >
-            <Home
-              size={18}
-              className="transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6"
-            />
-            Top Headlines
-          </Link>
-          <Link
             href="/live-news"
             className={navItemClass(pathname.startsWith("/live-news"))}
             onClick={closeAndNavigate}
@@ -406,129 +541,35 @@ function SidebarContent({
             />
             Live News Streaming
           </Link>
-          <Link
-            href="/categories/technology"
-            className={navItemClass(
-              pathname.startsWith("/categories/technology"),
+          {visibleCategoryItems.map((item) => {
+            const Icon = item.icon;
+            const isActive =
+              item.href === "/"
+                ? pathname === "/"
+                : pathname.startsWith(item.href);
+
+            return (
+              <Link
+                key={item.topic}
+                href={item.href}
+                className={navItemClass(isActive)}
+                onClick={closeAndNavigate}
+              >
+                <Icon
+                  size={18}
+                  className="transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6"
+                />
+                {item.topic}
+              </Link>
+            );
+          })}
+          {isAuthenticated &&
+            isPersonalizationLoaded &&
+            visibleCategoryItems.length === 0 && (
+              <p className="px-4 py-2 text-xs text-gray-500">
+                No topics selected. Add topics in Personalization.
+              </p>
             )}
-            onClick={closeAndNavigate}
-          >
-            <Laptop
-              size={18}
-              className="transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6"
-            />
-            Technology
-          </Link>
-          <Link
-            href="/categories/business"
-            className={navItemClass(
-              pathname.startsWith("/categories/business"),
-            )}
-            onClick={closeAndNavigate}
-          >
-            <Briefcase
-              size={18}
-              className="transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6"
-            />
-            Business
-          </Link>
-          <Link
-            href="/categories/entertainment"
-            className={navItemClass(
-              pathname.startsWith("/categories/entertainment"),
-            )}
-            onClick={closeAndNavigate}
-          >
-            <Film
-              size={18}
-              className="transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6"
-            />
-            Entertainment
-          </Link>
-          <Link
-            href="/categories/sports"
-            className={navItemClass(pathname.startsWith("/categories/sports"))}
-            onClick={closeAndNavigate}
-          >
-            <Trophy
-              size={18}
-              className="transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6"
-            />
-            Sports
-          </Link>
-          {isAuthenticated && (
-            <Link
-              href="/categories/health"
-              className={navItemClass(
-                pathname.startsWith("/categories/health"),
-              )}
-              onClick={closeAndNavigate}
-            >
-              <Heart
-                size={18}
-                className="transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6"
-              />
-              Health
-            </Link>
-          )}
-          {isAuthenticated && (
-            <Link
-              href="/categories/science"
-              className={navItemClass(
-                pathname.startsWith("/categories/science"),
-              )}
-              onClick={closeAndNavigate}
-            >
-              <FlaskConical
-                size={18}
-                className="transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6"
-              />
-              Science
-            </Link>
-          )}
-          {isAuthenticated && (
-            <Link
-              href="/categories/politics"
-              className={navItemClass(
-                pathname.startsWith("/categories/politics"),
-              )}
-              onClick={closeAndNavigate}
-            >
-              <Landmark
-                size={18}
-                className="transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6"
-              />
-              Politics
-            </Link>
-          )}
-          {isAuthenticated && (
-            <Link
-              href="/categories/tourism"
-              className={navItemClass(
-                pathname.startsWith("/categories/tourism"),
-              )}
-              onClick={closeAndNavigate}
-            >
-              <Plane
-                size={18}
-                className="transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6"
-              />
-              Tourism
-            </Link>
-          )}
-          {isAuthenticated && (
-            <Link
-              href="/categories/crime"
-              className={navItemClass(pathname.startsWith("/categories/crime"))}
-              onClick={closeAndNavigate}
-            >
-              <ShieldAlert
-                size={18}
-                className="transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6"
-              />
-              Crime
-            </Link>
-          )}
           {isAuthenticated && (
             <div className="relative md:hidden my-2">
               {/* Animated border */}
@@ -567,18 +608,28 @@ function SidebarContent({
         {isAuthenticated && (
           <CollapsibleSection title="Extra Options">
             <Link
-              href="/plans"
-              className="block px-4 py-1 text-sm text-gray-600 hover:text-[var(--primary)] cursor-pointer transition-colors"
+              href="/personalization"
+              className="inline-flex items-center gap-2 px-4 py-1 text-sm text-gray-600 hover:text-[var(--primary)] cursor-pointer transition-colors"
               onClick={closeAndNavigate}
             >
-              Subscriptions
+              <SlidersHorizontal size={14} />
+              Personalization
             </Link>
             <Link
               href="/appearance"
-              className="block px-4 py-1 text-sm text-gray-600 hover:text-[var(--primary)] cursor-pointer transition-colors"
+              className="inline-flex items-center gap-2 px-4 py-1 text-sm text-gray-600 hover:text-[var(--primary)] cursor-pointer transition-colors"
               onClick={closeAndNavigate}
             >
+              <Palette size={14} />
               Appearance
+            </Link>
+            <Link
+              href="/plans"
+              className="inline-flex items-center gap-2 px-4 py-1 text-sm text-gray-600 hover:text-[var(--primary)] cursor-pointer transition-colors"
+              onClick={closeAndNavigate}
+            >
+              <Gem size={14} />
+              Subscriptions
             </Link>
           </CollapsibleSection>
         )}
@@ -586,16 +637,18 @@ function SidebarContent({
         <CollapsibleSection title="More Info">
           <Link
             href="/about"
-            className="block px-4 py-1 text-sm text-gray-600 transition-colors hover:text-[var(--primary)]"
+            className="inline-flex items-center gap-2 px-4 py-1 text-sm text-gray-600 transition-colors hover:text-[var(--primary)]"
             onClick={closeAndNavigate}
           >
+            <Info size={14} />
             About NextNews
           </Link>
           <Link
             href="/support"
-            className="block px-4 py-1 text-sm text-gray-600 hover:text-[var(--primary)] cursor-pointer transition-colors"
+            className="inline-flex items-center gap-2 px-4 py-1 text-sm text-gray-600 hover:text-[var(--primary)] cursor-pointer transition-colors"
             onClick={closeAndNavigate}
           >
+            <LifeBuoy size={14} />
             Contact Support
           </Link>
         </CollapsibleSection>
