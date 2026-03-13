@@ -66,6 +66,7 @@ const AVAILABLE_TOPICS = [
 ];
 
 const MAX_TOPICS = 10;
+const INITIAL_VISIBLE_TOPICS = 15;
 const DEFAULT_TOPIC_SELECTION = [
   "Top Headlines",
   "Technology",
@@ -117,6 +118,7 @@ export default function PersonalizationPage() {
   const [suggestions, setSuggestions] = useState<TopicSuggestion[]>([]);
   const [isSuggesting, setIsSuggesting] = useState(false);
   const [aiElapsedSeconds, setAiElapsedSeconds] = useState(0);
+  const [showAllTopics, setShowAllTopics] = useState(false);
 
   const hasSelection = useMemo(
     () => favoriteSources.length > 0 || favoriteTopics.length > 0,
@@ -130,6 +132,15 @@ export default function PersonalizationPage() {
       ),
     [topicSearch],
   );
+
+  const visibleTopics = useMemo(() => {
+    if (topicSearch.trim()) return filteredTopics;
+    if (showAllTopics) return filteredTopics;
+    return filteredTopics.slice(0, INITIAL_VISIBLE_TOPICS);
+  }, [filteredTopics, showAllTopics, topicSearch]);
+
+  const shouldShowMoreTopicsButton =
+    !topicSearch.trim() && !showAllTopics && filteredTopics.length > INITIAL_VISIBLE_TOPICS;
 
   const aiLoadingMessage = useMemo(() => {
     if (aiElapsedSeconds < 4) return AI_LOADING_STEPS[0];
@@ -533,7 +544,7 @@ export default function PersonalizationPage() {
           </div>
 
           <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {filteredTopics.map((topic, index) => {
+            {visibleTopics.map((topic, index) => {
               const isSelected = favoriteTopics.includes(topic);
               const isDisabled =
                 !isSelected && favoriteTopics.length >= MAX_TOPICS;
@@ -568,6 +579,18 @@ export default function PersonalizationPage() {
               );
             })}
           </div>
+
+          {shouldShowMoreTopicsButton && (
+            <div className="mt-5 flex justify-center">
+              <button
+                type="button"
+                onClick={() => setShowAllTopics(true)}
+                className="rounded-2xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-medium text-slate-700 transition hover:border-[var(--primary)] hover:text-[var(--primary)] dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
+              >
+                See more options
+              </button>
+            </div>
+          )}
 
           {filteredTopics.length === 0 && (
             <p className="mt-4 text-center text-sm text-slate-500 dark:text-slate-400">

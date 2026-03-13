@@ -1,9 +1,10 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import ArticleCard from "./articleCart";
 import { motion } from "framer-motion";
 import { ArrowDown, Loader2 } from "lucide-react";
+import ArticleCard from "./articleCart";
 
 interface Article {
   source?: { id?: string | null; name?: string };
@@ -30,6 +31,7 @@ function formatPublishedDate(date?: string) {
   if (!date) return "Date Not Available";
   const parsed = new Date(date);
   if (Number.isNaN(parsed.getTime())) return "Date Not Available";
+
   return parsed.toLocaleString("en-US", {
     month: "short",
     day: "numeric",
@@ -139,7 +141,7 @@ export default function NewsFeedWithLoadMore({
 
   return (
     <section>
-      <div className="grid gap-8 grid-cols-1 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
         {articles.map((article, index) => (
           <ArticleCard
             key={`${article.url ?? "article"}-${index}`}
@@ -194,10 +196,23 @@ export default function NewsFeedWithLoadMore({
             </span>
           </motion.button>
         ) : (
-          <p className="text-sm text-gray-500">
-            No more news to load, Feel free to search for other
-            topics to find more news. 😶‍🌫️
-          </p>
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, ease: "easeOut" }}
+            className="rounded-2xl border border-[color:color-mix(in_srgb,var(--primary)_18%,white)] bg-[color:color-mix(in_srgb,var(--primary)_8%,white)] px-5 py-4 text-center shadow-sm dark:border-[color:color-mix(in_srgb,var(--primary)_24%,transparent)] dark:bg-[color:color-mix(in_srgb,var(--primary)_12%,#0f172a)]"
+          >
+            <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-300">
+              You're all caught up. Explore other topics or view our{" "}
+              <Link
+                href="/plans"
+                className="font-semibold text-[var(--primary)] underline decoration-[color:color-mix(in_srgb,var(--primary)_45%,transparent)] underline-offset-4 transition-colors hover:text-[color:color-mix(in_srgb,var(--primary)_82%,black_10%)]"
+              >
+                Plans
+              </Link>{" "}
+              for an enhanced experience.🚧
+            </p>
+          </motion.div>
         )}
 
         {loadError && <p className="text-sm text-red-600">{loadError}</p>}

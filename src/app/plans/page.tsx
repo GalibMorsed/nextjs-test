@@ -15,8 +15,75 @@ import {
   Copy,
   ShieldCheck,
   X,
+  Sparkles,
+  NotebookPen,
+  Radio,
+  SlidersHorizontal,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+
+const planCatalog = [
+  {
+    name: "Silver Reader",
+    monthlyPrice: 29,
+    yearlyPrice: 290,
+    desc: "A simple premium upgrade for readers who want a cleaner, more focused news routine.",
+    features: [
+      "Unlimited access to premium articles",
+      "Cleaner reading experience",
+      "Daily news briefing access",
+      "Article engagement tools",
+    ],
+  },
+  {
+    name: "Gold Member",
+    monthlyPrice: 79,
+    yearlyPrice: 790,
+    desc: "Best for regular readers who want deeper coverage and a richer reading experience.",
+    featured: true,
+    features: [
+      "Everything in Silver Reader",
+      "Exclusive analysis and long-form coverage",
+      "Weekly expert insights",
+      "Priority access to upcoming premium formats",
+    ],
+  },
+  {
+    name: "Platinum Insider",
+    monthlyPrice: 199,
+    yearlyPrice: 1990,
+    desc: "Designed for power users who want the fullest NextNews experience as the platform grows.",
+    features: [
+      "Everything in Gold Member",
+      "Early access to new premium features",
+      "Priority event and editorial access",
+      "Best fit for heavy readers and supporters",
+    ],
+  },
+];
+
+const productPerks = [
+  {
+    icon: Sparkles,
+    title: "Premium Reading",
+    desc: "A more polished reading flow for people who want fewer distractions and more value from every visit.",
+  },
+  {
+    icon: SlidersHorizontal,
+    title: "Personalized Experience",
+    desc: "Plans are designed to complement personalized topics, sources, and the wider account experience.",
+  },
+  {
+    icon: NotebookPen,
+    title: "Reader Tools",
+    desc: "Notes, saved preferences, and upcoming premium improvements are aimed at active readers, not passive scrolling.",
+  },
+  {
+    icon: Radio,
+    title: "Growing Platform",
+    desc: "Subscriptions support a product that continues expanding across live coverage, support tools, and premium content.",
+  },
+];
 
 export default function PlansPage() {
   const [yearly, setYearly] = useState(false);
@@ -24,11 +91,9 @@ export default function PlansPage() {
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
   const [showChaiPopup, setShowChaiPopup] = useState(false);
   const [showCelebration, setShowCelebration] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState<"bank" | "online">(
-    "bank",
-  );
+  const [paymentMethod, setPaymentMethod] = useState<"bank" | "online">("bank");
+  const [copied, setCopied] = useState(false);
 
-  // Update these payment values with your production account details.
   const upiVpa = "morsedgalib982@oksbi";
   const payeeName = "Galib";
   const amount = "25";
@@ -49,76 +114,60 @@ export default function PlansPage() {
     setTimeout(() => setShowCelebration(false), 4200);
   };
 
-  const plans = [
-    {
-      name: "Silver Reader",
-      price: yearly ? 290 : 29,
-      desc: "Silver Reader, designed for informed citizens.",
-      features: [
-        "Unlimited access to premium articles",
-        "Daily briefing newsletter",
-        "Ad-free reading experience",
-        "Access to comments section",
-      ],
-    },
-    {
-      name: "Gold Member",
-      price: yearly ? 790 : 79,
-      desc: "Gold Member for serious readers and enthusiasts.",
-      featured: true,
-      features: [
-        "All Silver Reader benefits",
-        "Exclusive investigative journalism",
-        "Weekly expert columns & analysis",
-        "Audio articles & offline reading",
-      ],
-    },
-    {
-      name: "Platinum Insider",
-      price: yearly ? 1990 : 199,
-      desc: "Platinum Insider for connoisseurs, offering top-tier benefits.",
-      features: [
-        "All Gold Member benefits",
-        "Live Q&A with top journalists",
-        "Early access to podcasts & videos",
-        "VIP invitations to editorial events",
-      ],
-    },
-  ];
-
   const handleSubscribe = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const emailInput = e.currentTarget.querySelector(
       'input[type="email"]',
     ) as HTMLInputElement | null;
     const email = emailInput?.value ?? "";
-    if (email) {
-      setSubscribed(true);
-      e.currentTarget.reset();
-      setTimeout(() => setSubscribed(false), 5000);
-    } else {
+
+    if (!email) {
       alert("Please enter a valid email address.");
+      return;
     }
+
+    setSubscribed(true);
+    e.currentTarget.reset();
+    setTimeout(() => setSubscribed(false), 5000);
+  };
+
+  const handleCopyUpi = async () => {
+    await navigator.clipboard.writeText(upiVpa);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2200);
   };
 
   return (
     <div className="min-h-screen overflow-x-hidden bg-gradient-to-br from-indigo-50 via-blue-50 to-purple-50 text-slate-900 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 dark:text-slate-100">
-      {/* Hero Section */}
       <section className="relative overflow-hidden px-4 py-14 sm:px-6 sm:py-16 lg:px-8">
-        <div className="mx-auto max-w-5xl text-center relative z-10">
-          <h1 className="text-4xl font-bold tracking-tight sm:text-5xl lg:text-6xl mb-4">
-            Subscribe to <span className="text-teal-600">NextNews</span>
+        <div className="relative z-10 mx-auto max-w-5xl text-center">
+          <h1 className="mb-4 text-4xl font-bold tracking-tight sm:text-5xl lg:text-6xl">
+            Plans for a Better <span className="text-teal-600">NextNews</span>{" "}
+            Experience
           </h1>
-          <p className="text-xl text-slate-600 mb-8 max-w-2xl mx-auto dark:text-slate-300">
-            Unlock exclusive news content with premium features and access. Best
-            for news enthusiasts and professionals. Choose your plan and stay
-            informed with NextNews!
+          <p className="mx-auto mb-8 max-w-3xl text-xl text-slate-600 dark:text-slate-300">
+            Choose a plan that fits how you read. Whether you want a cleaner
+            daily experience or deeper premium access, NextNews is built to grow
+            with serious readers.
           </p>
+
+          <div className="mb-10 flex flex-wrap items-center justify-center gap-3">
+            <span className="rounded-full bg-white/80 px-4 py-2 text-sm font-medium text-slate-700 shadow-sm dark:bg-slate-800/80 dark:text-slate-200">
+              Premium content
+            </span>
+            <span className="rounded-full bg-white/80 px-4 py-2 text-sm font-medium text-slate-700 shadow-sm dark:bg-slate-800/80 dark:text-slate-200">
+              Reader-first tools
+            </span>
+            <span className="rounded-full bg-white/80 px-4 py-2 text-sm font-medium text-slate-700 shadow-sm dark:bg-slate-800/80 dark:text-slate-200">
+              Designed for growing features
+            </span>
+          </div>
+
           <div className="mb-12 flex flex-wrap items-center justify-center gap-4 sm:mb-16">
             <span
               className={
                 !yearly
-                  ? "text-teal-600 font-semibold"
+                  ? "font-semibold text-teal-600"
                   : "text-slate-500 dark:text-slate-400"
               }
             >
@@ -126,12 +175,12 @@ export default function PlansPage() {
             </span>
             <button
               onClick={() => setYearly((p) => !p)}
-              className="relative w-20 h-10 rounded-full bg-slate-200 p-1 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-teal-500 dark:bg-slate-700"
+              className="relative h-10 w-20 rounded-full bg-slate-200 p-1 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-teal-500 dark:bg-slate-700"
               aria-label={yearly ? "Switch to monthly" : "Switch to yearly"}
             >
               <span
                 className={clsx(
-                  "absolute top-1 h-8 w-8 rounded-full bg-teal-600 shadow-sm transition-transform duration-300 ease-in-out flex items-center justify-center text-xs font-bold text-white",
+                  "absolute top-1 flex h-8 w-8 items-center justify-center rounded-full bg-teal-600 text-xs font-bold text-white shadow-sm transition-transform duration-300 ease-in-out",
                   yearly ? "translate-x-10" : "translate-x-0",
                 )}
               >
@@ -141,7 +190,7 @@ export default function PlansPage() {
             <span
               className={
                 yearly
-                  ? "text-teal-600 font-semibold"
+                  ? "font-semibold text-teal-600"
                   : "text-slate-500 dark:text-slate-400"
               }
             >
@@ -151,80 +200,121 @@ export default function PlansPage() {
         </div>
       </section>
 
-      {/* Plans Section */}
-      <section className="px-4 py-14 sm:px-6 sm:py-16 lg:px-8">
-        <div className="mx-auto grid max-w-6xl justify-items-center gap-8 lg:grid-cols-3">
-          {plans.map((plan, index) => (
-            <div
-              key={plan.name}
-              className={clsx(
-                "relative rounded-2xl p-6 border w-full max-w-sm transition-all duration-300 hover:shadow-lg",
-                plan.featured
-                  ? "bg-teal-50 border-teal-200 ring-1 ring-teal-200/50 dark:bg-teal-950/40 dark:border-teal-700 lg:scale-105"
-                  : "bg-white border-slate-200 dark:bg-slate-800 dark:border-slate-700",
-              )}
-              style={{ animationDelay: `${index * 150}ms` }}
-            >
-              <div className="text-center">
-                <h3 className="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-2">
-                  {plan.name}
-                </h3>
-                <p className="text-sm text-slate-600 dark:text-slate-300 mb-4">
-                  {plan.desc}
-                </p>
-                <p className="text-4xl font-bold text-teal-600 mb-1">
-                  ₹{plan.price}.00
-                </p>
-                <p className="text-sm text-slate-500 dark:text-slate-400">
-                  /{yearly ? "year" : "month"}
-                </p>
-                {yearly && (
-                  <p className="text-xs text-emerald-600 font-medium mt-1">
-                    Save 20%
-                  </p>
-                )}
-              </div>
-              <ul className="mt-6 space-y-3 text-sm text-slate-700 dark:text-slate-300">
-                {plan.features.map((f) => (
-                  <li key={f} className="flex items-start gap-2">
-                    <span className="mt-1 text-teal-600 font-bold">✓</span>
-                    <span>{f}</span>
-                  </li>
-                ))}
-              </ul>
-              <button
-                onClick={() => setSelectedPlan(plan.name)}
-                className={clsx(
-                  "mt-8 w-full rounded-xl px-5 py-3 text-sm font-semibold transition-all duration-300 focus:outline-none focus:ring-2",
-                  plan.featured
-                    ? "bg-teal-600 text-white hover:bg-teal-700 focus:ring-teal-500"
-                    : "bg-white text-teal-600 border border-teal-300 hover:bg-teal-50 focus:ring-teal-500 dark:bg-slate-900 dark:text-teal-300 dark:border-teal-700 dark:hover:bg-teal-950/40",
-                )}
+      <section className="px-4 py-4 sm:px-6 lg:px-8">
+        <div className="mx-auto grid max-w-6xl gap-6 md:grid-cols-2 xl:grid-cols-4">
+          {productPerks.map((item) => {
+            const IconComponent = item.icon;
+            return (
+              <motion.div
+                key={item.title}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                whileHover={{ y: -4 }}
+                className="rounded-2xl border border-white/70 bg-white/85 p-5 shadow-sm backdrop-blur dark:border-slate-700 dark:bg-slate-800/85"
               >
-                Get This Package
-              </button>
-              {/* Partner Logos */}
-              <div className="mt-6 pt-4 border-t border-slate-100 dark:border-slate-700 w-full">
-                <p className="text-xs text-center text-slate-400 dark:text-slate-500 mb-2">
-                  Trusted by partners
-                </p>
-                <div className="flex justify-center space-x-4 opacity-60">
-                  <Building2 className="w-5 h-5 text-slate-400" />
-                  <Globe className="w-5 h-5 text-slate-400" />
-                  <ShieldCheck className="w-5 h-5 text-slate-400" />
+                <div className="mb-4 inline-flex rounded-xl bg-teal-50 p-3 text-teal-600 dark:bg-teal-950/40 dark:text-teal-300">
+                  <IconComponent className="h-5 w-5" />
                 </div>
-              </div>
-            </div>
-          ))}
+                <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+                  {item.title}
+                </h2>
+                <p className="mt-2 text-sm leading-relaxed text-slate-600 dark:text-slate-300">
+                  {item.desc}
+                </p>
+              </motion.div>
+            );
+          })}
         </div>
       </section>
 
-      {/* Footer */}
+      <section className="px-4 py-14 sm:px-6 sm:py-16 lg:px-8">
+        <div className="mx-auto grid max-w-6xl justify-items-center gap-8 lg:grid-cols-3">
+          {planCatalog.map((plan, index) => {
+            const price = yearly ? plan.yearlyPrice : plan.monthlyPrice;
+
+            return (
+              <motion.div
+                key={plan.name}
+                initial={{ opacity: 0, y: 24 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: index * 0.08 }}
+                className={clsx(
+                  "relative w-full max-w-sm rounded-2xl border p-6 transition-all duration-300 hover:shadow-lg",
+                  plan.featured
+                    ? "border-teal-200 bg-teal-50 ring-1 ring-teal-200/50 dark:border-teal-700 dark:bg-teal-950/40 lg:scale-105"
+                    : "border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-800",
+                )}
+              >
+                {plan.featured && (
+                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-teal-600 px-4 py-1 text-xs font-semibold uppercase tracking-wide text-white shadow-sm">
+                    Most Popular
+                  </div>
+                )}
+
+                <div className="text-center">
+                  <h3 className="mb-2 text-2xl font-bold text-slate-900 dark:text-slate-100">
+                    {plan.name}
+                  </h3>
+                  <p className="mb-4 text-sm text-slate-600 dark:text-slate-300">
+                    {plan.desc}
+                  </p>
+                  <p className="mb-1 text-4xl font-bold text-teal-600">
+                    Rs {price}.00
+                  </p>
+                  <p className="text-sm text-slate-500 dark:text-slate-400">
+                    /{yearly ? "year" : "month"}
+                  </p>
+                  {yearly && (
+                    <p className="mt-1 text-xs font-medium text-emerald-600">
+                      Save 20% on annual billing
+                    </p>
+                  )}
+                </div>
+
+                <ul className="mt-6 space-y-3 text-sm text-slate-700 dark:text-slate-300">
+                  {plan.features.map((feature) => (
+                    <li key={feature} className="flex items-start gap-2">
+                      <CheckCircle2 className="mt-0.5 h-4 w-4 text-teal-600" />
+                      <span>{feature}</span>
+                    </li>
+                  ))}
+                </ul>
+
+                <button
+                  onClick={() => setSelectedPlan(plan.name)}
+                  className={clsx(
+                    "mt-8 w-full rounded-xl px-5 py-3 text-sm font-semibold transition-all duration-300 focus:outline-none focus:ring-2",
+                    plan.featured
+                      ? "bg-teal-600 text-white hover:bg-teal-700 focus:ring-teal-500"
+                      : "border border-teal-300 bg-white text-teal-600 hover:bg-teal-50 focus:ring-teal-500 dark:border-teal-700 dark:bg-slate-900 dark:text-teal-300 dark:hover:bg-teal-950/40",
+                  )}
+                >
+                  Get This Package
+                </button>
+
+                <div className="mt-6 w-full border-t border-slate-100 pt-4 dark:border-slate-700">
+                  <p className="mb-2 text-center text-xs text-slate-400 dark:text-slate-500">
+                    Trusted by partners
+                  </p>
+                  <div className="flex justify-center space-x-4 opacity-60">
+                    <Building2 className="h-5 w-5 text-slate-400" />
+                    <Globe className="h-5 w-5 text-slate-400" />
+                    <ShieldCheck className="h-5 w-5 text-slate-400" />
+                  </div>
+                </div>
+              </motion.div>
+            );
+          })}
+        </div>
+      </section>
+
       <footer className="bg-slate-900 px-4 py-12 text-white dark:bg-slate-950 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-6xl">
           <div className="mb-8 grid grid-cols-1 gap-8 md:grid-cols-2">
             <div className="text-center md:text-left">
-              <h3 className="text-lg font-bold mb-4">NextNews</h3>
+              <h3 className="mb-4 text-lg font-bold">NextNews</h3>
               <p className="text-sm text-slate-300">
                 Your gateway to trusted and reliable news.⚡
               </p>
@@ -249,35 +339,29 @@ export default function PlansPage() {
                 >
                   Social Media
                 </a>
-                <a
-                  href="#"
-                  className="text-sm text-slate-300 hover:text-teal-400"
-                >
-                  Company Location
-                </a>
               </div>
             </div>
           </div>
           <div className="flex flex-col items-center justify-between gap-4 border-t border-slate-800 pt-8 md:flex-row md:items-center">
             <p className="order-2 text-center text-sm text-slate-300 md:order-1 md:text-left">
-              © 2023 DaliyScoop [NextNews]. All rights reserved.
+              © 2026 NextNews. All rights reserved.
             </p>
             <div className="order-1 w-full max-w-md md:order-2">
               {subscribed ? (
-                <div className="bg-teal-600 text-white px-6 py-2 rounded-full text-center text-sm font-medium animate-pulse">
-                  Response saved and will be notified.
+                <div className="animate-pulse rounded-full bg-teal-600 px-6 py-2 text-center text-sm font-medium text-white">
+                  Response saved and you will be notified.
                 </div>
               ) : (
                 <form onSubmit={handleSubscribe} className="relative">
                   <input
                     type="email"
                     placeholder="Enter your email"
-                    className="w-full px-4 py-2 rounded-full bg-white text-slate-900 pr-20 focus:outline-none focus:ring-2 focus:ring-teal-500 dark:bg-slate-800 dark:text-slate-100"
+                    className="w-full rounded-full bg-white px-4 py-2 pr-20 text-slate-900 focus:outline-none focus:ring-2 focus:ring-teal-500 dark:bg-slate-800 dark:text-slate-100"
                     required
                   />
                   <button
                     type="submit"
-                    className="absolute right-1 top-1/2 -translate-y-1/2 bg-teal-600 text-white px-4 py-2 rounded-full text-sm hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                    className="absolute right-1 top-1/2 -translate-y-1/2 rounded-full bg-teal-600 px-4 py-2 text-sm text-white hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-500"
                   >
                     Subscribe
                   </button>
@@ -288,14 +372,13 @@ export default function PlansPage() {
         </div>
       </footer>
 
-      {/* Plan Selection Modal */}
       <AnimatePresence>
         {selectedPlan && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 p-0 sm:p-4 sm:items-center backdrop-blur-sm"
+            className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 p-0 backdrop-blur-sm sm:items-center sm:p-4"
             onClick={() => setSelectedPlan(null)}
           >
             <motion.div
@@ -303,32 +386,30 @@ export default function PlansPage() {
               animate={{ y: 0, opacity: 1 }}
               exit={{ y: "100%", opacity: 0 }}
               transition={{ duration: 0.3, ease: "easeOut" }}
-              className="bg-white rounded-t-2xl sm:rounded-2xl p-6 max-w-full sm:max-w-md w-full relative shadow-2xl dark:bg-slate-800"
+              className="relative w-full max-w-full rounded-t-2xl bg-white p-6 shadow-2xl dark:border dark:border-slate-700/80 dark:bg-[linear-gradient(180deg,rgba(15,23,42,0.98),rgba(30,41,59,0.98))] sm:max-w-md sm:rounded-2xl"
               onClick={(e) => e.stopPropagation()}
             >
               <button
                 onClick={() => setSelectedPlan(null)}
-                className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
+                className="absolute right-4 top-4 text-slate-400 transition-colors hover:text-slate-600 dark:hover:text-slate-200"
               >
                 <X className="h-5 w-5" />
               </button>
-              <div className="text-center space-y-4">
+              <div className="space-y-4 text-center">
                 <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-teal-100">
                   <ShieldCheck className="h-6 w-6 text-teal-600" />
                 </div>
                 <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100">
-                  Selected {selectedPlan} plan! 🌟
+                  {selectedPlan} selected
                 </h3>
-                <p className="text-slate-600 dark:text-slate-300 leading-relaxed">
-                  Payment integration will be available soon!
-                  <br />
-                  Until then, enjoy everything as a registered partner. 🤝
-                  <br />
-                  Upon payment, new features are also coming! ✨🚀
+                <p className="leading-relaxed text-slate-600 dark:text-slate-300">
+                  Payment flows are still being finalized. For now, this page
+                  previews the upcoming premium experience and available plan
+                  direction for NextNews.🤝
                 </p>
                 <button
                   onClick={() => setSelectedPlan(null)}
-                  className="w-full rounded-xl bg-teal-600 px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-teal-700 shadow-md hover:shadow-lg"
+                  className="w-full rounded-xl bg-teal-600 px-4 py-3 text-sm font-semibold text-white shadow-md transition-colors hover:bg-teal-700 hover:shadow-lg"
                 >
                   Got it
                 </button>
@@ -338,11 +419,11 @@ export default function PlansPage() {
                     setPaymentMethod("bank");
                     setShowChaiPopup(true);
                   }}
-                  className="w-full rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-900 transition-colors hover:bg-amber-100 shadow-sm"
+                  className="w-full rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-900 shadow-sm transition-colors hover:bg-amber-100"
                 >
                   <span className="inline-flex items-center justify-center gap-2">
                     <HeartHandshake className="h-4 w-4" />
-                    Help Me 😋
+                    Support the project
                   </span>
                 </button>
               </div>
@@ -351,14 +432,13 @@ export default function PlansPage() {
         )}
       </AnimatePresence>
 
-            {/* Chai Support Popup */}
       <AnimatePresence>
         {showChaiPopup && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[60] flex items-end justify-center bg-black/70 p-0 sm:p-4 sm:items-center backdrop-blur-sm"
+            className="fixed inset-0 z-[60] flex items-end justify-center bg-black/70 p-0 backdrop-blur-sm sm:items-center sm:p-4"
             onClick={() => setShowChaiPopup(false)}
           >
             <motion.div
@@ -366,57 +446,67 @@ export default function PlansPage() {
               animate={{ y: 0, opacity: 1 }}
               exit={{ y: "100%", opacity: 0 }}
               transition={{ duration: 0.3, ease: "easeOut" }}
-              className="bg-white rounded-t-2xl sm:rounded-2xl p-6 max-w-full sm:max-w-md w-full relative shadow-2xl dark:bg-slate-800"
+              className="relative w-full max-w-full rounded-t-2xl bg-white p-6 shadow-2xl dark:bg-slate-800 sm:max-w-md sm:rounded-2xl"
               onClick={(e) => e.stopPropagation()}
             >
               <button
                 onClick={() => setShowChaiPopup(false)}
-                className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
+                className="absolute right-4 top-4 text-slate-400 transition-colors hover:text-slate-600 dark:hover:text-slate-200"
                 aria-label="Close support popup"
               >
                 <X className="h-5 w-5" />
               </button>
 
               <div className="space-y-4 text-center">
-                <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-amber-100">
-                  <HandCoins className="h-6 w-6 text-amber-600" />
+                <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-amber-100 ring-1 ring-amber-200 dark:bg-amber-500/15 dark:ring-amber-400/20">
+                  <HandCoins className="h-6 w-6 text-amber-600 dark:text-amber-300" />
                 </div>
-                <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-300">
-                  Im Galib and if this website experience feels good for you,
-                  you can buy me a Chai as a friend. ?
+                <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-200">
+                  I&apos;m Galib, and if NextNews feels useful to you, you can
+                  support the project with a small chai treat.
                 </p>
-                <div className="mx-auto w-full max-w-sm rounded-[30px] bg-slate-100 p-4 text-left">
-                  <div className="rounded-3xl bg-white p-4 shadow-sm">
+                <div className="mx-auto w-full max-w-sm rounded-[30px] bg-slate-100 p-4 text-left ring-1 ring-slate-200/80 dark:bg-slate-950/70 dark:ring-slate-700/70">
+                  <div className="rounded-3xl bg-white p-4 shadow-sm ring-1 ring-slate-200/80 dark:bg-slate-900/90 dark:ring-slate-700/80">
                     <div className="flex items-center justify-between gap-3">
                       <div>
-                        <p className="text-base font-semibold text-slate-900">
+                        <p className="text-base font-semibold text-slate-900 dark:text-slate-100">
                           Galib Morsed
                         </p>
-                        <p className="text-xs text-slate-500">India</p>
-                        <p className="text-xs text-slate-500">{upiVpa}</p>
+                        <p className="text-xs text-slate-500 dark:text-slate-400">
+                          India
+                        </p>
+                        <p className="text-xs text-slate-500 dark:text-slate-400">
+                          {upiVpa}
+                        </p>
                       </div>
                       <button
                         type="button"
-                        onClick={() => {
-                          navigator.clipboard.writeText(upiVpa);
-                          alert("UPI ID copied!");
-                        }}
-                        className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700 hover:bg-slate-200 transition-colors"
+                        onClick={handleCopyUpi}
+                        className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700 transition-colors hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-100 dark:ring-1 dark:ring-slate-700 dark:hover:bg-slate-700"
                       >
                         <Copy className="h-3.5 w-3.5" />
-                        Copy
+                        {copied ? "Copied" : "Copy"}
                       </button>
                     </div>
 
-                    <div className="mt-5 flex flex-col items-center justify-center">
-                      <p className="mb-2 text-xs text-slate-500">Scan to pay via UPI</p>
-                      <div className="overflow-hidden rounded-lg border border-slate-200">
-                        <img src={qrCodeUrl} alt="UPI QR Code" width={150} height={150} />
+                    <div className="mt-5 rounded-2xl bg-slate-50 px-4 py-4 dark:bg-slate-950/80 dark:ring-1 dark:ring-slate-800">
+                      <div className="flex flex-col items-center justify-center">
+                        <p className="mb-2 text-xs text-slate-500 dark:text-slate-400">
+                          Scan to pay via UPI
+                        </p>
+                        <div className="overflow-hidden rounded-xl border border-slate-200 bg-white p-2 shadow-sm dark:border-slate-700 dark:bg-white">
+                          <img
+                            src={qrCodeUrl}
+                            alt="UPI QR Code"
+                            width={150}
+                            height={150}
+                          />
+                        </div>
                       </div>
                     </div>
 
                     <div className="mt-5">
-                      <p className="text-sm font-semibold text-slate-900">
+                      <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
                         Payment method
                       </p>
                       <div className="mt-3 grid grid-cols-2 gap-3">
@@ -424,19 +514,19 @@ export default function PlansPage() {
                           type="button"
                           onClick={() => setPaymentMethod("bank")}
                           className={clsx(
-                            "rounded-xl border p-3 text-center transition-colors",
+                            "rounded-xl border p-3 text-center transition-colors dark:shadow-sm",
                             paymentMethod === "bank"
-                              ? "border-emerald-200 bg-emerald-50"
-                              : "border-slate-200 bg-slate-50 hover:bg-slate-100",
+                              ? "border-emerald-200 bg-emerald-50 dark:border-emerald-500/40 dark:bg-emerald-500/12"
+                              : "border-slate-200 bg-slate-50 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800/80 dark:hover:bg-slate-800",
                           )}
                         >
-                          <div className="mb-1 flex items-center justify-center gap-1 text-emerald-700">
+                          <div className="mb-1 flex items-center justify-center gap-1 text-emerald-700 dark:text-emerald-300">
                             <Landmark className="h-4 w-4" />
                             {paymentMethod === "bank" && (
                               <CheckCircle2 className="h-4 w-4" />
                             )}
                           </div>
-                          <p className="text-sm font-medium text-emerald-700">
+                          <p className="text-sm font-medium text-emerald-700 dark:text-emerald-300">
                             e-Transfer
                           </p>
                         </button>
@@ -445,16 +535,16 @@ export default function PlansPage() {
                           type="button"
                           onClick={() => setPaymentMethod("online")}
                           className={clsx(
-                            "rounded-xl border p-3 text-center transition-colors",
+                            "rounded-xl border p-3 text-center transition-colors dark:shadow-sm",
                             paymentMethod === "online"
-                              ? "border-emerald-200 bg-emerald-50"
-                              : "border-slate-200 bg-slate-50 hover:bg-slate-100",
+                              ? "border-emerald-200 bg-emerald-50 dark:border-emerald-500/40 dark:bg-emerald-500/12"
+                              : "border-slate-200 bg-slate-50 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800/80 dark:hover:bg-slate-800",
                           )}
                         >
-                          <div className="mb-1 flex items-center justify-center text-slate-700">
+                          <div className="mb-1 flex items-center justify-center text-slate-700 dark:text-slate-200">
                             <CreditCard className="h-4 w-4" />
                           </div>
-                          <p className="text-sm font-medium text-slate-800">
+                          <p className="text-sm font-medium text-slate-800 dark:text-slate-100">
                             Online
                           </p>
                         </button>
@@ -464,7 +554,7 @@ export default function PlansPage() {
                     <button
                       type="button"
                       onClick={handleProcessPayment}
-                      className="mt-5 flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-slate-800"
+                      className="mt-5 flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-slate-800 dark:bg-emerald-400/90 dark:text-slate-950 dark:hover:bg-emerald-300"
                     >
                       Process Payment
                       <ChevronRight className="h-4 w-4" />
@@ -477,7 +567,6 @@ export default function PlansPage() {
         )}
       </AnimatePresence>
 
-      {/* Thank You Firecracker Animation */}
       <AnimatePresence>
         {showCelebration && (
           <motion.div
@@ -515,10 +604,7 @@ export default function PlansPage() {
                       height: `${size}px`,
                     }}
                     initial={{ scale: 0, opacity: 0 }}
-                    animate={{
-                      scale: [0, 1.6, 0],
-                      opacity: [0, 1, 0],
-                    }}
+                    animate={{ scale: [0, 1.6, 0], opacity: [0, 1, 0] }}
                     transition={{
                       duration,
                       delay,

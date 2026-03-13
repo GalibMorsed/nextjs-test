@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import {
@@ -292,6 +292,7 @@ export default function Sidebar({ isMobileOpen, onCloseMobile }: SidebarProps) {
 
 // ─── Snake Register Button ────────────────────────────────────────────────────
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function SnakeRegisterButton({ onClick }: { onClick: () => void }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animRef = useRef<number>(0);
@@ -710,7 +711,14 @@ function SidebarContent({
             )}
           </div>
         ) : (
-          <SnakeRegisterButton onClick={closeAndNavigate} />
+          <Link
+            href="/auth/register"
+            onClick={closeAndNavigate}
+            className="flex w-full items-center justify-center gap-2 rounded-xl border border-[var(--primary)] bg-transparent px-4 py-2 text-sm font-medium text-[var(--primary)] transition-colors hover:bg-[var(--primary)]/10"
+          >
+            <UserPlus size={16} />
+            <span>Create Account</span>
+          </Link>
         )}
       </div>
     </>
