@@ -1,9 +1,48 @@
 import { NextResponse } from "next/server";
+import {
+  enforceRateLimit,
+  getBearerToken,
+  getClientIp,
+  verifySupabaseAccessToken,
+} from "@/lib/apiSecurity";
 
 const OPENROUTER_ENDPOINT = "https://openrouter.ai/api/v1/chat/completions";
+const MAX_FIELD_LENGTH = 4000;
+const RATE_LIMIT_WINDOW_MS = 60_000;
+const RATE_LIMIT_REQUESTS = 8;
 
 export async function POST(req: Request) {
   try {
+    const token = getBearerToken(req);
+    if (!token) {
+      return NextResponse.json(
+        { error: "Login required to use AI summaries." },
+        { status: 401 },
+      );
+    }
+
+    const user = await verifySupabaseAccessToken(token);
+    if (!user) {
+      return NextResponse.json(
+        { error: "Invalid or expired session. Please log in again." },
+        { status: 401 },
+      );
+    }
+
+    const rateLimit = enforceRateLimit(
+      `${user.id}:${getClientIp(req)}:ai-summary`,
+      RATE_LIMIT_REQUESTS,
+      RATE_LIMIT_WINDOW_MS,
+    );
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        {
+          error: `Too many AI summary requests. Try again in ${rateLimit.retryAfterSeconds}s.`,
+        },
+        { status: 429 },
+      );
+    }
+
     const apiKey = process.env.OPENROUTER_API_KEY;
     const model = process.env.OPENROUTER_MODEL || "openai/gpt-oss-120b:free";
 
@@ -15,11 +54,19 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json();
-    const title = typeof body?.title === "string" ? body.title.trim() : "";
+    const title = typeof body?.title === "string"
+      ? body.title.trim().slice(0, MAX_FIELD_LENGTH)
+      : "";
     const description =
-      typeof body?.description === "string" ? body.description.trim() : "";
-    const content = typeof body?.content === "string" ? body.content.trim() : "";
-    const source = typeof body?.source === "string" ? body.source.trim() : "";
+      typeof body?.description === "string"
+        ? body.description.trim().slice(0, MAX_FIELD_LENGTH)
+        : "";
+    const content = typeof body?.content === "string"
+      ? body.content.trim().slice(0, MAX_FIELD_LENGTH)
+      : "";
+    const source = typeof body?.source === "string"
+      ? body.source.trim().slice(0, 200)
+      : "";
 
     if (!title && !description && !content) {
       return NextResponse.json(

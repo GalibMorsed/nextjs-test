@@ -11,8 +11,22 @@ export type StoredAccountSettings = {
 export function getAccountSettingsStorageKey(): string {
   if (typeof window === "undefined") return "accountSettings_guest";
   const email = localStorage.getItem("auth_email");
-  const token = localStorage.getItem("auth_token");
-  return `accountSettings_${email || token || "guest"}`;
+  return `accountSettings_${email || "guest"}`;
+}
+
+export function removeStoredAccountSettings(email?: string | null): void {
+  if (typeof window === "undefined") return;
+
+  const normalizedEmail = email?.trim();
+  const storageKey = normalizedEmail
+    ? `accountSettings_${normalizedEmail}`
+    : getAccountSettingsStorageKey();
+
+  try {
+    localStorage.removeItem(storageKey);
+  } catch {
+    // Ignore localStorage removal errors.
+  }
 }
 
 export function readStoredAccountSettings(): StoredAccountSettings {

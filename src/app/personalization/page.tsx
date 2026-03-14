@@ -2,7 +2,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion, type Variants } from "framer-motion";
 import { AlertTriangle, BellRing, CheckCircle2, Loader2, Sparkles, X } from "lucide-react";
 import { supabase } from "../../../lib/superbaseClient";
 import {
@@ -90,16 +90,16 @@ function toggleValue(current: string[], value: string): string[] {
   return [...current, value];
 }
 
-const sectionVariants = {
+const sectionVariants: Variants = {
   hidden: { opacity: 0, y: 30 },
-  visible: (i: number) => ({
+  visible: (i = 0) => ({
     opacity: 1,
     y: 0,
-    transition: { duration: 0.5, delay: i * 0.08, ease: [0.23, 1, 0.32, 1] },
+    transition: { duration: 0.5, delay: i * 0.08 },
   }),
 };
 
-const cardVariants = {
+const cardVariants: Variants = {
   hidden: { opacity: 0, y: 20, scale: 0.95 },
   visible: { opacity: 1, y: 0, scale: 1 },
 };
@@ -307,10 +307,23 @@ export default function PersonalizationPage() {
     setPopupMessage(null);
 
     try {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      if (!session?.access_token) {
+        setPopupMessage({
+          tone: "error",
+          text: "Please log in again to get AI suggestions.",
+        });
+        return;
+      }
+
       const response = await fetch("/api/topic-suggestions", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`,
         },
         body: JSON.stringify({
           availableTopics: AVAILABLE_TOPICS,

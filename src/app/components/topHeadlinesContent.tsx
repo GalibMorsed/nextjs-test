@@ -14,10 +14,10 @@ interface Article {
   source?: { id?: string | null; name?: string };
   author?: string | null;
   title?: string;
-  description?: string;
-  content?: string;
+  description?: string | null;
+  content?: string | null;
   url?: string;
-  urlToImage?: string;
+  urlToImage?: string | null;
   publishedAt?: string;
 }
 
@@ -79,14 +79,8 @@ export default function TopHeadlinesContent({
     useState(false);
 
   useEffect(() => {
-    const localToken = localStorage.getItem("auth_token");
-    if (localToken) setIsAuthenticated(true);
-
     supabase.auth.getSession().then(({ data }) => {
-      const hasSession = Boolean(data.session?.user);
-      setIsAuthenticated(
-        hasSession || Boolean(localStorage.getItem("auth_token")),
-      );
+      setIsAuthenticated(Boolean(data.session?.user));
     });
 
     const {

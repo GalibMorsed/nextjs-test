@@ -1,6 +1,14 @@
 import { NextResponse } from "next/server";
+import {
+  enforceRateLimit,
+  getBearerToken,
+  getClientIp,
+  verifySupabaseAccessToken,
+} from "@/lib/apiSecurity";
 
 const OPENROUTER_ENDPOINT = "https://openrouter.ai/api/v1/chat/completions";
+const RATE_LIMIT_WINDOW_MS = 60_000;
+const RATE_LIMIT_REQUESTS = 6;
 
 type TopicSuggestion = {
   topic: string;
@@ -96,6 +104,36 @@ async function fetchHeadlineSignals(country: string): Promise<string[]> {
 
 export async function POST(req: Request) {
   try {
+    const token = getBearerToken(req);
+    if (!token) {
+      return NextResponse.json(
+        { error: "Login required to get AI topic suggestions." },
+        { status: 401 },
+      );
+    }
+
+    const user = await verifySupabaseAccessToken(token);
+    if (!user) {
+      return NextResponse.json(
+        { error: "Invalid or expired session. Please log in again." },
+        { status: 401 },
+      );
+    }
+
+    const rateLimit = enforceRateLimit(
+      `${user.id}:${getClientIp(req)}:topic-suggestions`,
+      RATE_LIMIT_REQUESTS,
+      RATE_LIMIT_WINDOW_MS,
+    );
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        {
+          error: `Too many suggestion requests. Try again in ${rateLimit.retryAfterSeconds}s.`,
+        },
+        { status: 429 },
+      );
+    }
+
     const apiKey = process.env.OPENROUTER_API_KEY;
     const model = process.env.OPENROUTER_MODEL || "openai/gpt-oss-120b:free";
 
@@ -108,10 +146,14 @@ export async function POST(req: Request) {
 
     const body = (await req.json()) as TopicSuggestionsPayload;
     const availableTopics = Array.isArray(body.availableTopics)
-      ? body.availableTopics.map((topic) => topic.trim()).filter(Boolean)
+      ? body.availableTopics
+          .map((topic) => topic.trim().slice(0, 80))
+          .filter(Boolean)
       : [];
     const selectedTopics = Array.isArray(body.selectedTopics)
-      ? body.selectedTopics.map((topic) => topic.trim()).filter(Boolean)
+      ? body.selectedTopics
+          .map((topic) => topic.trim().slice(0, 80))
+          .filter(Boolean)
       : [];
     const country = typeof body.country === "string" && body.country.trim()
       ? body.country.trim().toLowerCase()

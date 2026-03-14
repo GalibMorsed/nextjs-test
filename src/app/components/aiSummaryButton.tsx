@@ -49,20 +49,19 @@ export default function AISummaryButton({
   const summaryPoints = toBulletPoints(summary);
 
   useEffect(() => {
-    const updateAuthState = () => {
-      const token = localStorage.getItem("auth_token");
-      setIsLoggedIn(Boolean(token));
+    const updateAuthState = async () => {
+      const { data } = await supabase.auth.getSession();
+      setIsLoggedIn(Boolean(data.session?.user));
     };
 
-    updateAuthState();
+    void updateAuthState();
     window.addEventListener("storage", updateAuthState);
     window.addEventListener("focus", updateAuthState);
 
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
-      const token = localStorage.getItem("auth_token");
-      setIsLoggedIn(Boolean(token) && Boolean(session));
+      setIsLoggedIn(Boolean(session?.user));
     });
 
     return () => {
@@ -87,10 +86,19 @@ export default function AISummaryButton({
     setIsLoading(true);
 
     try {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      if (!session?.access_token) {
+        throw new Error("Please log in again to use AI summaries.");
+      }
+
       const response = await fetch("/api/ai-summary", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`,
         },
         body: JSON.stringify({
           title,

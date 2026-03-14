@@ -203,7 +203,7 @@ export default function NewsFeedWithLoadMore({
             className="rounded-2xl border border-[color:color-mix(in_srgb,var(--primary)_18%,white)] bg-[color:color-mix(in_srgb,var(--primary)_8%,white)] px-5 py-4 text-center shadow-sm dark:border-[color:color-mix(in_srgb,var(--primary)_24%,transparent)] dark:bg-[color:color-mix(in_srgb,var(--primary)_12%,#0f172a)]"
           >
             <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-300">
-              You're all caught up. Explore other topics or view our{" "}
+              You&apos;re all caught up. Explore other topics or view our{" "}
               <Link
                 href="/plans"
                 className="font-semibold text-[var(--primary)] underline decoration-[color:color-mix(in_srgb,var(--primary)_45%,transparent)] underline-offset-4 transition-colors hover:text-[color:color-mix(in_srgb,var(--primary)_82%,black_10%)]"

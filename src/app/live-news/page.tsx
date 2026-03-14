@@ -37,11 +37,6 @@ export default function LiveNewsPage() {
   const [searchQuery, setSearchQuery] = useState(DEFAULT_QUERY);
 
   useEffect(() => {
-    const storedToken = localStorage.getItem("auth_token");
-    if (storedToken) {
-      setIsAuthenticated(true);
-    }
-
     supabase.auth.getSession().then(({ data }) => {
       if (data.session?.user) {
         setIsAuthenticated(true);
@@ -199,7 +194,7 @@ export default function LiveNewsPage() {
                     Unlock Custom Search
                   </h3>
                   <p className="text-sm text-gray-600 mt-1 max-w-md mx-auto">
-                    Register to start search for specific live feeds. We've
+                    Register to start search for specific live feeds. We&apos;ve
                     curated some popular live news streams for you below.
                   </p>
                 </div>

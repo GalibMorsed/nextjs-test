@@ -24,10 +24,27 @@ export function getAppearanceStorageKey(): string {
   if (typeof window === "undefined") return "appearanceSettings_guest";
 
   try {
-    const userId = localStorage.getItem("auth_token");
-    return userId ? `appearanceSettings_${userId}` : "appearanceSettings_guest";
+    const userEmail = localStorage.getItem("auth_email");
+    return userEmail
+      ? `appearanceSettings_${userEmail}`
+      : "appearanceSettings_guest";
   } catch {
     return "appearanceSettings_guest";
+  }
+}
+
+export function removeAppearanceSettings(email?: string | null): void {
+  if (typeof window === "undefined") return;
+
+  const normalizedEmail = email?.trim();
+  const storageKey = normalizedEmail
+    ? `appearanceSettings_${normalizedEmail}`
+    : getAppearanceStorageKey();
+
+  try {
+    localStorage.removeItem(storageKey);
+  } catch {
+    // Ignore localStorage removal errors.
   }
 }
 

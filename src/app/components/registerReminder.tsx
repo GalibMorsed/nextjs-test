@@ -28,10 +28,8 @@ export default function RegisterReminder() {
         return;
       }
 
-      const localToken = localStorage.getItem("auth_token");
-      const hasLocalAuth = Boolean(localToken);
-      setIsAuthenticated(hasLocalAuth);
-      setIsVisible(!hasLocalAuth);
+      setIsAuthenticated(false);
+      setIsVisible(true);
     };
 
     syncAuthState();
