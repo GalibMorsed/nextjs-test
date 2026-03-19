@@ -22,7 +22,7 @@ Through this project, I gained strong experience with Next.js routing, API integ
 
 ## CI/CD Pipelines
 
-This repository includes a production-oriented GitHub Actions setup for validation, image publishing, security checks, and deployment.
+This repository keeps a small, essential GitHub Actions setup focused on code quality and Docker release flow.
 
 ### Workflows
 
@@ -32,26 +32,18 @@ This repository includes a production-oriented GitHub Actions setup for validati
 - `Docker Publish` in `.github/workflows/docker-publish.yml`
   Builds and pushes the production Docker image to GitHub Container Registry (`ghcr.io`) on `main` and `master`.
 
-- `Preview Image` in `.github/workflows/preview-image.yml`
-  Builds and pushes pull request preview images tagged like `pr-<number>`.
+### Dependency Automation
 
-- `Security` in `.github/workflows/security.yml`
-  Runs `npm audit` and a Trivy security scan on pushes, pull requests, and on a weekly schedule.
-
-- `Deploy` in `.github/workflows/deploy.yml`
-  Manually deploys a selected image tag to a remote Docker host over SSH.
-
-- `Docker Build` in `.github/workflows/docker-build.yml`
-  Manual Docker-only smoke build for quick validation when needed.
+- `Dependabot` in `.github/dependabot.yml`
+  Opens update pull requests for npm packages and GitHub Actions on a weekly schedule.
 
 ### Container Registry
 
-Published images are pushed to GitHub Container Registry using a name like:
+Published images are pushed to GitHub Container Registry using tags like:
 
 ```text
 ghcr.io/<github-owner>/nextnews:latest
 ghcr.io/<github-owner>/nextnews:sha-<commit>
-ghcr.io/<github-owner>/nextnews:pr-<number>
 ```
 
 ### Required GitHub Variables
@@ -63,30 +55,16 @@ Add these repository variables in GitHub if you want the publish pipeline to use
 
 If these are not set, the workflows fall back to safe placeholder values for CI builds.
 
-### Required GitHub Secrets For Deployment
-
-Add these secrets before using the deploy workflow:
-
-- `DEPLOY_HOST`
-- `DEPLOY_USER`
-- `DEPLOY_SSH_KEY`
-- `DEPLOY_PATH`
-- `GHCR_PAT`
-
-`GHCR_PAT` should be a token that can pull packages from GitHub Container Registry on the target server.
-
 ### Typical Flow
 
-1. Open a pull request and let `CI`, `Security`, and `Preview Image` run.
+1. Open a pull request and let `CI` validate the code and Docker build.
 2. Merge into `main` or `master`.
 3. Let `Docker Publish` push the production image to `ghcr.io`.
-4. Run `Deploy` manually with the image tag you want to release.
 
 ### Notes
 
-- Preview images are pushed to the registry, but they are not automatically deployed to a live preview URL.
-- The deploy workflow assumes the destination server already has Docker and Docker Compose installed.
 - The production Docker image is built from the standalone Next.js output for a smaller and safer runtime container.
+- If you later want automated server deployment, preview environments, or security scans, those can be added back as separate workflows.
 
 ## Marketing Poster
 
