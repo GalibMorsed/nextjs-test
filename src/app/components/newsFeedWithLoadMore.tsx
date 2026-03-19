@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { motion } from "framer-motion";
-import { ArrowDown, Loader2 } from "lucide-react";
+import { AnimatePresence, motion } from "framer-motion";
+import { ArrowDown, CreditCard, Loader2, X } from "lucide-react";
+import { useRouter } from "next/navigation";
 import ArticleCard from "./articleCart";
 
 interface Article {
@@ -42,6 +43,15 @@ function formatPublishedDate(date?: string) {
   });
 }
 
+function hasLocalAuth() {
+  if (typeof window === "undefined") return false;
+
+  const authToken = localStorage.getItem("auth_token")?.trim();
+  const authEmail = localStorage.getItem("auth_email")?.trim();
+
+  return Boolean(authToken || authEmail);
+}
+
 export default function NewsFeedWithLoadMore({
   initialArticles,
   category,
@@ -58,6 +68,10 @@ export default function NewsFeedWithLoadMore({
   const [hasMore, setHasMore] = useState(
     (initialArticles?.length ?? 0) >= pageSize,
   );
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [showPlansPopup, setShowPlansPopup] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
     setArticles(initialArticles ?? []);
@@ -66,6 +80,34 @@ export default function NewsFeedWithLoadMore({
     setIsLoadingMore(false);
     setLoadError(null);
   }, [initialArticles, category, country, query, date, pageSize]);
+
+  useEffect(() => {
+    const syncViewport = () => setIsMobile(window.innerWidth < 640);
+    syncViewport();
+    window.addEventListener("resize", syncViewport);
+
+    return () => window.removeEventListener("resize", syncViewport);
+  }, []);
+
+  useEffect(() => {
+    const syncAuthState = () => {
+      const isAuthenticated = hasLocalAuth();
+      setIsLoggedIn(isAuthenticated);
+
+      if (isAuthenticated) {
+        setShowPlansPopup(false);
+      }
+    };
+
+    syncAuthState();
+    window.addEventListener("storage", syncAuthState);
+    window.addEventListener("focus", syncAuthState);
+
+    return () => {
+      window.removeEventListener("storage", syncAuthState);
+      window.removeEventListener("focus", syncAuthState);
+    };
+  }, []);
 
   const existingKeys = useMemo(
     () =>
@@ -134,6 +176,31 @@ export default function NewsFeedWithLoadMore({
       setIsLoadingMore(false);
     }
   };
+
+  const handlePlansClick = () => {
+    const isAuthenticated = hasLocalAuth();
+    setIsLoggedIn(isAuthenticated);
+
+    if (isAuthenticated) {
+      setShowPlansPopup(false);
+      router.push("/plans");
+      return;
+    }
+
+    setShowPlansPopup(true);
+  };
+
+  const popupVariants = isMobile
+    ? {
+        initial: { opacity: 0, y: "100%" },
+        animate: { opacity: 1, y: 0 },
+        exit: { opacity: 0, y: "100%" },
+      }
+    : {
+        initial: { opacity: 0, y: 20, scale: 0.96 },
+        animate: { opacity: 1, y: 0, scale: 1 },
+        exit: { opacity: 0, y: 20, scale: 0.96 },
+      };
 
   if (!articles.length) {
     return <p>{emptyMessage}</p>;
@@ -204,19 +271,88 @@ export default function NewsFeedWithLoadMore({
           >
             <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-300">
               You&apos;re all caught up. Explore other topics or view our{" "}
-              <Link
-                href="/plans"
+              <button
+                type="button"
+                onClick={() => void handlePlansClick()}
                 className="font-semibold text-[var(--primary)] underline decoration-[color:color-mix(in_srgb,var(--primary)_45%,transparent)] underline-offset-4 transition-colors hover:text-[color:color-mix(in_srgb,var(--primary)_82%,black_10%)]"
               >
                 Plans
-              </Link>{" "}
-              for an enhanced experience.🚧
+              </button>{" "}
+              for an enhanced experience.
             </p>
           </motion.div>
         )}
 
         {loadError && <p className="text-sm text-red-600">{loadError}</p>}
       </div>
+
+      <AnimatePresence>
+        {showPlansPopup && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-end justify-center bg-slate-950/40 p-0 backdrop-blur-sm sm:items-center sm:p-6"
+            onClick={() => setShowPlansPopup(false)}
+          >
+            <motion.div
+              variants={popupVariants}
+              initial="initial"
+              animate="animate"
+              exit="exit"
+              transition={{ ease: [0.16, 1, 0.3, 1], duration: 0.25 }}
+              onClick={(event) => event.stopPropagation()}
+              className="relative w-full rounded-t-3xl border border-slate-200 bg-white p-5 shadow-2xl sm:max-w-md sm:rounded-3xl sm:p-6"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="plans-popup-title"
+            >
+              <button
+                type="button"
+                onClick={() => setShowPlansPopup(false)}
+                className="absolute right-4 top-4 flex h-9 w-9 items-center justify-center rounded-full text-slate-500 transition hover:bg-slate-100 hover:text-slate-700"
+                aria-label="Close popup"
+              >
+                <X size={18} />
+              </button>
+
+              <div className="flex flex-col items-center justify-center py-6 text-center">
+                <div className="mb-4 rounded-full bg-blue-50 p-4 dark:bg-blue-950/40">
+                  <CreditCard
+                    size={32}
+                    className="text-blue-600 dark:text-blue-300"
+                  />
+                </div>
+                <h3
+                  id="plans-popup-title"
+                  className="mb-3 text-lg font-semibold text-slate-900 dark:text-slate-100"
+                >
+                  Register first to check plans
+                </h3>
+                <p className="mb-6 max-w-xs text-sm text-slate-600 dark:text-slate-300">
+                  This functionality is only for registered members. Please log
+                  in or register to check plans.
+                </p>
+                <div className="flex w-full gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setShowPlansPopup(false)}
+                    className="flex-1 rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 shadow-sm transition-all duration-200 hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
+                  >
+                    Close
+                  </button>
+                  <Link
+                    href="/auth/register"
+                    className="flex-1 rounded-xl bg-blue-600 px-4 py-2.5 text-center text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:bg-blue-700"
+                  >
+                    Register
+                  </Link>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </section>
   );
 }
