@@ -44,9 +44,3 @@ Section listing “Saved searches” with quick chips/tags to rerun.
 On each article card, show:
 A badge/indicator if you already have a note on that article.
 “Quick note” popover to create/edit a note without leaving the feed. 
-
-5) Plans / monetization prep (even if you stay free)**
-
-You already have a plans page. Before deployment:
-Clarify tiers/features (e.g. Free vs Pro, AI limits, extra personalization).
-Even if you don’t charge yet, having a clear structure helps later and gives users a sense of what’s “premium”.
