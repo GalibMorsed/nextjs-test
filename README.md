@@ -22,12 +22,9 @@ Through this project, I gained strong experience with Next.js routing, API integ
 
 ## CI/CD Pipelines
 
-This repository keeps a small, essential GitHub Actions setup focused on code quality and Docker release flow.
+This repository keeps a small GitHub Actions setup focused on Docker release flow.
 
 ### Workflows
-
-- `CI` in `.github/workflows/ci.yml`
-  Runs linting, TypeScript type checking, application build, and Docker build validation on pushes and pull requests.
 
 - `Docker Publish` in `.github/workflows/docker-publish.yml`
   Builds and pushes the production Docker image to GitHub Container Registry (`ghcr.io`) on `main` and `master`.
@@ -57,14 +54,13 @@ If these are not set, the workflows fall back to safe placeholder values for CI 
 
 ### Typical Flow
 
-1. Open a pull request and let `CI` validate the code and Docker build.
-2. Merge into `main` or `master`.
-3. Let `Docker Publish` push the production image to `ghcr.io`.
+1. Merge into `main` or `master`.
+2. Let `Docker Publish` push the production image to `ghcr.io`.
 
 ### Notes
 
 - The production Docker image is built from the standalone Next.js output for a smaller and safer runtime container.
-- If you later want automated server deployment, preview environments, or security scans, those can be added back as separate workflows.
+- If you later want validation, automated server deployment, preview environments, or security scans, those can be added back as separate workflows.
 
 ## Marketing Poster
 
