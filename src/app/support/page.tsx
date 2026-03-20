@@ -1,17 +1,25 @@
 "use client";
+
 import React, { useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
+import { Heart, Sparkles } from "lucide-react";
 import {
-  FaQuestionCircle,
   FaComments,
   FaPhoneAlt,
+  FaQuestionCircle,
   FaTicketAlt,
   FaTimes,
 } from "react-icons/fa";
-import { motion, AnimatePresence } from "framer-motion";
+
+import FeedbackToast from "../components/feedbackToast";
 
 export default function SupportPage() {
   const [submitted, setSubmitted] = useState(false);
   const [activeModal, setActiveModal] = useState<string | null>(null);
+  const [isFeedbackVisible, setIsFeedbackVisible] = useState(false);
+  const [feedbackToastKey, setFeedbackToastKey] = useState(0);
+  const [communityLikes, setCommunityLikes] = useState(24892);
+  const [feedbackCount, setFeedbackCount] = useState(31240);
   const [formData, setFormData] = useState({
     issueType: "",
     name: "",
@@ -19,47 +27,34 @@ export default function SupportPage() {
     contactNumber: "",
   });
 
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
-  ) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    // Simulate submission logic (e.g., API call)
-    setSubmitted(true);
-  };
-
-  const handleOptionClick = (title: string) => {
-    if (title === "Live Chat") {
-      window.open("https://wa.me/918100684108", "_blank");
-    } else {
-      setActiveModal(title);
-    }
-  };
-
   const faqs = [
     {
-      q: "How do I reset my password?",
-      a: "Go to Settings > Security > Reset Password.",
+      q: "What should I do if I cannot log in or finish registration?",
+      a: "Check your email and password. If your account is new, verify your email first.",
     },
     {
-      q: "Can I upgrade my plan?",
-      a: "Yes, visit the Billing section to upgrade anytime.",
+      q: "What if my saved notes are not loading?",
+      a: "Refresh the Notes page and confirm you are using the correct account.",
     },
     {
-      q: "Is my data secure?",
-      a: "We use end-to-end encryption for all user data.",
+      q: "Why are my personalized topics not updating?",
+      a: "Save your preferences again, then reload the page once.",
     },
     {
-      q: "Do you offer refunds?",
-      a: "Refunds are available within the first 14 days.",
+      q: "Why is Live News or plan content not opening?",
+      a: "Make sure you are logged in and the right plan is active on your account.",
     },
     {
-      q: "How do I contact support?",
-      a: "You can use this page to email or chat with us.",
+      q: "What should I do if settings are not saving?",
+      a: "Try one more time and wait for the success message before leaving the page.",
+    },
+    {
+      q: "What if a page or article is not loading?",
+      a: "Refresh once and check your internet connection. If it continues, contact support.",
+    },
+    {
+      q: "How can I get faster help for any app error?",
+      a: "Send the page name, feature name, and exact error message in the support form or Live Chat.",
     },
   ];
 
@@ -67,232 +62,339 @@ export default function SupportPage() {
     {
       title: "FAQ",
       desc: "Browse common questions and quick solutions.",
-      icon: <FaQuestionCircle className="text-teal-400 text-2xl" />,
+      icon: <FaQuestionCircle className="text-2xl text-teal-400" />,
     },
     {
       title: "Live Chat",
       desc: "Chat with our support team in real time.",
-      icon: <FaComments className="text-teal-400 text-2xl" />,
+      icon: <FaComments className="text-2xl text-teal-400" />,
     },
     {
       title: "Phone Support",
       desc: "Call us during business hours.",
-      icon: <FaPhoneAlt className="text-teal-400 text-2xl" />,
+      icon: <FaPhoneAlt className="text-2xl text-teal-400" />,
     },
     {
       title: "Track Ticket",
       desc: "Check the status of your requests.",
-      icon: <FaTicketAlt className="text-teal-400 text-2xl" />,
+      icon: <FaTicketAlt className="text-2xl text-teal-400" />,
     },
   ];
+
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
+  ) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setSubmitted(true);
+  };
+
+  const handleOptionClick = (title: string) => {
+    if (title === "Live Chat") {
+      window.open("https://wa.me/918100684108", "_blank");
+      return;
+    }
+
+    setActiveModal(title);
+  };
+
+  const handleFeedback = (type: "up" | "down", reason?: string) => {
+    setFeedbackCount((prev) => prev + 1);
+
+    if (type === "up") {
+      setCommunityLikes((prev) => prev + 1);
+    }
+
+    if (reason) {
+      console.info("Support feedback reason:", reason);
+    }
+  };
+
+  const openFeedbackToast = () => {
+    setFeedbackToastKey((prev) => prev + 1);
+    setIsFeedbackVisible(true);
+  };
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6, ease: "easeOut" }}
-      className="min-h-screen bg-gradient-to-br from-teal-50 via-white to-cyan-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 flex items-center justify-center px-4 py-8 sm:px-6 sm:py-12 lg:px-8"
+      className="flex min-h-screen items-center justify-center bg-gradient-to-br from-teal-50 via-white to-cyan-50 px-4 py-8 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 sm:px-6 sm:py-12 lg:px-8"
     >
-      <div className="max-w-6xl w-full grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-stretch lg:items-center">
-        {/* LEFT SECTION - Enhanced vertical centering and spacing */}
-        <motion.div
-          className="flex flex-col justify-center space-y-6 lg:space-y-8"
-          initial={{ opacity: 0, x: -30 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.6, delay: 0.1, ease: "easeOut" }}
-        >
-          <div className="space-y-4">
-            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 dark:text-slate-100 leading-tight">
-              We’re here to <span className="text-teal-500">help</span>,
-              anytime.
-            </h1>
-            <p className="text-gray-600 dark:text-slate-300 max-w-md sm:max-w-lg text-sm sm:text-base leading-relaxed">
-              Our support team is always ready to help you troubleshoot, answer
-              questions, and guide you toward solutions.
-            </p>
-          </div>
-
-          {/* STATS - Improved badge styling with subtle shadows */}
-          <div className="flex flex-col sm:flex-row gap-3">
-            <motion.span
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ delay: 0.3, duration: 0.4 }}
-              className="inline-flex items-center px-4 py-2 rounded-full bg-teal-50 text-teal-700 text-sm font-medium shadow-sm dark:bg-teal-950/40 dark:text-teal-300"
+      <div className="mx-auto flex w-full max-w-6xl justify-center">
+        <div className="w-full p-0">
+          <div className="space-y-6 lg:space-y-8">
+            <motion.div
+              className="flex flex-col gap-4"
+              initial={{ opacity: 0, x: -30 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.6, delay: 0.1, ease: "easeOut" }}
             >
-              99% satisfaction rate
-            </motion.span>
-            <motion.span
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ delay: 0.35, duration: 0.4 }}
-              className="inline-flex items-center px-4 py-2 rounded-full bg-teal-50 text-teal-700 text-sm font-medium shadow-sm dark:bg-teal-950/40 dark:text-teal-300"
-            >
-              Avg. response: &lt;24h
-            </motion.span>
-          </div>
+              <div className="inline-flex w-fit items-center gap-2 rounded-full border border-teal-100 bg-white/80 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-teal-700 shadow-sm backdrop-blur dark:border-teal-900/60 dark:bg-slate-900/70 dark:text-teal-300">
+                <Sparkles className="h-4 w-4" />
+                Proudly loved by the community
+              </div>
 
-          {/* SUPPORT OPTIONS - Responsive grid with better hover and stagger animations */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 lg:gap-6">
-            {supportOptions.map((item, index) => (
               <motion.div
-                key={item.title}
-                className="group bg-white rounded-xl shadow-sm p-5 hover:shadow-lg border border-gray-100 hover:border-teal-100 transition-all duration-300 cursor-pointer flex items-start gap-4 overflow-hidden dark:bg-slate-800 dark:border-slate-700 dark:hover:border-teal-700"
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 18 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{
-                  duration: 0.4,
-                  delay: 0.2 + 0.1 * index,
-                  ease: "easeOut",
-                }}
-                whileHover={{ y: -4, scale: 1.02 }}
-                onClick={() => handleOptionClick(item.title)}
+                transition={{ delay: 0.22, duration: 0.45 }}
+                className="w-full max-w-3xl rounded-3xl border border-teal-100 bg-white/85 p-5 shadow-lg shadow-teal-100/60 backdrop-blur dark:border-teal-900/60 dark:bg-slate-900/80 dark:shadow-none"
               >
-                <motion.div
-                  className="flex-shrink-0"
-                  whileHover={{ scale: 1.1 }}
-                  transition={{ duration: 0.2 }}
-                >
-                  {item.icon}
-                </motion.div>
-                <div className="min-w-0 flex-1">
-                  <h3 className="font-semibold text-gray-900 dark:text-slate-100 group-hover:text-teal-500 transition-colors duration-200 truncate">
-                    {item.title}
-                  </h3>
-                  <p className="text-sm text-gray-600 dark:text-slate-300 mt-1 line-clamp-2">
-                    {item.desc}
-                  </p>
+                <div className="grid gap-5 md:grid-cols-[minmax(0,1fr)_140px] md:items-center">
+                  <div className="space-y-4">
+                    <div className="inline-flex items-center gap-2 rounded-full bg-teal-50 px-3 py-1 text-sm font-semibold text-teal-700 dark:bg-teal-950/40 dark:text-teal-300">
+                      <Heart className="h-4 w-4 fill-current" />
+                      <span>
+                        {communityLikes.toLocaleString()} likes and growing
+                      </span>
+                    </div>
+
+                    <p className="text-lg font-semibold text-gray-900 dark:text-slate-100">
+                      NextNews is earning real love, and we are proud of it.
+                    </p>
+
+                    <p className="max-w-2xl text-sm leading-relaxed text-gray-600 dark:text-slate-300">
+                      {feedbackCount.toLocaleString()} readers have already
+                      rated their experience with our app and support flow.
+                    </p>
+                  </div>
+
+                  <motion.button
+                    type="button"
+                    onClick={openFeedbackToast}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    className="inline-flex min-h-0 items-center justify-center rounded-2xl bg-teal-500 px-5 py-3 text-sm font-semibold text-white shadow-md transition-colors hover:bg-teal-600"
+                  >
+                    Leave quick feedback
+                  </motion.button>
                 </div>
               </motion.div>
-            ))}
-          </div>
-        </motion.div>
-
-        {/* RIGHT SECTION – FORM - Enhanced with better padding and focus states */}
-        <motion.div
-          className="bg-white rounded-2xl shadow-lg p-6 sm:p-8 lg:p-10 w-full self-stretch flex flex-col justify-center dark:bg-slate-800"
-          initial={{ opacity: 0, x: 30 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.6, delay: 0.2, ease: "easeOut" }}
-        >
-          <h2 className="text-xl sm:text-2xl font-semibold text-gray-900 dark:text-slate-100 mb-6 text-center lg:text-left">
-            Contact Support
-          </h2>
-
-          {!submitted ? (
-            <form className="space-y-5" onSubmit={handleSubmit}>
-              <div>
-                <label className="text-sm font-medium text-gray-700 dark:text-slate-300 block mb-2">
-                  Select Issue Type
-                </label>
-                <select
-                  name="issueType"
-                  value={formData.issueType}
-                  onChange={handleChange}
-                  className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-teal-400 focus:border-teal-400 outline-none transition-all duration-200 bg-white shadow-sm hover:shadow-md dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100"
-                  required
-                >
-                  <option value="">Select issue type...</option>
-                  <option value="Technical Issue">Technical Issue</option>
-                  <option value="Payment Issue">Payment Issue</option>
-                  <option value="Account Issue">Account Issue</option>
-                  <option value="Registration Related Issue">
-                    Registration Related Issue
-                  </option>
-                  <option value="Notes Issue">Notes Issue</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="text-sm font-medium text-gray-700 dark:text-slate-300 block mb-2">
-                  Your Name
-                </label>
-                <input
-                  type="text"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleChange}
-                  placeholder="Enter your name"
-                  className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-teal-400 focus:border-teal-400 outline-none transition-all duration-200 bg-white shadow-sm hover:shadow-md dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="text-sm font-medium text-gray-700 dark:text-slate-300 block mb-2">
-                  Email Address
-                </label>
-                <input
-                  type="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleChange}
-                  placeholder="example@example.com"
-                  className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-teal-400 focus:border-teal-400 outline-none transition-all duration-200 bg-white shadow-sm hover:shadow-md dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="text-sm font-medium text-gray-700 dark:text-slate-300 block mb-2">
-                  Contact Number
-                </label>
-                <input
-                  type="text"
-                  name="contactNumber"
-                  value={formData.contactNumber}
-                  onChange={handleChange}
-                  placeholder="Enter your contact number"
-                  className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-teal-400 focus:border-teal-400 outline-none transition-all duration-200 bg-white shadow-sm hover:shadow-md dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100"
-                />
-              </div>
-
-              <motion.button
-                type="submit"
-                className="w-full bg-teal-500 hover:bg-teal-600 active:bg-teal-700 text-white font-semibold py-3 rounded-lg transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-              >
-                Next
-              </motion.button>
-            </form>
-          ) : (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 10 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              transition={{ duration: 0.4, ease: "easeOut" }}
-              className="text-center space-y-5 flex-1 flex flex-col justify-center"
-            >
-              <h3 className="text-2xl font-semibold text-teal-600">
-                Thank You!
-              </h3>
-              <p className="text-gray-600 dark:text-slate-300 text-sm sm:text-base leading-relaxed px-2">
-                Your support request has been submitted successfully. Our team
-                will review your inquiry and get back to you within 24 hours via
-                email or phone. If it&apos;s urgent, consider using Live Chat or
-                Phone Support for faster assistance.
-              </p>
-              <motion.button
-                onClick={() => setSubmitted(false)}
-                className="w-full bg-gray-100 hover:bg-gray-200 text-gray-900 font-semibold py-3 rounded-lg transition-all duration-200 shadow-sm hover:shadow-md transform hover:-translate-y-0.5 dark:bg-slate-700 dark:text-slate-100 dark:hover:bg-slate-600"
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-              >
-                Submit Another Request
-              </motion.button>
             </motion.div>
-          )}
-        </motion.div>
+
+            <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1.05fr)_minmax(320px,0.95fr)] lg:items-start">
+              <motion.div
+                className="space-y-6"
+                initial={{ opacity: 0, x: -30 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.6, delay: 0.15, ease: "easeOut" }}
+              >
+                <div className="space-y-4">
+                  <h1 className="max-w-3xl text-3xl font-bold leading-tight text-gray-900 dark:text-slate-100 sm:text-4xl lg:text-5xl">
+                    We&apos;re here to{" "}
+                    <span className="text-teal-500">help</span>, anytime.
+                  </h1>
+
+                  <p className="max-w-3xl text-sm leading-relaxed text-gray-600 dark:text-slate-300 sm:text-base">
+                    Our support team is always ready to help you troubleshoot,
+                    answer questions, and guide you toward solutions.
+                  </p>
+                </div>
+
+                <div className="flex flex-row flex-wrap gap-3">
+                  <motion.span
+                    initial={{ scale: 0.9, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    transition={{ delay: 0.3, duration: 0.4 }}
+                    className="inline-flex w-fit max-w-full items-center justify-center rounded-full bg-teal-50 px-4 py-2 text-center text-sm font-medium text-teal-700 shadow-sm dark:bg-teal-950/40 dark:text-teal-300"
+                  >
+                    99% satisfaction rate
+                  </motion.span>
+                  <motion.span
+                    initial={{ scale: 0.9, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    transition={{ delay: 0.35, duration: 0.4 }}
+                    className="inline-flex w-fit max-w-full items-center justify-center rounded-full bg-teal-50 px-4 py-2 text-center text-sm font-medium text-teal-700 shadow-sm dark:bg-teal-950/40 dark:text-teal-300"
+                  >
+                    Avg. response: &lt;24h
+                  </motion.span>
+                </div>
+
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  {supportOptions.map((item, index) => (
+                    <motion.div
+                      key={item.title}
+                      className="group flex cursor-pointer items-start gap-4 overflow-hidden rounded-xl border border-gray-100 bg-white p-5 shadow-sm transition-all duration-300 hover:border-teal-100 hover:shadow-lg dark:border-slate-700 dark:bg-slate-800 dark:hover:border-teal-700"
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{
+                        duration: 0.4,
+                        delay: 0.2 + 0.1 * index,
+                        ease: "easeOut",
+                      }}
+                      whileHover={{ y: -4, scale: 1.02 }}
+                      onClick={() => handleOptionClick(item.title)}
+                    >
+                      <motion.div
+                        className="shrink-0"
+                        whileHover={{ scale: 1.1 }}
+                        transition={{ duration: 0.2 }}
+                      >
+                        {item.icon}
+                      </motion.div>
+
+                      <div className="min-w-0 flex-1">
+                        <h3 className="truncate font-semibold text-gray-900 transition-colors duration-200 group-hover:text-teal-500 dark:text-slate-100">
+                          {item.title}
+                        </h3>
+                        <p className="mt-1 text-sm text-gray-600 line-clamp-2 dark:text-slate-300">
+                          {item.desc}
+                        </p>
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+              </motion.div>
+
+              <motion.div
+                className="flex h-full w-full self-stretch rounded-2xl bg-white p-6 shadow-lg dark:bg-slate-800 sm:p-8 lg:min-h-[35rem] lg:p-10"
+                initial={{ opacity: 0, x: 30 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.6, delay: 0.2, ease: "easeOut" }}
+              >
+                <div className="flex w-full flex-col justify-center">
+                  <h2 className="mb-6 text-center text-xl font-semibold text-gray-900 dark:text-slate-100 sm:text-2xl lg:text-left">
+                    Contact Support
+                  </h2>
+
+                  {!submitted ? (
+                    <form className="space-y-5" onSubmit={handleSubmit}>
+                      <div>
+                        <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-slate-300">
+                          Select Issue Type
+                        </label>
+                        <select
+                          name="issueType"
+                          value={formData.issueType}
+                          onChange={handleChange}
+                          className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 shadow-sm outline-none transition-all duration-200 hover:shadow-md focus:border-teal-400 focus:ring-2 focus:ring-teal-400 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100"
+                          required
+                        >
+                          <option value="">Select issue type...</option>
+                          <option value="Technical Issue">
+                            Technical Issue
+                          </option>
+                          <option value="Payment Issue">Payment Issue</option>
+                          <option value="Account Issue">Account Issue</option>
+                          <option value="Registration Related Issue">
+                            Registration Related Issue
+                          </option>
+                          <option value="Notes Issue">Notes Issue</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-slate-300">
+                          Your Name
+                        </label>
+                        <input
+                          type="text"
+                          name="name"
+                          value={formData.name}
+                          onChange={handleChange}
+                          placeholder="Enter your name"
+                          className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 shadow-sm outline-none transition-all duration-200 hover:shadow-md focus:border-teal-400 focus:ring-2 focus:ring-teal-400 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100"
+                          required
+                        />
+                      </div>
+
+                      <div>
+                        <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-slate-300">
+                          Email Address
+                        </label>
+                        <input
+                          type="email"
+                          name="email"
+                          value={formData.email}
+                          onChange={handleChange}
+                          placeholder="example@example.com"
+                          className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 shadow-sm outline-none transition-all duration-200 hover:shadow-md focus:border-teal-400 focus:ring-2 focus:ring-teal-400 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100"
+                          required
+                        />
+                      </div>
+
+                      <div>
+                        <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-slate-300">
+                          Contact Number
+                        </label>
+                        <input
+                          type="text"
+                          name="contactNumber"
+                          value={formData.contactNumber}
+                          onChange={handleChange}
+                          placeholder="Enter your contact number"
+                          className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 shadow-sm outline-none transition-all duration-200 hover:shadow-md focus:border-teal-400 focus:ring-2 focus:ring-teal-400 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100"
+                        />
+                      </div>
+
+                      <motion.button
+                        type="submit"
+                        className="w-full rounded-lg bg-teal-500 py-3 font-semibold text-white shadow-md transition-all duration-200 hover:-translate-y-0.5 hover:bg-teal-600 hover:shadow-lg active:bg-teal-700"
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                      >
+                        Next
+                      </motion.button>
+                    </form>
+                  ) : (
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                      animate={{ opacity: 1, scale: 1, y: 0 }}
+                      transition={{ duration: 0.4, ease: "easeOut" }}
+                      className="flex flex-1 flex-col justify-center space-y-5 text-center"
+                    >
+                      <h3 className="text-2xl font-semibold text-teal-600">
+                        Thank You!
+                      </h3>
+                      <p className="px-2 text-sm leading-relaxed text-gray-600 dark:text-slate-300 sm:text-base">
+                        Your support request has been submitted successfully.
+                        Our team will review your inquiry and get back to you
+                        within 24 hours via email or phone. If it&apos;s urgent,
+                        consider using Live Chat or Phone Support for faster
+                        assistance.
+                      </p>
+                      <div className="space-y-3">
+                        <motion.button
+                          type="button"
+                          onClick={() => setSubmitted(false)}
+                          className="w-full rounded-lg bg-gray-100 py-3 font-semibold text-gray-900 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:bg-gray-200 hover:shadow-md dark:bg-slate-700 dark:text-slate-100 dark:hover:bg-slate-600"
+                          whileHover={{ scale: 1.02 }}
+                          whileTap={{ scale: 0.98 }}
+                        >
+                          Submit Another Request
+                        </motion.button>
+                        <motion.button
+                          type="button"
+                          onClick={openFeedbackToast}
+                          className="w-full rounded-lg border border-teal-200 bg-teal-50 py-3 font-semibold text-teal-700 transition-colors hover:bg-teal-100 dark:border-teal-900/60 dark:bg-teal-950/30 dark:text-teal-300 dark:hover:bg-teal-950/50"
+                          whileHover={{ scale: 1.02 }}
+                          whileTap={{ scale: 0.98 }}
+                        >
+                          Rate your support experience
+                        </motion.button>
+                      </div>
+                    </motion.div>
+                  )}
+                </div>
+              </motion.div>
+            </div>
+          </div>
+        </div>
       </div>
 
-      {/* MODALS - Enhanced with better mobile handling and animations */}
       <AnimatePresence mode="wait">
         {activeModal && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/30 p-0 sm:p-6 backdrop-blur-sm"
+            className="fixed inset-0 z-50 flex items-end justify-center bg-black/30 p-0 backdrop-blur-sm sm:items-center sm:p-6"
             onClick={() => setActiveModal(null)}
           >
             <motion.div
@@ -300,35 +402,35 @@ export default function SupportPage() {
               animate={{ y: 0, opacity: 1 }}
               exit={{ y: "100%", opacity: 0 }}
               transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
-              className="bg-white rounded-t-2xl rounded-b-none sm:rounded-2xl p-6 w-full max-w-md max-h-[85vh] sm:max-h-[90vh] overflow-hidden shadow-2xl relative dark:bg-slate-800"
+              className="relative max-h-[85vh] w-full max-w-md overflow-hidden rounded-t-2xl rounded-b-none bg-white p-6 shadow-2xl dark:bg-slate-800 sm:max-h-[90vh] sm:rounded-2xl"
               onClick={(e) => e.stopPropagation()}
             >
               <button
                 onClick={() => setActiveModal(null)}
-                className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors duration-200 p-1 rounded-full hover:bg-gray-100 dark:hover:bg-slate-700"
+                className="absolute top-4 right-4 rounded-full p-1 text-gray-400 transition-colors duration-200 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-slate-700"
               >
                 <FaTimes size={18} />
               </button>
 
-              <h3 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-slate-100 mb-6 text-center">
+              <h3 className="mb-6 text-center text-xl font-bold text-gray-900 dark:text-slate-100 sm:text-2xl">
                 {activeModal}
               </h3>
 
-              <div className="max-h-[50vh] sm:max-h-[60vh] overflow-y-auto pr-1 -mr-1 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
+              <div className="max-h-[50vh] -mr-1 overflow-y-auto pr-1 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-gray-300 sm:max-h-[60vh]">
                 {activeModal === "FAQ" && (
                   <div className="space-y-4">
                     {faqs.map((faq, i) => (
                       <motion.div
-                        key={i}
+                        key={faq.q}
                         initial={{ opacity: 0, x: 10 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: 0.1 * i, duration: 0.2 }}
                         className="border-b border-gray-100 pb-4 last:border-b-0 dark:border-slate-700"
                       >
-                        <p className="font-semibold text-gray-800 dark:text-slate-100 mb-2">
+                        <p className="mb-2 font-semibold text-gray-800 dark:text-slate-100">
                           {faq.q}
                         </p>
-                        <p className="text-sm text-gray-600 dark:text-slate-300 leading-relaxed">
+                        <p className="text-sm leading-relaxed text-gray-600 dark:text-slate-300">
                           {faq.a}
                         </p>
                       </motion.div>
@@ -337,17 +439,17 @@ export default function SupportPage() {
                 )}
 
                 {activeModal === "Phone Support" && (
-                  <div className="text-center py-6 space-y-4">
-                    <div className="text-3xl mb-4">📞</div>
-                    <p className="text-lg text-gray-700 dark:text-slate-200 leading-relaxed">
+                  <div className="space-y-4 py-6 text-center">
+                    <div className="mb-4 text-3xl">📞</div>
+                    <p className="text-lg leading-relaxed text-gray-700 dark:text-slate-200">
                       +91 8100684108 <br />
                       <span className="text-sm text-gray-500 dark:text-slate-400">
-                        Available Mon–Fri, 10AM–6PM
+                        Available Mon-Fri, 10AM-6PM
                       </span>
                     </p>
                     <motion.a
                       href="tel:+918100684108"
-                      className="inline-block bg-teal-500 hover:bg-teal-600 active:bg-teal-700 text-white font-semibold px-8 py-3 rounded-full transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-1 active:translate-y-0"
+                      className="inline-block rounded-full bg-teal-500 px-8 py-3 font-semibold text-white shadow-lg transition-all duration-200 hover:-translate-y-1 hover:bg-teal-600 hover:shadow-xl active:translate-y-0 active:bg-teal-700"
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
                     >
@@ -357,15 +459,15 @@ export default function SupportPage() {
                 )}
 
                 {activeModal === "Track Ticket" && (
-                  <div className="text-center py-6 space-y-4">
-                    <div className="text-3xl mb-4">🎫</div>
-                    <p className="text-gray-700 dark:text-slate-200 text-base leading-relaxed">
+                  <div className="space-y-4 py-6 text-center">
+                    <div className="mb-4 text-3xl">🎫</div>
+                    <p className="text-base leading-relaxed text-gray-700 dark:text-slate-200">
                       Enter your ticket ID on the support dashboard to track
                       updates in real time.
                     </p>
                     <motion.button
                       onClick={() => setActiveModal(null)}
-                      className="w-full bg-gray-100 hover:bg-gray-200 text-gray-900 font-semibold py-2.5 rounded-lg transition-all duration-200 dark:bg-slate-700 dark:text-slate-100 dark:hover:bg-slate-600"
+                      className="w-full rounded-lg bg-gray-100 py-2.5 font-semibold text-gray-900 transition-all duration-200 hover:bg-gray-200 dark:bg-slate-700 dark:text-slate-100 dark:hover:bg-slate-600"
                       whileHover={{ scale: 1.02 }}
                     >
                       Go to Dashboard
@@ -377,6 +479,13 @@ export default function SupportPage() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      <FeedbackToast
+        key={feedbackToastKey}
+        visible={isFeedbackVisible}
+        onClose={() => setIsFeedbackVisible(false)}
+        onFeedback={handleFeedback}
+      />
     </motion.div>
   );
 }
