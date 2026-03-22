@@ -18,17 +18,34 @@ export default function Navbar({ onMenuToggle, isMobileOpen }: NavbarProps) {
   const pathname = usePathname();
 
   useEffect(() => {
-    getVerifiedAuthUser().then(({ user }) => {
-      setIsAuthenticated(Boolean(user));
-    });
+    let isMounted = true;
+
+    const checkAuth = async () => {
+      try {
+        // Use cached local token — avoids Supabase navigator-lock call
+        if (localStorage.getItem("auth_token") || localStorage.getItem("auth_email")) {
+          if (isMounted) setIsAuthenticated(true);
+          return;
+        }
+        const { user } = await getVerifiedAuthUser();
+        if (isMounted) setIsAuthenticated(Boolean(user));
+      } catch {
+        // silently ignore AbortError / navigator-lock timeout
+      }
+    };
+
+    void checkAuth();
 
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
-      setIsAuthenticated(Boolean(session?.user));
+      if (isMounted) setIsAuthenticated(Boolean(session?.user));
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      isMounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   const isNotesActive = pathname === "/notes";

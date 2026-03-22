@@ -17,6 +17,19 @@ export default function RegisterReminder() {
     let mounted = true;
 
     const syncAuthState = async () => {
+      // Use cached local token first — avoids Supabase navigator-lock call
+      const hasLocalAuth =
+        Boolean(localStorage.getItem("auth_token")?.trim()) ||
+        Boolean(localStorage.getItem("auth_email")?.trim());
+
+      if (hasLocalAuth) {
+        if (!mounted) return;
+        setIsAuthenticated(true);
+        setIsVisible(false);
+        return;
+      }
+
+      // Guest path: check Supabase
       let data;
       try {
         const result = await supabase.auth.getSession();
@@ -41,11 +54,12 @@ export default function RegisterReminder() {
       setIsVisible(true);
     };
 
-    syncAuthState();
+    void syncAuthState();
 
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!mounted) return;
       const hasSession = Boolean(session?.user);
       setIsAuthenticated(hasSession);
       setIsVisible(!hasSession);

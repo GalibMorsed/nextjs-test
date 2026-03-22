@@ -49,24 +49,44 @@ export default function AISummaryButton({
   const summaryPoints = toBulletPoints(summary);
 
   useEffect(() => {
-    const updateAuthState = async () => {
-      const { data } = await supabase.auth.getSession();
-      setIsLoggedIn(Boolean(data.session?.user));
+    let isMounted = true;
+
+    const checkAuth = async () => {
+      try {
+        // Use cached local token — no Supabase call needed
+        if (localStorage.getItem("auth_token") || localStorage.getItem("auth_email")) {
+          if (isMounted) setIsLoggedIn(true);
+          return;
+        }
+        const { data } = await supabase.auth.getSession();
+        if (isMounted) setIsLoggedIn(Boolean(data.session?.user));
+      } catch {
+        // silently ignore AbortError / navigator-lock timeout
+      }
     };
 
-    void updateAuthState();
-    window.addEventListener("storage", updateAuthState);
-    window.addEventListener("focus", updateAuthState);
+    void checkAuth();
+
+    const handleStorageOrFocus = () => {
+      const hasLocal =
+        Boolean(localStorage.getItem("auth_token")) ||
+        Boolean(localStorage.getItem("auth_email"));
+      if (isMounted) setIsLoggedIn(hasLocal);
+    };
+
+    window.addEventListener("storage", handleStorageOrFocus);
+    window.addEventListener("focus", handleStorageOrFocus);
 
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
-      setIsLoggedIn(Boolean(session?.user));
+      if (isMounted) setIsLoggedIn(Boolean(session?.user));
     });
 
     return () => {
-      window.removeEventListener("storage", updateAuthState);
-      window.removeEventListener("focus", updateAuthState);
+      isMounted = false;
+      window.removeEventListener("storage", handleStorageOrFocus);
+      window.removeEventListener("focus", handleStorageOrFocus);
       subscription.unsubscribe();
     };
   }, []);
@@ -86,11 +106,9 @@ export default function AISummaryButton({
     setIsLoading(true);
 
     try {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-
-      if (!session?.access_token) {
+      // Use the locally cached token — avoids another Supabase lock call
+      const accessToken = localStorage.getItem("auth_token");
+      if (!accessToken) {
         throw new Error("Please log in again to use AI summaries.");
       }
 
@@ -98,7 +116,7 @@ export default function AISummaryButton({
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${session.access_token}`,
+          Authorization: `Bearer ${accessToken}`,
         },
         body: JSON.stringify({
           title,

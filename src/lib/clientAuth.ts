@@ -81,7 +81,7 @@ export async function getVerifiedAuthUser() {
       } = await supabase.auth.getSession();
 
       if (session) {
-        await supabase.auth.signOut().catch(() => {});
+        await supabase.auth.signOut().catch(() => { });
       }
 
       if (typeof window !== "undefined") {

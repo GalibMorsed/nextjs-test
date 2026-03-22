@@ -144,15 +144,12 @@ export default function PersonalizationPage() {
 
     const loadData = async () => {
       try {
-        const {
-          data: { session },
-        } = await supabase.auth.getSession();
-
-        if (mounted) {
-          setUserEmail(
-            session?.user?.email ?? localStorage.getItem("auth_email") ?? "",
-          );
-        }
+        // Read email from localStorage — no Supabase call needed
+        const cachedEmail =
+          localStorage.getItem("auth_email") ||
+          localStorage.getItem("userEmail") ||
+          "";
+        if (mounted) setUserEmail(cachedEmail);
 
         const { data, error: fetchError } = await getUserPersonalization();
         if (fetchError) {

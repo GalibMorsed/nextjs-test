@@ -66,11 +66,10 @@ export default function PersonalizationAiSuggestions({
     setSuggestions([]);
 
     try {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
+      // Use cached token — avoids another Supabase navigator-lock call
+      const accessToken = localStorage.getItem("auth_token");
 
-      if (!session?.access_token) {
+      if (!accessToken) {
         onErrorMessage("Please log in again to get AI suggestions.");
         return;
       }
@@ -79,7 +78,7 @@ export default function PersonalizationAiSuggestions({
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${session.access_token}`,
+          Authorization: `Bearer ${accessToken}`,
         },
         body: JSON.stringify({
           availableTopics,

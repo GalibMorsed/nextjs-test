@@ -38,24 +38,36 @@ export default function AddNoteButton({
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
+    let isMounted = true;
+
     const checkAuth = async () => {
-      const { user } = await getVerifiedAuthUser();
-      setIsAuthenticated(Boolean(user));
+      try {
+        // Use cached local token — no Supabase call needed
+        if (localStorage.getItem("auth_token") || localStorage.getItem("auth_email")) {
+          if (isMounted) setIsAuthenticated(true);
+          return;
+        }
+        const { user } = await getVerifiedAuthUser();
+        if (isMounted) setIsAuthenticated(Boolean(user));
+      } catch {
+        // silently ignore AbortError / navigator-lock timeout
+      }
     };
-    checkAuth();
+
+    void checkAuth();
 
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
-      setIsAuthenticated(!!session);
+      if (isMounted) setIsAuthenticated(Boolean(session?.user));
     });
 
     const checkMobile = () => setIsMobile(window.innerWidth < 640);
     checkMobile();
     window.addEventListener("resize", checkMobile);
 
-    // Cleanup timeout on component unmount
     return () => {
+      isMounted = false;
       subscription.unsubscribe();
       window.removeEventListener("resize", checkMobile);
       if (timeoutRef.current) {

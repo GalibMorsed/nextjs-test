@@ -69,23 +69,35 @@ export default function CategoryContent({
   const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
-    const localToken = localStorage.getItem("auth_token");
-    if (localToken) setIsAuthenticated(true);
+    let isMounted = true;
 
-    supabase.auth.getSession().then(({ data }) => {
-      const hasSession = Boolean(data.session?.user);
-      setIsAuthenticated(
-        hasSession || Boolean(localStorage.getItem("auth_token")),
-      );
-    });
+    const checkAuth = async () => {
+      try {
+        const localToken = localStorage.getItem("auth_token");
+        if (localToken) {
+          if (isMounted) setIsAuthenticated(true);
+          return; // skip Supabase call entirely if local token exists
+        }
+
+        const { data } = await supabase.auth.getSession();
+        if (isMounted) {
+          setIsAuthenticated(Boolean(data.session?.user));
+        }
+      } catch {
+        // silently ignore AbortError / navigator-lock timeout
+      }
+    };
+
+    void checkAuth();
 
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
-      setIsAuthenticated(Boolean(session?.user));
+      if (isMounted) setIsAuthenticated(Boolean(session?.user));
     });
 
     return () => {
+      isMounted = false;
       subscription.unsubscribe();
     };
   }, []);

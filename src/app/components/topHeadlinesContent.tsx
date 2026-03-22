@@ -79,17 +79,32 @@ export default function TopHeadlinesContent({
     useState(false);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      setIsAuthenticated(Boolean(data.session?.user));
-    });
+    let isMounted = true;
+
+    const checkAuth = async () => {
+      try {
+        // Use cached local token — no Supabase call needed
+        if (localStorage.getItem("auth_token") || localStorage.getItem("auth_email")) {
+          if (isMounted) setIsAuthenticated(true);
+          return;
+        }
+        const { data } = await supabase.auth.getSession();
+        if (isMounted) setIsAuthenticated(Boolean(data.session?.user));
+      } catch {
+        // silently ignore AbortError / navigator-lock timeout
+      }
+    };
+
+    void checkAuth();
 
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
-      setIsAuthenticated(Boolean(session?.user));
+      if (isMounted) setIsAuthenticated(Boolean(session?.user));
     });
 
     return () => {
+      isMounted = false;
       subscription.unsubscribe();
     };
   }, []);
