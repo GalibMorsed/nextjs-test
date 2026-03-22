@@ -17,7 +17,16 @@ export default function RegisterReminder() {
     let mounted = true;
 
     const syncAuthState = async () => {
-      const { data } = await supabase.auth.getSession();
+      let data;
+      try {
+        const result = await supabase.auth.getSession();
+        data = result.data;
+      } catch (err: any) {
+        if (err?.name === "AbortError") {
+          console.warn("Register reminder auth check aborted/timed out.");
+        }
+        data = { session: null };
+      }
       const sessionUser = data.session?.user ?? null;
 
       if (!mounted) return;

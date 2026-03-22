@@ -72,23 +72,32 @@ export function clearClientSession(email?: string | null) {
 }
 
 export async function getVerifiedAuthUser() {
-  const { data, error } = await supabase.auth.getUser();
+  try {
+    const { data, error } = await supabase.auth.getUser();
 
-  if (error || !data.user) {
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
+    if (error || !data.user) {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
 
-    if (session) {
-      await supabase.auth.signOut();
+      if (session) {
+        await supabase.auth.signOut().catch(() => {});
+      }
+
+      if (typeof window !== "undefined") {
+        clearClientSession(session?.user?.email);
+      }
+
+      return { user: null, error: error ?? new Error("Not logged in") };
     }
 
-    if (typeof window !== "undefined") {
-      clearClientSession(session?.user?.email);
+    return { user: data.user, error: null };
+  } catch (err: any) {
+    if (err?.name === "AbortError") {
+      console.warn("Supabase auth operation timed out (expected behavior).");
+    } else {
+      console.error("An unexpected error occurred during auth:", err);
     }
-
-    return { user: null, error: error ?? new Error("Not logged in") };
+    return { user: null, error: err };
   }
-
-  return { user: data.user, error: null };
 }

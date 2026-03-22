@@ -180,8 +180,12 @@ export default function PersonalizationPage() {
             ? persistedTopics
             : DEFAULT_TOPIC_SELECTION,
         );
-      } catch (loadError) {
+      } catch (loadError: any) {
         if (!mounted) return;
+        if (loadError?.name === "AbortError") {
+          console.warn("Personalization data load aborted/timed out.");
+          return;
+        }
         const messageText =
           loadError instanceof Error
             ? loadError.message

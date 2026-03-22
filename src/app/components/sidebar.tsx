@@ -142,22 +142,34 @@ export default function Sidebar({ isMobileOpen, onCloseMobile }: SidebarProps) {
       }
     };
 
-    getVerifiedAuthUser().then(async ({ user }) => {
-      if (user) {
-        const {
-          data: { session },
-        } = await supabase.auth.getSession();
-        setIsAuthenticated(true);
-        setUserEmail(user.email ?? "");
-        persistClientSession(user.email ?? "", session?.access_token ?? "");
-        void loadPersonalization();
-      } else {
-        setIsAuthenticated(false);
-        setUserEmail("");
-        setSelectedTopics([]);
-        setIsPersonalizationLoaded(true);
-      }
-    });
+    getVerifiedAuthUser()
+      .then(async ({ user }) => {
+        if (user) {
+          try {
+            const {
+              data: { session },
+            } = await supabase.auth.getSession();
+            setIsAuthenticated(true);
+            setUserEmail(user.email ?? "");
+            persistClientSession(user.email ?? "", session?.access_token ?? "");
+            void loadPersonalization();
+          } catch (err: any) {
+            if (err?.name === "AbortError") {
+              console.warn("Sidebar auth operation timed out (expected behavior).");
+            }
+          }
+        } else {
+          setIsAuthenticated(false);
+          setUserEmail("");
+          setSelectedTopics([]);
+          setIsPersonalizationLoaded(true);
+        }
+      })
+      .catch((err) => {
+        if (err?.name === "AbortError") {
+          console.warn("Sidebar auth operation timed out (expected behavior).");
+        }
+      });
 
     const {
       data: { subscription },
