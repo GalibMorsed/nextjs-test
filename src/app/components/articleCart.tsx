@@ -45,7 +45,7 @@ export default function ArticleCard({
       </div>
 
       <div className="flex flex-1 flex-col p-5">
-        <div className="mb-3 flex items-center text-xs text-gray-500 font-medium uppercase tracking-wider">
+        <div suppressHydrationWarning className="mb-3 flex items-center text-xs text-gray-500 font-medium uppercase tracking-wider">
           {formattedDate || "Date Not Available"}
         </div>
 
