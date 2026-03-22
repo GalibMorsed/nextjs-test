@@ -205,7 +205,7 @@ export default function AddNoteButton({
                         <span className="font-medium text-slate-500 dark:text-slate-400">
                           Date:
                         </span>
-                        <span className="mt-1 block text-slate-900 dark:text-slate-100">
+                        <span suppressHydrationWarning className="mt-1 block text-slate-900 dark:text-slate-100">
                           {formattedDate}
                         </span>
                       </p>

@@ -18,7 +18,6 @@ interface Article {
 
 interface CategoryContentProps {
   category: string;
-  initialArticles: Article[];
   pageSize?: number;
 }
 
@@ -58,15 +57,37 @@ function RefreshSkeleton() {
 
 export default function CategoryContent({
   category,
-  initialArticles,
   pageSize = 20,
 }: CategoryContentProps) {
   const categoryDisplayName = getCategoryDisplayName(category);
-  const [articles, setArticles] = useState<Article[]>(initialArticles ?? []);
+  const [articles, setArticles] = useState<Article[]>([]);
+  const [loading, setLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [refreshError, setRefreshError] = useState<string | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
+
+  const fetchNews = async () => {
+    try {
+      const params = new URLSearchParams({
+        country: "us",
+        category,
+        page: "1",
+        pageSize: String(pageSize),
+      });
+      const res = await fetch(`/api/news?${params.toString()}`);
+      const data = await res.json();
+      setArticles(data.articles ?? []);
+    } catch {
+      setArticles([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchNews();
+  }, [category, pageSize]);
 
   useEffect(() => {
     const localToken = localStorage.getItem("auth_token");
@@ -96,25 +117,7 @@ export default function CategoryContent({
     setRefreshError(null);
 
     try {
-      const params = new URLSearchParams({
-        country: "us",
-        category,
-        page: "1",
-        pageSize: String(pageSize),
-      });
-
-      const response = await fetch(`/api/news?${params.toString()}`, {
-        cache: "no-store",
-      });
-
-      if (!response.ok) throw new Error();
-
-      const data = await response.json();
-      const latestArticles: Article[] = Array.isArray(data?.articles)
-        ? data.articles
-        : [];
-
-      setArticles(latestArticles);
+      await fetchNews();
       setRefreshKey((prev) => prev + 1);
     } catch {
       setRefreshError(
@@ -213,7 +216,7 @@ export default function CategoryContent({
       )}
 
       {/* Main Content */}
-      {isRefreshing ? (
+      {isRefreshing || loading ? (
         <RefreshSkeleton />
       ) : (
         <NewsFeedWithLoadMore
