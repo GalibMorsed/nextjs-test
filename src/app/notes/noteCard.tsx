@@ -125,7 +125,7 @@ export default function NoteCard({
         ) : null}
       </div>
 
-      <p className="mt-2 text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-300">
+      <p suppressHydrationWarning className="mt-2 text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-300">
         {formattedDate}
       </p>
 
