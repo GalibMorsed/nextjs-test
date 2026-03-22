@@ -67,6 +67,28 @@ export default function CategoryContent({
   const [refreshError, setRefreshError] = useState<string | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
 
+  const fetchNews = async () => {
+    try {
+      const params = new URLSearchParams({
+        country: "us",
+        category,
+        page: "1",
+        pageSize: String(pageSize),
+      });
+      const res = await fetch(`/api/news?${params.toString()}`);
+      const data = await res.json();
+      setArticles(data.articles ?? []);
+    } catch {
+      setArticles([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchNews();
+  }, [category, pageSize]);
+
   useEffect(() => {
     const localToken = localStorage.getItem("auth_token");
     if (localToken) setIsAuthenticated(true);
@@ -89,53 +111,13 @@ export default function CategoryContent({
     };
   }, []);
 
-  useEffect(() => {
-    const fetchNews = async () => {
-      try {
-        const params = new URLSearchParams({
-          country: "us",
-          category,
-          page: "1",
-          pageSize: String(pageSize),
-        });
-        const res = await fetch(`/api/news?${params.toString()}`);
-        const data = await res.json();
-        setArticles(data.articles ?? []);
-      } catch {
-        setArticles([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchNews();
-  }, [category, pageSize]);
-
   const handleRefresh = async () => {
     if (isRefreshing) return;
     setIsRefreshing(true);
     setRefreshError(null);
 
     try {
-      const params = new URLSearchParams({
-        country: "us",
-        category,
-        page: "1",
-        pageSize: String(pageSize),
-      });
-
-      const response = await fetch(`/api/news?${params.toString()}`, {
-        cache: "no-store",
-      });
-
-      if (!response.ok) throw new Error();
-
-      const data = await response.json();
-      const latestArticles: Article[] = Array.isArray(data?.articles)
-        ? data.articles
-        : [];
-
-      setArticles(latestArticles);
+      await fetchNews();
       setRefreshKey((prev) => prev + 1);
     } catch {
       setRefreshError(
