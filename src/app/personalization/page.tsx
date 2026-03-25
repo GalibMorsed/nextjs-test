@@ -1,9 +1,10 @@
 
 "use client";
 
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion, type Variants } from "framer-motion";
-import { AlertTriangle, BellRing, CheckCircle2, X } from "lucide-react";
+import { AlertTriangle, ArrowRight, BellRing, CheckCircle2, X } from "lucide-react";
 import { supabase } from "../../../lib/superbaseClient";
 import {
   broadcastPersonalizationUpdated,
@@ -15,6 +16,10 @@ import PersonalizationAiSuggestions from "../components/personalizationAiSuggest
 
 type PopupMessage = {
   tone: "success" | "error" | "info";
+  text: string;
+} | null;
+
+type SuggestedTopicToast = {
   text: string;
 } | null;
 
@@ -101,6 +106,8 @@ export default function PersonalizationPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [isDiscarding, setIsDiscarding] = useState(false);
   const [popupMessage, setPopupMessage] = useState<PopupMessage>(null);
+  const [suggestedTopicToast, setSuggestedTopicToast] =
+    useState<SuggestedTopicToast>(null);
   const [isDeletePopupOpen, setIsDeletePopupOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [showAllTopics, setShowAllTopics] = useState(false);
@@ -209,9 +216,16 @@ export default function PersonalizationPage() {
 
   useEffect(() => {
     if (!popupMessage) return;
+    if (popupMessage.tone === "success") return;
     const timer = window.setTimeout(() => setPopupMessage(null), 3200);
     return () => window.clearTimeout(timer);
   }, [popupMessage]);
+
+  useEffect(() => {
+    if (!suggestedTopicToast) return;
+    const timer = window.setTimeout(() => setSuggestedTopicToast(null), 1200);
+    return () => window.clearTimeout(timer);
+  }, [suggestedTopicToast]);
 
   const handleSave = async () => {
     setIsSaving(true);
@@ -231,7 +245,7 @@ export default function PersonalizationPage() {
       broadcastPersonalizationUpdated();
       setPopupMessage({
         tone: "success",
-        text: "Your preferences are saved. You're all set! ✅",
+        text: "New preference list has been updated successfully. You are all set, go home and get a new start.",
       });
     } catch (saveActionError) {
       const messageText =
@@ -278,9 +292,8 @@ export default function PersonalizationPage() {
     }
 
     setFavoriteTopics((prev) => [...prev, topic]);
-    setPopupMessage({
-      tone: "success",
-      text: `Great choice! "${topic}" has been added to your topics. ✨`,
+    setSuggestedTopicToast({
+      text: `"${topic}" preference is selected.`,
     });
   };
 
@@ -633,6 +646,22 @@ export default function PersonalizationPage() {
       </div>
 
       <AnimatePresence>
+        {suggestedTopicToast && (
+          <motion.div
+            initial={{ opacity: 0, y: 18, scale: 0.96 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 10, scale: 0.98 }}
+            transition={{ duration: 0.18, ease: "easeOut" }}
+            className="pointer-events-none fixed inset-x-0 bottom-4 z-50 flex justify-center px-4 sm:bottom-6"
+          >
+            <div className="w-full max-w-xs rounded-full border border-emerald-200/80 bg-white/95 px-4 py-2.5 text-center text-sm font-medium text-emerald-700 shadow-lg shadow-emerald-500/10 backdrop-blur dark:border-emerald-500/20 dark:bg-slate-900/95 dark:text-emerald-300">
+              {suggestedTopicToast.text}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
         {popupMessage && (
           <motion.div
             initial={{ opacity: 0 }}
@@ -647,39 +676,87 @@ export default function PersonalizationPage() {
               animate="animate"
               exit="exit"
               transition={{ ease: [0.16, 1, 0.3, 1], duration: 0.3 }}
-              className="relative w-full sm:max-w-md rounded-t-2xl sm:rounded-xl bg-white dark:bg-slate-800 p-5 sm:p-6 shadow-xl"
+              className={`relative w-full overflow-hidden rounded-t-2xl shadow-xl sm:rounded-[28px] ${
+                popupMessage.tone === "success"
+                  ? "sm:max-w-lg border border-emerald-200/70 bg-white/95 p-0 dark:border-emerald-500/20 dark:bg-slate-900/95"
+                  : "sm:max-w-md bg-white p-5 dark:bg-slate-800 sm:p-6"
+              }`}
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="flex items-start gap-3">
-                <div
-                  className={`mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${
-                    popupMessage.tone === "success"
-                      ? "bg-emerald-100 text-emerald-600"
-                      : popupMessage.tone === "info"
+              {popupMessage.tone === "success" ? (
+                <>
+                  <div className="absolute inset-x-0 top-0 h-24 bg-gradient-to-r from-emerald-400/20 via-sky-300/20 to-cyan-300/20 dark:from-emerald-400/10 dark:via-sky-400/10 dark:to-cyan-400/10" />
+                  <div className="absolute -right-10 top-8 h-32 w-32 rounded-full bg-emerald-300/20 blur-3xl dark:bg-emerald-400/10" />
+                  <div className="relative p-6 sm:p-7">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex items-center gap-4">
+                        <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-500 text-white shadow-lg shadow-emerald-500/20">
+                          <CheckCircle2 className="h-7 w-7" />
+                        </div>
+                        <div>
+                          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-emerald-600 dark:text-emerald-300">
+                            Preferences Updated
+                          </p>
+                          <h3 className="mt-1 text-lg font-semibold text-slate-900 dark:text-slate-50">
+                            You're ready for a fresh start
+                          </h3>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setPopupMessage(null)}
+                        className="flex h-9 w-9 items-center justify-center rounded-full border border-slate-200/80 bg-white/80 text-slate-400 transition hover:border-slate-300 hover:text-slate-700 dark:border-slate-700 dark:bg-slate-800/80 dark:hover:border-slate-600 dark:hover:text-slate-200"
+                        aria-label="Close message"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
+
+                    <div className="mt-5 rounded-2xl border border-emerald-100 bg-gradient-to-br from-emerald-50 via-white to-sky-50 p-4 dark:border-emerald-500/10 dark:from-emerald-500/10 dark:via-slate-900 dark:to-sky-500/10">
+                      <p className="text-sm leading-6 text-slate-700 dark:text-slate-200">
+                        {popupMessage.text}
+                      </p>
+                    </div>
+
+                    <div className="mt-5 flex justify-end">
+                      <Link
+                        href="/"
+                        className="inline-flex items-center gap-2 rounded-full bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-200"
+                      >
+                        Go Home
+                        <ArrowRight className="h-4 w-4" />
+                      </Link>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <div className="flex items-start gap-3">
+                  <div
+                    className={`mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${
+                      popupMessage.tone === "info"
                         ? "bg-sky-100 text-sky-600"
                         : "bg-red-100 text-red-600"
-                  }`}
-                >
-                  {popupMessage.tone === "success" ? (
-                    <CheckCircle2 className="h-5 w-5" />
-                  ) : popupMessage.tone === "info" ? (
-                    <BellRing className="h-5 w-5" />
-                  ) : (
-                    <AlertTriangle className="h-5 w-5" />
-                  )}
+                    }`}
+                  >
+                    {popupMessage.tone === "info" ? (
+                      <BellRing className="h-5 w-5" />
+                    ) : (
+                      <AlertTriangle className="h-5 w-5" />
+                    )}
+                  </div>
+                  <p className="flex-1 text-sm font-medium text-slate-800 dark:text-slate-100">
+                    {popupMessage.text}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setPopupMessage(null)}
+                    className="flex h-7 w-7 items-center justify-center rounded-full text-slate-400 transition hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-700 dark:hover:text-slate-200"
+                    aria-label="Close message"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
                 </div>
-                <p className="flex-1 text-sm font-medium text-slate-800 dark:text-slate-100">
-                  {popupMessage.text}
-                </p>
-                <button
-                  type="button"
-                  onClick={() => setPopupMessage(null)}
-                  className="flex h-7 w-7 items-center justify-center rounded-full text-slate-400 transition hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-700 dark:hover:text-slate-200"
-                  aria-label="Close message"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              </div>
+              )}
             </motion.div>
           </motion.div>
         )}

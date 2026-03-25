@@ -435,7 +435,7 @@ export default function AppearancePage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-6 bg-black/30 backdrop-blur-sm"
+            className="fixed inset-0 z-50 flex items-end justify-center bg-black/30 p-0 backdrop-blur-sm sm:items-center sm:p-6"
             onClick={() => setPopupMessage(null)}
           >
             <motion.div
@@ -444,23 +444,43 @@ export default function AppearancePage() {
               animate="animate"
               exit="exit"
               transition={{ ease: [0.16, 1, 0.3, 1], duration: 0.3 }}
-              className="relative w-full sm:max-w-sm rounded-t-2xl sm:rounded-xl bg-white dark:bg-slate-800 p-5 sm:p-6 shadow-xl flex items-center gap-4"
+              className="relative w-full overflow-hidden rounded-t-2xl border border-emerald-200/70 bg-white/95 shadow-xl dark:border-emerald-500/20 dark:bg-slate-900/95 sm:max-w-md sm:rounded-[28px]"
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="flex-shrink-0 w-10 h-10 rounded-full bg-green-100 text-green-600 flex items-center justify-center">
-                <Check size={20} />
+              <div className="absolute inset-x-0 top-0 h-24 bg-gradient-to-r from-emerald-400/20 via-sky-300/20 to-cyan-300/20 dark:from-emerald-400/10 dark:via-sky-400/10 dark:to-cyan-400/10" />
+              <div className="absolute -right-10 top-8 h-32 w-32 rounded-full bg-emerald-300/20 blur-3xl dark:bg-emerald-400/10" />
+              <div className="relative px-4 pb-5 pt-4 sm:p-7">
+                <div className="flex items-start justify-end">
+                  <button
+                    type="button"
+                    onClick={() => setPopupMessage(null)}
+                    className="flex h-9 w-9 items-center justify-center rounded-full border border-slate-200/80 bg-white/80 text-slate-400 transition hover:border-slate-300 hover:text-slate-700 dark:border-slate-700 dark:bg-slate-800/80 dark:hover:border-slate-600 dark:hover:text-slate-200"
+                    aria-label="Close message"
+                  >
+                    <X size={16} />
+                  </button>
+                </div>
+
+                <div className="mt-1 flex flex-col items-center text-center sm:mt-0 sm:flex-row sm:items-center sm:gap-4 sm:text-left">
+                  <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-500 text-white shadow-lg shadow-emerald-500/20">
+                    <Check size={24} />
+                  </div>
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-[0.22em] text-emerald-600 dark:text-emerald-300">
+                      Appearance Updated
+                    </p>
+                    <h3 className="mt-1 text-lg font-semibold text-slate-900 dark:text-slate-50">
+                      Changes saved
+                    </h3>
+                  </div>
+                </div>
+
+                <div className="mt-5 rounded-2xl border border-emerald-100 bg-gradient-to-br from-emerald-50 via-white to-sky-50 p-4 text-center dark:border-emerald-500/10 dark:from-emerald-500/10 dark:via-slate-900 dark:to-sky-500/10 sm:text-left">
+                  <p className="text-sm font-medium leading-6 text-slate-700 dark:text-slate-200">
+                    {popupMessage}
+                  </p>
+                </div>
               </div>
-              <p className="flex-1 text-sm font-medium text-gray-800 dark:text-slate-100">
-                {popupMessage}
-              </p>
-              <button
-                type="button"
-                onClick={() => setPopupMessage(null)}
-                className="flex items-center justify-center w-7 h-7 rounded-full text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-700 hover:text-gray-600 dark:hover:text-slate-200 transition-all duration-200"
-                aria-label="Close message"
-              >
-                <X size={16} />
-              </button>
             </motion.div>
           </motion.div>
         )}

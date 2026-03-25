@@ -646,7 +646,7 @@ export default function AccountSettingsPage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-6 bg-black/30 backdrop-blur-sm"
+            className="fixed inset-0 z-50 flex items-end justify-center bg-black/30 p-0 backdrop-blur-sm sm:items-center sm:p-6"
             onClick={() => setFlash(null)}
           >
             <motion.div
@@ -655,38 +655,102 @@ export default function AccountSettingsPage() {
               animate="animate"
               exit="exit"
               transition={{ ease: [0.16, 1, 0.3, 1], duration: 0.3 }}
-              className="relative w-full sm:max-w-md rounded-t-2xl sm:rounded-xl bg-white dark:bg-slate-800 p-5 sm:p-6 shadow-xl"
+              className={`relative w-full overflow-hidden rounded-t-2xl border bg-white/95 shadow-xl dark:bg-slate-900/95 sm:max-w-md sm:rounded-[28px] ${
+                flash.tone === "success"
+                  ? "border-emerald-200/70 dark:border-emerald-500/20"
+                  : flash.tone === "info"
+                    ? "border-sky-200/70 dark:border-sky-500/20"
+                    : "border-red-200/70 dark:border-red-500/20"
+              }`}
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="flex items-start gap-3">
+              <div
+                className={`absolute inset-x-0 top-0 h-24 ${
+                  flash.tone === "success"
+                    ? "bg-gradient-to-r from-emerald-400/20 via-sky-300/20 to-cyan-300/20 dark:from-emerald-400/10 dark:via-sky-400/10 dark:to-cyan-400/10"
+                    : flash.tone === "info"
+                      ? "bg-gradient-to-r from-sky-400/20 via-cyan-300/20 to-indigo-300/20 dark:from-sky-400/10 dark:via-cyan-400/10 dark:to-indigo-400/10"
+                      : "bg-gradient-to-r from-red-400/20 via-rose-300/20 to-orange-300/20 dark:from-red-400/10 dark:via-rose-400/10 dark:to-orange-400/10"
+                }`}
+              />
+              <div
+                className={`absolute -right-10 top-8 h-32 w-32 rounded-full blur-3xl ${
+                  flash.tone === "success"
+                    ? "bg-emerald-300/20 dark:bg-emerald-400/10"
+                    : flash.tone === "info"
+                      ? "bg-sky-300/20 dark:bg-sky-400/10"
+                      : "bg-red-300/20 dark:bg-red-400/10"
+                }`}
+              />
+              <div className="relative px-4 pb-5 pt-4 sm:p-7">
+                <div className="flex items-start justify-end">
+                  <button
+                    type="button"
+                    onClick={() => setFlash(null)}
+                    className="flex h-9 w-9 items-center justify-center rounded-full border border-slate-200/80 bg-white/80 text-slate-400 transition hover:border-slate-300 hover:text-slate-700 dark:border-slate-700 dark:bg-slate-800/80 dark:hover:border-slate-600 dark:hover:text-slate-200"
+                    aria-label="Close message"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+
+                <div className="mt-1 flex flex-col items-center text-center sm:mt-0 sm:flex-row sm:items-center sm:gap-4 sm:text-left">
+                  <div
+                    className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl text-white shadow-lg ${
+                      flash.tone === "success"
+                        ? "bg-gradient-to-br from-emerald-500 to-teal-500 shadow-emerald-500/20"
+                        : flash.tone === "info"
+                          ? "bg-gradient-to-br from-sky-500 to-cyan-500 shadow-sky-500/20"
+                          : "bg-gradient-to-br from-red-500 to-orange-500 shadow-red-500/20"
+                    }`}
+                  >
+                    {flash.tone === "success" ? (
+                      <CheckCircle2 className="h-7 w-7" />
+                    ) : flash.tone === "info" ? (
+                      <BellRing className="h-7 w-7" />
+                    ) : (
+                      <AlertTriangle className="h-7 w-7" />
+                    )}
+                  </div>
+                  <div>
+                    <p
+                      className={`text-xs font-semibold uppercase tracking-[0.22em] ${
+                        flash.tone === "success"
+                          ? "text-emerald-600 dark:text-emerald-300"
+                          : flash.tone === "info"
+                            ? "text-sky-600 dark:text-sky-300"
+                            : "text-red-600 dark:text-red-300"
+                      }`}
+                    >
+                      {flash.tone === "success"
+                        ? "Settings Updated"
+                        : flash.tone === "info"
+                          ? "Settings Notice"
+                          : "Settings Alert"}
+                    </p>
+                    <h3 className="mt-1 text-lg font-semibold text-slate-900 dark:text-slate-50">
+                      {flash.tone === "success"
+                        ? "Changes saved"
+                        : flash.tone === "info"
+                          ? "Please review"
+                          : "Something needs attention"}
+                    </h3>
+                  </div>
+                </div>
+
                 <div
-                  className={`mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${
+                  className={`mt-5 rounded-2xl p-4 text-center sm:text-left ${
                     flash.tone === "success"
-                      ? "bg-emerald-100 text-emerald-600"
+                      ? "border border-emerald-100 bg-gradient-to-br from-emerald-50 via-white to-sky-50 dark:border-emerald-500/10 dark:from-emerald-500/10 dark:via-slate-900 dark:to-sky-500/10"
                       : flash.tone === "info"
-                        ? "bg-sky-100 text-sky-600"
-                        : "bg-red-100 text-red-600"
+                        ? "border border-sky-100 bg-gradient-to-br from-sky-50 via-white to-cyan-50 dark:border-sky-500/10 dark:from-sky-500/10 dark:via-slate-900 dark:to-cyan-500/10"
+                        : "border border-red-100 bg-gradient-to-br from-red-50 via-white to-orange-50 dark:border-red-500/10 dark:from-red-500/10 dark:via-slate-900 dark:to-orange-500/10"
                   }`}
                 >
-                  {flash.tone === "success" ? (
-                    <CheckCircle2 className="h-5 w-5" />
-                  ) : flash.tone === "info" ? (
-                    <BellRing className="h-5 w-5" />
-                  ) : (
-                    <AlertTriangle className="h-5 w-5" />
-                  )}
+                  <p className="text-sm font-medium leading-6 text-slate-700 dark:text-slate-200">
+                    {flash.text}
+                  </p>
                 </div>
-                <p className="flex-1 text-sm font-medium text-slate-800 dark:text-slate-100">
-                  {flash.text}
-                </p>
-                <button
-                  type="button"
-                  onClick={() => setFlash(null)}
-                  className="flex h-7 w-7 items-center justify-center rounded-full text-slate-400 transition hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-700 dark:hover:text-slate-200"
-                  aria-label="Close message"
-                >
-                  <X className="h-4 w-4" />
-                </button>
               </div>
             </motion.div>
           </motion.div>
