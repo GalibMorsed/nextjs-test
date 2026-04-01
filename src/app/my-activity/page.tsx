@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactNode } from "react";
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import {
@@ -14,7 +15,10 @@ import {
   TrendingUp,
 } from "lucide-react";
 import { getVerifiedAuthUser } from "@/lib/clientAuth";
-import { readActivityAnalytics, type ActivityAnalytics } from "@/lib/activityAnalytics";
+import {
+  readActivityAnalytics,
+  type ActivityAnalytics,
+} from "@/lib/activityAnalytics";
 import { getUserNotes, type UserNote } from "../services/notesService";
 import {
   getUserPersonalization,
@@ -50,6 +54,14 @@ type RangeLabel = (typeof RANGE_OPTIONS)[number]["label"];
 const timeOf = (note: UserNote) =>
   new Date(note.created_at || note.article_date || 0).getTime() || 0;
 
+const formatSummaryTime = (value: string) =>
+  new Intl.DateTimeFormat(undefined, {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  }).format(new Date(value));
+
 const dayKey = (value: string) => {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "";
@@ -77,9 +89,9 @@ const heatColor = (count: number) =>
 
 const HEAT_LEGEND = [
   { label: "None", color: "bg-stone-100 dark:bg-slate-200" },
-  { label: "1-2 articles", color: "bg-emerald-200 dark:bg-emerald-300" },
-  { label: "3-5 articles", color: "bg-emerald-500 dark:bg-emerald-400" },
-  { label: "6+ articles", color: "bg-emerald-700 dark:bg-emerald-500" },
+  { label: "1-2 activities", color: "bg-emerald-200 dark:bg-emerald-300" },
+  { label: "3-5 activities", color: "bg-emerald-500 dark:bg-emerald-400" },
+  { label: "6+ activities", color: "bg-emerald-700 dark:bg-emerald-500" },
 ] as const;
 
 export default function MyActivityPage() {
@@ -165,15 +177,82 @@ export default function MyActivityPage() {
     });
   }, [activeRange.days, activityAnalytics.events]);
 
+  const aiSummaryEvents = useMemo(() => {
+    return filteredEvents
+      .filter((event) => event.type === "ai_summary")
+      .slice()
+      .sort(
+        (a, b) =>
+          new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(),
+      );
+  }, [filteredEvents]);
+
+  const recentAiSummaries = useMemo(() => {
+    return aiSummaryEvents.slice(0, 4).map((event) => ({
+      source: event.source?.trim() || "Unknown source",
+      topic: event.category?.trim() || "Uncategorized",
+      timestamp: event.timestamp,
+    }));
+  }, [aiSummaryEvents]);
+
+  const mostSummarizedTopics = useMemo(() => {
+    const counts = new Map<string, number>();
+
+    aiSummaryEvents.forEach((event) => {
+      const topic =
+        event.category?.trim() || event.source?.trim() || "Uncategorized";
+      counts.set(topic, (counts.get(topic) ?? 0) + 1);
+    });
+
+    const total = Array.from(counts.values()).reduce(
+      (sum, value) => sum + value,
+      0,
+    );
+
+    return Array.from(counts.entries())
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5)
+      .map(([topic, count]) => ({
+        topic,
+        count,
+        percent: total > 0 ? Math.round((count / total) * 1000) / 10 : 0,
+      }));
+  }, [aiSummaryEvents]);
+
   const noteCount = filteredNotes.length;
-  const articleCount = filteredEvents.filter((event) => event.type === "article_open").length;
-  const previousArticleCount = previousEvents.filter((event) => event.type === "article_open").length;
+  const articleCount = filteredEvents.filter(
+    (event) => event.type === "article_open",
+  ).length;
+  const aiSummaryCount = aiSummaryEvents.length;
+  const aiSuggestionCount = filteredEvents.filter(
+    (event) => event.type === "personalization_suggestion",
+  ).length;
+  const previousArticleCount = previousEvents.filter(
+    (event) => event.type === "article_open",
+  ).length;
+  const previousAiSummaryCount = previousEvents.filter(
+    (event) => event.type === "ai_summary",
+  ).length;
+  const previousAiSuggestionCount = previousEvents.filter(
+    (event) => event.type === "personalization_suggestion",
+  ).length;
 
   const noteDelta =
-    previousNotes.length > 0 ? Math.round(((noteCount - previousNotes.length) / previousNotes.length) * 100) : noteCount > 0 ? 100 : 0;
+    previousNotes.length > 0
+      ? Math.round(
+          ((noteCount - previousNotes.length) / previousNotes.length) * 100,
+        )
+      : noteCount > 0
+        ? 100
+        : 0;
   const articleDelta =
-    previousArticleCount > 0 ? Math.round(((articleCount - previousArticleCount) / previousArticleCount) * 100) : articleCount > 0 ? 100 : 0;
-
+    previousArticleCount > 0
+      ? Math.round(
+          ((articleCount - previousArticleCount) / previousArticleCount) * 100,
+        )
+      : articleCount > 0
+        ? 100
+        : 0;
   const engagementDays = useMemo(() => {
     const counts = new Map<string, number>();
 
@@ -324,28 +403,33 @@ export default function MyActivityPage() {
     return labels.map((label, index) => ({ label, count: counts[index] }));
   }, [activeRange.days, engagementDays]);
 
+  const totalAiUsage = aiSummaryCount + aiSuggestionCount;
+  const previousTotalAiUsage =
+    previousAiSummaryCount + previousAiSuggestionCount;
+
   const analystCards = [
     {
-      title: "AI summaries",
-      description: `${activityAnalytics.aiSummaryCount} AI summary use${activityAnalytics.aiSummaryCount === 1 ? "" : "s"} on articles.`,
-      icon: Bot,
-    },
-    {
-      title: "AI suggestions",
-      description: `${activityAnalytics.personalizationSuggestionCount} AI suggestion request${activityAnalytics.personalizationSuggestionCount === 1 ? "" : "s"} for personalization.`,
-      icon: BrainCircuit,
-    },
-    {
       title: "Total AI usage",
-      description: `${activityAnalytics.aiSummaryCount + activityAnalytics.personalizationSuggestionCount} combined AI use${activityAnalytics.aiSummaryCount + activityAnalytics.personalizationSuggestionCount === 1 ? "" : "s"} in your account.`,
+      description: `${totalAiUsage} combined AI use${totalAiUsage === 1 ? "" : "s"} in the selected range.`,
       icon: Sparkles,
+      delta:
+        previousTotalAiUsage > 0
+          ? Math.round(
+              ((totalAiUsage - previousTotalAiUsage) / previousTotalAiUsage) *
+                100,
+            )
+          : totalAiUsage > 0
+            ? 100
+            : 0,
     },
   ] as const;
 
+  const personalizationStatus = personalization ? "Available" : "Not set";
+
   return (
-    <main className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(16,185,129,0.08),_transparent_28%),linear-gradient(to_bottom,_#fafaf9,_#ffffff_28%)] px-4 py-6 sm:px-6 lg:px-8 dark:bg-[radial-gradient(circle_at_top,_rgba(16,185,129,0.12),_transparent_24%),linear-gradient(to_bottom,_#020617,_#0f172a_38%,_#020617)]">
+    <main className="min-h-screen overflow-x-hidden bg-[radial-gradient(circle_at_top,_rgba(16,185,129,0.08),_transparent_28%),linear-gradient(to_bottom,_#fafaf9,_#ffffff_28%)] px-4 py-6 sm:px-6 lg:px-8 dark:bg-[radial-gradient(circle_at_top,_rgba(16,185,129,0.12),_transparent_24%),linear-gradient(to_bottom,_#020617,_#0f172a_38%,_#020617)]">
       <motion.div
-        className="mx-auto flex max-w-7xl flex-col gap-5"
+        className="mx-auto flex min-w-0 max-w-7xl flex-col gap-5"
         variants={staggerContainer}
         initial="hidden"
         animate="visible"
@@ -358,7 +442,7 @@ export default function MyActivityPage() {
           <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
             <div className="max-w-2xl">
               <h1 className="text-3xl font-semibold tracking-tight text-slate-900 sm:text-4xl dark:text-slate-50">My Activity</h1>
-              <p className="mt-2 text-base text-slate-600 dark:text-slate-300">Your reading insights, notes, history, and AI analyst activity in one place.</p>
+              <p className="mt-2 text-base text-slate-600 dark:text-slate-300">Your reading insights, notes, history, and AI analyst activity in one place.🧐</p>
               <div className="mt-3 inline-flex rounded-full bg-stone-100 px-3 py-1 text-sm font-medium text-slate-600 dark:bg-slate-800 dark:text-slate-300">
                 Selected filter: {selectedRange}
               </div>
@@ -382,15 +466,38 @@ export default function MyActivityPage() {
           </div>
         </motion.section>
 
-        <section className="grid grid-cols-2 gap-4 xl:grid-cols-4">
-          <MetricCard title="Articles read" value={articleCount} delta={articleDelta} subtitle="Counted from how many times you opened articles with Read more in this range." icon={<FileText className="h-5 w-5" />} />
-          <MetricCard title="Notes added" value={noteCount} delta={noteDelta} subtitle="Saved notes and highlights from your account." icon={<FileText className="h-5 w-5" />} />
-          <MetricCard title="Reading streak" value={streak.current} suffix={streak.current === 1 ? "day" : "days"} subtitle={`Personal best: ${streak.best} day${streak.best === 1 ? "" : "s"}`} icon={<Flame className="h-5 w-5" />} />
-          <MetricCard title="Live sessions" value={0} subtitle="No live-session watch tracking has been saved for this account yet." icon={<Radio className="h-5 w-5" />} />
+        <section className="grid min-w-0 grid-cols-2 gap-4 xl:grid-cols-4">
+          <MetricCard
+            title="Articles read"
+            value={articleCount}
+            delta={articleDelta}
+            subtitle="How many opened articles with in this range."
+            icon={<FileText className="h-5 w-5" />}
+          />
+          <MetricCard
+            title="Notes added"
+            value={noteCount}
+            delta={noteDelta}
+            subtitle="Saved notes and highlights from your account."
+            icon={<FileText className="h-5 w-5" />}
+          />
+          <MetricCard
+            title="Reading streak"
+            value={streak.current}
+            suffix={streak.current === 1 ? "day" : "days"}
+            subtitle={`Personal best: ${streak.best} day${streak.best === 1 ? "" : "s"} in a row.`}
+            icon={<Flame className="h-5 w-5" />}
+          />
+          <MetricCard
+            title="Live sessions"
+            value={0}
+            subtitle="No live-session watched yet."
+            icon={<Radio className="h-5 w-5" />}
+          />
         </section>
 
-        <section className="grid gap-4 xl:grid-cols-[1.6fr_1fr]">
-          <Panel title="Daily reading activity" description="A visual trend area for article opens, saved notes, and AI usage over time.">
+        <section className="grid min-w-0 gap-4 xl:grid-cols-[1.6fr_1fr]">
+          <Panel title="Daily reading activity" description="A visual trend area for usage over time.">
             <div className="flex h-[280px] items-end gap-4 rounded-[24px] border border-slate-200/80 bg-white px-4 pb-6 pt-8 dark:border-slate-700 dark:bg-slate-950/40">
               {chartBuckets.map((item) => {
                 const max = Math.max(...chartBuckets.map((entry) => entry.count), 1);
@@ -461,53 +568,72 @@ export default function MyActivityPage() {
             </div>
           </Panel>
 
-          <Panel title="Category breakdown" description="Categories are ranked by how often you used them during the selected period.">
+          <Panel title="Category breakdown" description="Categories are ranked by how often you used them during a selected period.">
             {categoryBreakdown.length > 0 ? (
-              <div className="grid gap-3 sm:grid-cols-2">
-                {categoryBreakdown.map((item) => (
-                  <div key={item.category} className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-5 dark:border-slate-700 dark:bg-slate-950/40">
-                    <div className="flex items-center justify-between gap-3">
-                      <div className="text-lg font-medium capitalize text-slate-800 dark:text-slate-100">{item.category.replaceAll("-", " ")}</div>
-                      <div className="text-sm text-slate-500 dark:text-slate-400">{item.count}</div>
+              <div className="grid gap-x-10 gap-y-6 sm:grid-cols-2">
+                {categoryBreakdown.map((item, idx) => (
+                  <motion.div
+                    key={item.category}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    whileHover={{
+                      y: -2,
+                      borderColor: "rgba(16, 185, 129, 0.4)",
+                    }}
+                    transition={{ ...softSpring, delay: idx * 0.04 }}
+                    className="group relative flex flex-col gap-2.5 rounded-2xl border border-slate-200/80 bg-slate-50/40 p-4 transition-colors dark:border-slate-800/50 dark:bg-slate-900/40"
+                  >
+                    <div className="flex items-center justify-between gap-3 px-0.5">
+                      <span className="text-sm font-semibold capitalize text-slate-700 dark:text-slate-200">
+                        {item.category.replaceAll("-", " ")}
+                      </span>
+                      <span className="text-xs font-bold tabular-nums text-slate-500 dark:text-slate-400">
+                        {item.percent}%
+                      </span>
                     </div>
-                    <div className="mt-3 h-2 rounded-full bg-slate-200 dark:bg-slate-800">
-                      <div className="h-full rounded-full bg-[linear-gradient(90deg,_rgba(16,185,129,0.95),_rgba(59,130,246,0.75))]" style={{ width: `${item.percent}%` }} />
+                    <div className="relative h-2.5 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800/80">
+                      <motion.div
+                        initial={{ width: 0 }}
+                        animate={{ width: `${item.percent}%` }}
+                        transition={{ ...softSpring, delay: 0.2 + idx * 0.05 }}
+                        className="h-full rounded-full bg-[linear-gradient(90deg,_rgba(16,185,129,0.95),_rgba(59,130,246,0.75))] shadow-[0_0_12px_-2px_rgba(16,185,129,0.4)]"
+                      />
                     </div>
-                  </div>
+                  </motion.div>
                 ))}
               </div>
             ) : (
-              <EmptyStateText>No category usage found yet. Open articles from category pages with Read more to build this section.</EmptyStateText>
+              <EmptyStateText>No category usage found yet. Open any categories.</EmptyStateText>
             )}
           </Panel>
         </section>
 
-        <section className="grid gap-4 xl:grid-cols-2">
-          <Panel title="Reading streak" description="A heatmap-style streak grid for recent reading, note-taking, and AI activity days.">
+        <section className="grid min-w-0 gap-4 xl:grid-cols-2">
+          <Panel title="Reading streak" description="A heatmap-style streak grid for recent reading activity days.">
             <div className="space-y-4">
-              <div className="grid grid-cols-6 gap-3 sm:grid-cols-8 lg:grid-cols-10">
+              <div className="grid grid-cols-5 gap-2 sm:grid-cols-8 sm:gap-3 lg:grid-cols-10">
                 {heatmap.map((day, index) => (
                   <motion.div
-                  key={day.key}
-                  initial={{ opacity: 0, scale: 0.92 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ ...softSpring, delay: index * 0.01 }}
-                  whileHover={{ scale: 1.08, y: -1 }}
-                  className={`flex aspect-square items-center justify-center rounded-xl text-[11px] font-medium ${heatColor(day.count)} ${
-                    day.count > 0
-                      ? "text-emerald-950 dark:text-emerald-50"
-                      : "text-slate-500 dark:text-slate-400"
-                  }`}
-                  title={`${day.key}: ${day.count}`}
-                >
-                  {day.key.slice(-2)}
+                    key={day.key}
+                    initial={{ opacity: 0, scale: 0.92 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ ...softSpring, delay: index * 0.01 }}
+                    whileHover={{ scale: 1.08, y: -1 }}
+                    className={`flex aspect-square min-w-0 items-center justify-center rounded-lg text-[10px] font-medium sm:rounded-xl sm:text-[11px] ${heatColor(day.count)} ${
+                      day.count > 0
+                        ? "text-emerald-950 dark:text-emerald-50"
+                        : "text-slate-500 dark:text-slate-400"
+                    }`}
+                    title={`${day.key}: ${day.count}`}
+                  >
+                    {day.key.slice(-2)}
                   </motion.div>
                 ))}
               </div>
 
-              <div className="flex flex-wrap items-center gap-x-7 gap-y-2 rounded-2xl border border-stone-200/80 bg-stone-50/90 px-4 py-3 dark:border-slate-700/70 dark:bg-slate-950/60">
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-2xl border border-stone-200/80 bg-stone-50/90 px-3 py-3 text-xs sm:gap-x-7 sm:px-4 sm:text-sm dark:border-slate-700/70 dark:bg-slate-950/60">
                 {HEAT_LEGEND.map((item) => (
-                  <div key={item.label} className="flex items-center gap-2.5 text-sm font-medium text-stone-600 dark:text-slate-200">
+                  <div key={item.label} className="flex items-center gap-2 text-xs font-medium text-stone-600 sm:gap-2.5 sm:text-sm dark:text-slate-200">
                     <span className={`h-4 w-4 rounded-[4px] ring-1 ring-black/5 dark:ring-white/10 ${item.color}`} aria-hidden />
                     <span>{item.label}</span>
                   </div>
@@ -516,52 +642,238 @@ export default function MyActivityPage() {
             </div>
           </Panel>
 
-          <Panel title="Top sources" description="Sources are ranked from article opens, saved notes, and AI summary usage combined.">
+          <Panel title="Top sources" description="Sources are ranked from usage behavior during the selected period.">
             {sourceCounts.length > 0 ? (
-              <div className="space-y-4">
-                {sourceCounts.map(([source, count]) => {
-                  const max = sourceCounts[0]?.[1] ?? 1;
-                  return (
-                    <div key={source} className="grid grid-cols-[minmax(0,1fr)_2fr_auto] items-center gap-3">
-                      <div className="truncate text-base text-slate-800 dark:text-slate-100">{source}</div>
-                      <div className="h-3 rounded-full bg-slate-100 dark:bg-slate-800">
-                        <div className="h-full rounded-full bg-[linear-gradient(90deg,_rgba(16,185,129,0.95),_rgba(59,130,246,0.75))]" style={{ width: `${Math.max((count / max) * 100, 10)}%` }} />
-                      </div>
-                      <div className="text-base text-slate-600 dark:text-slate-300">{count}</div>
-                    </div>
-                  );
-                })}
-              </div>
+              (() => {
+                const total = sourceCounts.reduce(
+                  (sum, [, count]) => sum + count,
+                  0,
+                );
+
+                return (
+                  <div className="grid min-w-0 gap-4 sm:gap-x-10 sm:gap-y-6 sm:grid-cols-2">
+                    {sourceCounts.map(([source, count], idx) => {
+                      const max = sourceCounts[0]?.[1] ?? 1;
+                      const percent = Math.max((count / max) * 100, 10);
+                      const share =
+                        total > 0 ? Math.round((count / total) * 1000) / 10 : 0;
+
+                      return (
+                        <motion.div
+                          key={source}
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          whileHover={{
+                            y: -2,
+                            borderColor: "rgba(16, 185, 129, 0.4)",
+                          }}
+                          transition={{ ...softSpring, delay: idx * 0.04 }}
+                          className="group relative min-w-0 flex flex-col gap-2.5 rounded-2xl border border-slate-200/80 bg-slate-50/40 p-4 transition-colors dark:border-slate-800/50 dark:bg-slate-900/40"
+                        >
+                          <div className="flex items-center justify-between gap-3 px-0.5">
+                            <span className="min-w-0 flex-1 truncate text-sm font-semibold text-slate-700 dark:text-slate-200">
+                              {source}
+                            </span>
+                            <span className="shrink-0 text-xs font-bold tabular-nums text-slate-500 dark:text-slate-400">
+                              {share}%
+                            </span>
+                          </div>
+                          <div className="relative h-2.5 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800/80">
+                            <motion.div
+                              initial={{ width: 0 }}
+                              animate={{ width: `${percent}%` }}
+                              transition={{
+                                ...softSpring,
+                                delay: 0.2 + idx * 0.05,
+                              }}
+                              className="h-full rounded-full bg-[linear-gradient(90deg,_rgba(16,185,129,0.95),_rgba(59,130,246,0.75))] shadow-[0_0_12px_-2px_rgba(16,185,129,0.4)]"
+                            />
+                          </div>
+                        </motion.div>
+                      );
+                    })}
+                  </div>
+                );
+              })()
             ) : (
-              <EmptyStateText>No source activity yet. Open articles, save notes, or use AI summaries to build this list.</EmptyStateText>
+              <EmptyStateText>No source activity yet.</EmptyStateText>
             )}
           </Panel>
         </section>
 
-        <section className="grid gap-4 xl:grid-cols-[1.2fr_1fr]">
-          <Panel title="AI analysts" description="Your AI usage activity across article summaries and personalization suggestions." icon={<Bot className="h-5 w-5" />}>
-            <div className="grid gap-4 lg:grid-cols-3">
-              {analystCards.map(({ title, description, icon: Icon }) => (
-                <article
+        <section className="grid min-w-0 gap-4 xl:grid-cols-1">
+          <Panel
+            title="AI analysts"
+            description="Your AI usage activity across article summaries and personalized suggestions."
+            icon={<Bot className="h-5 w-5" />}
+          >
+            <div className="grid grid-cols-1 gap-5 lg:grid-cols-2 xl:grid-cols-3">
+              {analystCards.map(({ title, description, icon: Icon, delta }) => (
+                <motion.article
                   key={title}
-                  className="rounded-[24px] border border-slate-200/80 bg-[linear-gradient(180deg,_rgba(255,255,255,0.95),_rgba(240,253,250,0.85))] p-5 dark:border-slate-700/80 dark:bg-[linear-gradient(180deg,_rgba(15,23,42,0.96),_rgba(10,18,34,0.92))] dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]"
+                  whileHover={{ y: -4, transition: softSpring }}
+                  className="rounded-[24px] border border-slate-200/80 bg-[linear-gradient(180deg,_rgba(255,255,255,0.95),_rgba(240,253,250,0.85))] p-5 shadow-sm dark:border-slate-700/80 dark:bg-[linear-gradient(180deg,_rgba(15,23,42,0.96),_rgba(10,18,34,0.92))] dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.03),0_10px_30px_-15px_rgba(16,185,129,0.1)]"
                 >
                   <span className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300 dark:ring-1 dark:ring-emerald-700/30">
                     <Icon className="h-5 w-5" />
                   </span>
-                  <h3 className="mt-4 text-lg font-semibold text-slate-900 dark:text-slate-100">{title}</h3>
-                  <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300/90">{description}</p>
-                </article>
+                  <h3 className="mt-4 text-lg font-semibold text-slate-900 dark:text-slate-100">
+                    {title}
+                  </h3>
+                  <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300/90">
+                    {description}
+                  </p>
+                  {typeof delta === "number" ? (
+                    <div
+                      className={`mt-4 inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium ${
+                        delta >= 0
+                          ? "border-emerald-200/60 bg-emerald-50 text-emerald-700 dark:border-emerald-700/40 dark:bg-emerald-950/40 dark:text-emerald-300"
+                          : "border-rose-200/60 bg-rose-50 text-rose-700 dark:border-rose-700/40 dark:bg-rose-950/40 dark:text-rose-300"
+                      }`}
+                    >
+                      {delta >= 0 ? (
+                        <TrendingUp className="h-3.5 w-3.5" />
+                      ) : (
+                        <TrendingDown className="h-3.5 w-3.5" />
+                      )}
+                      {Math.abs(delta)}% vs last period
+                    </div>
+                  ) : null}
+                </motion.article>
               ))}
+
+              <motion.div
+                whileHover={{ y: -4, transition: softSpring }}
+                className="rounded-[24px] border border-slate-200/80 bg-slate-50/90 p-4 shadow-sm sm:p-5 dark:border-slate-700/80 dark:bg-slate-950/40 dark:shadow-[0_10px_30px_-15px_rgba(0,0,0,0.1)]"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+                      Most summarized topics
+                    </h3>
+                    <p className="mt-1 text-sm leading-6 text-slate-600 dark:text-slate-300">
+                      Topics summarized most often.
+                    </p>
+                  </div>
+                  <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-white text-emerald-700 ring-1 ring-slate-200 dark:bg-slate-900 dark:text-emerald-300 dark:ring-slate-700">
+                    <BrainCircuit className="h-4 w-4" />
+                  </span>
+                </div>
+
+                {mostSummarizedTopics.length > 0 ? (
+                  <div className="mt-4 space-y-4">
+                    {mostSummarizedTopics.map((item) => (
+                      <div key={item.topic} className="space-y-2">
+                        <div className="flex items-center justify-between gap-3 text-sm">
+                          <div className="min-w-0 truncate font-medium capitalize text-slate-800 dark:text-slate-100">
+                            {item.topic.replaceAll("-", " ")}
+                          </div>
+                          <div className="shrink-0 text-slate-500 dark:text-slate-400">
+                            {item.count} uses
+                          </div>
+                        </div>
+                        <div className="h-2 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800">
+                          <motion.div
+                            initial={{ width: 0 }}
+                            animate={{ width: `${item.percent}%` }}
+                            transition={{ ...softSpring, delay: 0.2 }}
+                            className="h-full rounded-full bg-[linear-gradient(90deg,_rgba(16,185,129,0.95),_rgba(59,130,246,0.75))]"
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <EmptyStateText>
+                    No AI summaries yet. Use the AI summary on an article.
+                  </EmptyStateText>
+                )}
+              </motion.div>
+
+              <motion.div
+                whileHover={{ y: -4, transition: softSpring }}
+                className="rounded-[24px] border border-slate-200/80 bg-slate-50/90 p-4 shadow-sm sm:p-5 lg:col-span-2 xl:col-span-1 dark:border-slate-700/80 dark:bg-slate-950/40 dark:shadow-[0_10px_30px_-15px_rgba(0,0,0,0.1)]"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+                      Recent AI summaries
+                    </h3>
+                    <p className="mt-1 text-sm leading-6 text-slate-600 dark:text-slate-300">
+                      The latest summaries in this range.
+                    </p>
+                  </div>
+                  <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-white text-emerald-700 ring-1 ring-slate-200 dark:bg-slate-900 dark:text-emerald-300 dark:ring-slate-700">
+                    <Sparkles className="h-4 w-4" />
+                  </span>
+                </div>
+
+                {recentAiSummaries.length > 0 ? (
+                  <div className="mt-4 space-y-3">
+                    {recentAiSummaries.map((item, idx) => (
+                      <motion.div
+                        key={`${item.timestamp}-${item.source}`}
+                        initial={{ opacity: 0, x: 10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ ...softSpring, delay: idx * 0.05 }}
+                        whileHover={{
+                          x: -4,
+                          scale: 1.01,
+                          transition: { duration: 0.2 },
+                        }}
+                        className="cursor-default rounded-2xl border border-slate-200 bg-white/80 px-4 py-3.5 shadow-[0_2px_8px_-3px_rgba(0,0,0,0.05)] hover:bg-white dark:border-slate-700 dark:bg-slate-900/70 dark:hover:bg-slate-900"
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0">
+                            <p className="truncate text-sm font-semibold text-slate-900 dark:text-slate-100">
+                              {item.source}
+                            </p>
+                            <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
+                              {item.topic}
+                            </p>
+                          </div>
+                          <p className="shrink-0 text-xs font-medium text-slate-500 dark:text-slate-400">
+                            {formatSummaryTime(item.timestamp)}
+                          </p>
+                        </div>
+                      </motion.div>
+                    ))}
+                  </div>
+                ) : (
+                  <EmptyStateText>
+                    No AI summary activity yet. Generate one to see the latest items here.
+                  </EmptyStateText>
+                )}
+              </motion.div>
             </div>
           </Panel>
 
-          <Panel title="Activity summary" description="Quick status blocks for the analytics services behind this page." icon={<TrendingUp className="h-5 w-5" />}>
-            <div className="space-y-3">
-              <SummaryRow icon={<CalendarRange className="h-4 w-4" />} title="Time filters" detail={`${selectedRange} selected`} />
-              <SummaryRow icon={<TrendingUp className="h-4 w-4" />} title="Reading analytics" detail={`${noteCount} note${noteCount === 1 ? "" : "s"} in range`} />
-              <SummaryRow icon={<Bot className="h-4 w-4" />} title="AI summaries used" detail={`${activityAnalytics.aiSummaryCount} total`} />
-              <SummaryRow icon={<Sparkles className="h-4 w-4" />} title="AI suggestions used" detail={`${activityAnalytics.personalizationSuggestionCount} total`} />
+          <Panel
+            title="Activity summary"
+            description="Quick status blocks for the analytics services behind my activity."
+            icon={<TrendingUp className="h-5 w-5" />}
+          >
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              <SummaryRow
+                icon={<CalendarRange className="h-4 w-4" />}
+                title="Time filters"
+                detail={`${selectedRange} selected`}
+              />
+              <SummaryRow
+                icon={<TrendingUp className="h-4 w-4" />}
+                title="Reading analytics"
+                detail={`${noteCount} note${noteCount === 1 ? "" : "s"} in range`}
+              />
+              <SummaryRow
+                icon={<Bot className="h-4 w-4" />}
+                title="AI summaries used"
+                detail={`${aiSummaryCount} in range`}
+              />
+              <SummaryRow
+                icon={<Sparkles className="h-4 w-4" />}
+                title="Personalization"
+                detail={personalizationStatus}
+              />
             </div>
           </Panel>
         </section>
@@ -581,7 +893,7 @@ function MetricCard({
   title: string;
   value: number;
   subtitle: string;
-  icon: React.ReactNode;
+  icon: ReactNode;
   delta?: number;
   suffix?: string;
 }) {
@@ -634,8 +946,8 @@ function Panel({
 }: {
   title: string;
   description: string;
-  children: React.ReactNode;
-  icon?: React.ReactNode;
+  children: ReactNode;
+  icon?: ReactNode;
 }) {
   return (
     <motion.section
@@ -661,7 +973,7 @@ function SummaryRow({
   title,
   detail,
 }: {
-  icon: React.ReactNode;
+  icon: ReactNode;
   title: string;
   detail: string;
 }) {
@@ -682,7 +994,7 @@ function SummaryRow({
   );
 }
 
-function EmptyStateText({ children }: { children: React.ReactNode }) {
+function EmptyStateText({ children }: { children: ReactNode }) {
   return (
     <motion.div
       initial={{ opacity: 0 }}

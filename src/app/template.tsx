@@ -12,6 +12,7 @@ export default function Template({ children }: { children: React.ReactNode }) {
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
+      className="min-w-0 overflow-x-hidden"
     >
       {children}
     </motion.div>

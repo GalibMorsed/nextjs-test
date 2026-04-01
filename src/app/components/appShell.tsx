@@ -68,12 +68,12 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         onMenuToggle={() => setIsSidebarOpen((prev) => !prev)}
         isMobileOpen={isSidebarOpen}
       />
-      <div className="flex min-h-[calc(100vh-65px)]">
+      <div className="flex min-h-[calc(100vh-65px)] overflow-x-hidden">
         <Sidebar
           isMobileOpen={isSidebarOpen}
           onCloseMobile={() => setIsSidebarOpen(false)}
         />
-        <main className="flex-1 md:ml-72">
+        <main className="min-w-0 flex-1 overflow-x-hidden md:ml-72">
           <Template>{children}</Template>
         </main>
       </div>
