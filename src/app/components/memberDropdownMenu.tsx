@@ -8,6 +8,7 @@ import {
   useState,
   useCallback,
 } from "react";
+import { createPortal } from "react-dom";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import {
@@ -108,6 +109,11 @@ export default function MemberDropdownMenu({
   const [isOpen, setIsOpen] = useState(false);
   const [showNotice, setShowNotice] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
   const buttonRef = useRef<HTMLButtonElement | null>(null);
   const panelRef = useRef<HTMLDivElement | null>(null);
   const menuItemsRef = useRef<(HTMLButtonElement | null)[]>([]);
@@ -359,7 +365,7 @@ export default function MemberDropdownMenu({
                 transition={panelTransition}
                 className="
                   fixed inset-x-3 top-[4.65rem] z-50 max-h-[min(78vh,32rem)] overflow-visible
-                  md:absolute md:left-1/2 md:right-auto md:top-[calc(100%+0.5rem)] md:max-h-[min(85vh,32rem)] md:w-[min(94vw,22.5rem)] md:-translate-x-1/2
+                  md:absolute md:left-1/2 md:right-auto md:top-[calc(100%+0.6rem)] md:max-h-none md:w-[min(94vw,28.75rem)] md:-translate-x-1/2
                 "
               >
                 <div
@@ -393,7 +399,7 @@ export default function MemberDropdownMenu({
                     style={{ transformOrigin: "50% 50%" }}
                   />
                   <motion.div
-                    className="flex shrink-0 items-start justify-between gap-3 border-b border-[var(--border)] px-4 pb-4 pt-5"
+                    className="flex shrink-0 items-start justify-between gap-3 border-b border-[var(--border)] px-4 pb-4 pt-5 md:px-5 md:pb-5 md:pt-6"
                     initial={reduceMotion ? {} : { opacity: 0, y: -6 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={
@@ -405,11 +411,11 @@ export default function MemberDropdownMenu({
                     <div className="min-w-0 pr-2">
                       <p
                         id={titleId}
-                        className="text-[11px] font-bold uppercase tracking-[0.12em] text-blue-700 dark:text-blue-400"
+                        className="text-[11px] font-bold uppercase tracking-[0.12em] text-blue-600 dark:text-blue-400 md:text-xs md:tracking-[0.15em]"
                       >
                         Advance NextNews
                       </p>
-                      <p className="mt-1.5 text-xs font-normal leading-relaxed text-[var(--muted)]">
+                      <p className="mt-1.5 text-xs font-normal leading-relaxed text-[var(--muted)] md:mt-2 md:text-sm">
                         Pick one to jump
                         there in a single tap-no digging through menus.🤫
                       </p>
@@ -431,7 +437,7 @@ export default function MemberDropdownMenu({
                   </motion.div>
 
                   <motion.ul
-                    className="flex flex-col gap-2.5 overflow-y-auto overscroll-contain px-3.5 py-3.5"
+                    className="flex flex-col gap-2.5 overflow-y-auto overscroll-contain px-3.5 py-3.5 md:gap-3 md:px-4 md:py-4"
                     role="none"
                     variants={menuListVariants}
                     initial="hidden"
@@ -465,9 +471,10 @@ export default function MemberDropdownMenu({
                               reduceMotion
                                 ? undefined
                                 : {
-                                    y: -2,
+                                    y: -2.5,
+                                    scale: 1.015,
                                     boxShadow:
-                                      "0 12px 28px -8px color-mix(in srgb, var(--primary) 22%, transparent), 0 4px 12px -4px rgba(15, 23, 42, 0.1)",
+                                      "0 16px 32px -8px color-mix(in srgb, var(--primary) 30%, transparent), 0 6px 14px -6px rgba(15, 23, 42, 0.15)",
                                   }
                             }
                             whileTap={
@@ -483,6 +490,7 @@ export default function MemberDropdownMenu({
                               transition-colors duration-200
                               focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)]/40
                               focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--card)]
+                              md:gap-4 md:rounded-2xl md:px-4 md:py-4
                               ${
                                 isSelected
                                   ? "border-[color:color-mix(in_srgb,var(--primary)_48%,var(--border))] bg-[color:color-mix(in_srgb,var(--primary)_8%,var(--card))] shadow-[0_0_0_1px_color-mix(in_srgb,var(--primary)_12%,transparent),0_8px_20px_-10px_color-mix(in_srgb,var(--primary)_18%,transparent)]"
@@ -494,25 +502,26 @@ export default function MemberDropdownMenu({
                             <motion.span
                               className="
                                 inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full
-                                bg-blue-50 text-blue-600 ring-1 ring-blue-100/80
-                                transition-colors duration-200
-                                group-hover:bg-blue-100 group-hover:text-blue-700 group-hover:ring-blue-200/90
-                                dark:bg-blue-950/45 dark:text-blue-400 dark:ring-blue-800/50
-                                dark:group-hover:bg-blue-900/50 dark:group-hover:text-blue-300 dark:group-hover:ring-blue-700/40
+                                bg-gradient-to-br from-emerald-50 to-teal-50 text-emerald-600 ring-1 ring-emerald-100/80
+                                transition-all duration-300
+                                group-hover:from-emerald-100 group-hover:to-teal-100 group-hover:text-emerald-700 group-hover:ring-emerald-200/90 group-hover:shadow-md
+                                dark:from-emerald-400/10 dark:to-teal-400/10 dark:text-emerald-400 dark:ring-emerald-500/20
+                                dark:group-hover:from-emerald-400/20 dark:group-hover:to-teal-400/20 dark:group-hover:text-emerald-300 dark:group-hover:ring-emerald-500/40 dark:group-hover:shadow-[0_4px_12px_rgba(16,185,129,0.15)]
+                                md:h-13 md:w-13 md:rounded-2xl
                               "
                               aria-hidden
-                              whileHover={reduceMotion ? undefined : { scale: 1.06 }}
+                              whileHover={reduceMotion ? undefined : { scale: 1.1, rotate: 3 }}
                               transition={{
                                 type: "spring",
-                                stiffness: 380,
-                                damping: 28,
+                                stiffness: 350,
+                                damping: 20,
                               }}
                             >
-                              <Icon size={18} strokeWidth={1.6} />
+                              <Icon size={18} strokeWidth={1.6} className="md:h-5 md:w-5" />
                             </motion.span>
                             <span className="min-w-0 flex-1">
                               <span className="flex items-center gap-2">
-                                <span className="text-sm font-semibold text-[var(--foreground)] transition-colors duration-200 group-hover:text-[color:color-mix(in_srgb,var(--foreground)_90%,var(--primary)_10%)]">
+                                <span className="text-sm font-semibold text-[var(--foreground)] transition-colors duration-200 group-hover:text-[color:color-mix(in_srgb,var(--foreground)_90%,var(--primary)_10%)] md:text-base">
                                   {item.label}
                                 </span>
                                 <span className="inline-flex rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-slate-600 ring-1 ring-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:ring-slate-700">
@@ -520,7 +529,7 @@ export default function MemberDropdownMenu({
                                 </span>
                               </span>
                               {item.description ? (
-                                <span className="mt-0.5 block text-[11px] leading-snug text-[var(--muted)]">
+                                <span className="mt-0.5 block text-[11px] leading-snug text-[var(--muted)] md:mt-1 md:text-xs">
                                   {item.description}
                                 </span>
                               ) : null}
@@ -528,18 +537,19 @@ export default function MemberDropdownMenu({
                             <motion.span
                               className="
                                 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full
-                                border border-blue-100/90 bg-blue-50/90 text-blue-500
-                                transition-colors duration-200
-                                group-hover:border-blue-200 group-hover:bg-blue-100/95 group-hover:text-blue-600
-                                dark:border-blue-800/55 dark:bg-blue-950/40 dark:text-blue-400
-                                dark:group-hover:border-blue-600/50 dark:group-hover:bg-blue-900/45 dark:group-hover:text-blue-300
+                                border border-emerald-100/90 bg-gradient-to-br from-emerald-50/90 to-teal-50/90 text-emerald-500
+                                transition-all duration-300
+                                group-hover:border-emerald-200 group-hover:from-emerald-100/95 group-hover:to-teal-100/95 group-hover:text-emerald-600
+                                dark:border-emerald-500/20 dark:from-emerald-400/10 dark:to-teal-400/10 dark:text-emerald-400
+                                dark:group-hover:border-emerald-500/30 dark:group-hover:from-emerald-400/20 dark:group-hover:to-teal-400/20 dark:group-hover:text-emerald-300
+                                md:h-10 md:w-10 md:rounded-xl
                               "
                               aria-hidden
-                              whileHover={reduceMotion ? undefined : { x: 3 }}
+                              whileHover={reduceMotion ? undefined : { x: 5, scale: 1.08 }}
                               transition={{
                                 type: "spring",
-                                stiffness: 400,
-                                damping: 26,
+                                stiffness: 350,
+                                damping: 20,
                               }}
                             >
                               <ArrowRight
@@ -555,7 +565,7 @@ export default function MemberDropdownMenu({
                   </motion.ul>
 
                   <motion.div
-                    className="shrink-0 border-t border-[var(--border)] bg-[color:color-mix(in_srgb,var(--card)_96%,var(--primary)_4%)] px-4 py-3 dark:bg-[color:color-mix(in_srgb,var(--card)_92%,var(--primary)_5%)]"
+                    className="shrink-0 border-t border-[var(--border)] bg-[color:color-mix(in_srgb,var(--card)_96%,var(--primary)_4%)] px-4 py-3 dark:bg-[color:color-mix(in_srgb,var(--card)_92%,var(--primary)_5%)] md:px-5 md:py-4"
                     initial={reduceMotion ? {} : { opacity: 0 }}
                     animate={{ opacity: 1 }}
                     transition={{
@@ -563,7 +573,7 @@ export default function MemberDropdownMenu({
                       delay: reduceMotion ? 0 : 0.28,
                     }}
                   >
-                    <p className="text-center text-[11px] leading-relaxed text-[var(--muted)]">
+                    <p className="text-center text-[11px] leading-relaxed text-[var(--muted)] md:text-xs">
                       Most areas are available only to{" "}
                       <span className="font-semibold text-[var(--foreground)]">
                         Pro
@@ -583,38 +593,40 @@ export default function MemberDropdownMenu({
         </AnimatePresence>
       </div>
 
-      <AnimatePresence>
-        {showNotice && (
-          <motion.div
-            initial={
-              reduceMotion
-                ? { opacity: 0 }
-                : { opacity: 0, y: 28, x: 16, scale: 0.97 }
-            }
-            animate={{ opacity: 1, y: 0, x: 0, scale: 1 }}
-            exit={
-              reduceMotion
-                ? { opacity: 0 }
-                : { opacity: 0, y: 16, x: 8, scale: 0.98 }
-            }
-            transition={{
-              ease: [0.16, 1, 0.3, 1],
-              duration: reduceMotion ? 0.01 : 0.32,
-            }}
-            className="pointer-events-none fixed bottom-4 right-4 z-[60] w-[min(100vw-2rem,22rem)] sm:bottom-6 sm:right-6"
-          >
-            <div
-              className="
-                pointer-events-auto relative overflow-hidden rounded-2xl border border-sky-200/70
-                bg-white/95 shadow-xl dark:border-sky-500/20 dark:bg-slate-900/95
-                sm:rounded-[24px]
-              "
-              role="status"
-              aria-live="polite"
-              aria-atomic
-            >
-              <div className="absolute inset-x-0 top-0 h-20 bg-gradient-to-r from-sky-400/20 via-cyan-300/20 to-indigo-300/20 dark:from-sky-400/10 dark:via-cyan-400/10 dark:to-indigo-400/10" />
-              <div className="absolute -right-8 top-6 h-28 w-28 rounded-full bg-sky-300/20 blur-3xl dark:bg-sky-400/10" />
+      {mounted
+        ? createPortal(
+            <AnimatePresence>
+              {showNotice && (
+                <motion.div
+                  initial={
+                    reduceMotion
+                      ? { opacity: 0 }
+                      : { opacity: 0, y: 28, x: 16, scale: 0.97 }
+                  }
+                  animate={{ opacity: 1, y: 0, x: 0, scale: 1 }}
+                  exit={
+                    reduceMotion
+                      ? { opacity: 0 }
+                      : { opacity: 0, y: 16, x: 8, scale: 0.98 }
+                  }
+                  transition={{
+                    ease: [0.16, 1, 0.3, 1],
+                    duration: reduceMotion ? 0.01 : 0.32,
+                  }}
+                  className="pointer-events-none fixed bottom-4 right-4 z-[60] w-[min(100vw-2rem,22rem)] sm:bottom-6 sm:right-6"
+                >
+              <div
+                className="
+                  pointer-events-auto relative overflow-hidden rounded-2xl border border-emerald-200/70
+                  bg-white/95 shadow-xl dark:border-emerald-500/20 dark:bg-slate-900/95
+                  sm:rounded-[24px]
+                "
+                role="status"
+                aria-live="polite"
+                aria-atomic
+              >
+                <div className="absolute inset-x-0 top-0 h-20 bg-gradient-to-r from-emerald-400/20 via-teal-300/20 to-cyan-300/20 dark:from-emerald-400/10 dark:via-teal-400/10 dark:to-cyan-400/10" />
+                <div className="absolute -right-8 top-6 h-28 w-28 rounded-full bg-emerald-300/20 blur-3xl dark:bg-emerald-400/10" />
               <div className="relative px-4 pb-4 pt-3 sm:px-5 sm:pb-5 sm:pt-4">
                 <div className="flex justify-end">
                   <button
@@ -628,11 +640,11 @@ export default function MemberDropdownMenu({
                 </div>
 
                 <div className="-mt-1 flex flex-col gap-3 text-center sm:mt-0 sm:flex-row sm:items-center sm:gap-4 sm:text-left">
-                  <div className="mx-auto flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-sky-500 to-cyan-500 text-white shadow-lg shadow-sky-500/20 sm:mx-0">
+                  <div className="mx-auto flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-500 text-white shadow-lg shadow-emerald-500/20 sm:mx-0">
                     <Construction className="h-6 w-6" strokeWidth={2} />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-sky-600 dark:text-sky-300">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-emerald-600 dark:text-emerald-300">
                       Under construction
                     </p>
                     <h3 className="mt-1 text-base font-semibold leading-snug text-slate-900 dark:text-slate-50 sm:text-lg">
@@ -646,9 +658,12 @@ export default function MemberDropdownMenu({
                 </div>
               </div>
             </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+                </motion.div>
+              )}
+            </AnimatePresence>,
+            document.body,
+          )
+        : null}
     </>
   );
 }

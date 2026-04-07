@@ -43,18 +43,24 @@ const planCatalog = [
       "Deeper personalization controls",
       "Higher AI summary and assistant limits",
       "Priority access to premium reader tools",
+      "Tailored specific space for Pro users in the app",
+      "Extra perks with Advance NextNews 😉",
     ],
   },
   {
     name: "Pro+",
     monthlyPrice: 199,
     yearlyPrice: 1990,
-    desc: "Built for power users who want the fullest NextNews experience as advanced features roll out.",
+    desc: "Built for power users who want the fullest NextNews experience as advanced.",
     features: [
       "Pro+ includes you in the inner circle of NextNews",
-      "Expanded AI usage limits",
+      "Expanded usage limits with Regions and AI",
       "Early access to upcoming premium features",
-      "Extra personalization and supporter perks",
+      "Over-the-top with Advance NextNews",
+      "Unlimited access to all premium News and AI API calls for Pro+ users",
+      "Priority support and direct line for feedback and feature requests",
+      "Access to exclusive Pro+ community and events",
+      "Deeply explained AI insights and analytics about personalizations and suggestions",
     ],
   },
 ];
@@ -258,7 +264,7 @@ export default function PlansPage() {
       </section>
 
       <section className="px-4 py-14 sm:px-6 sm:py-16 lg:px-8">
-        <div className="mx-auto grid max-w-6xl justify-items-center gap-8 lg:grid-cols-3">
+        <div className="mx-auto grid max-w-6xl items-center justify-items-center gap-8 xl:grid-cols-3">
           {planCatalog.map((plan, index) => {
             const price = yearly ? plan.yearlyPrice : plan.monthlyPrice;
 
@@ -312,7 +318,7 @@ export default function PlansPage() {
                 <ul className="mt-6 space-y-3 text-sm text-slate-700 dark:text-slate-300">
                   {plan.features.map((feature) => (
                     <li key={feature} className="flex items-start gap-2">
-                      <CheckCircle2 className="mt-0.5 h-4 w-4 text-teal-600" />
+                      <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-teal-600" />
                       <span>{feature}</span>
                     </li>
                   ))}

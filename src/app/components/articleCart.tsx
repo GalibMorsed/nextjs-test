@@ -59,7 +59,7 @@ export default function ArticleCard({
           {article.description || "Click to read the full story."}
         </p>
         <div className="mt-auto pt-4 border-t border-gray-50">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-wrap items-center justify-between gap-3">
             <a
               href={article.url || "#"}
               target={article.url ? "_blank" : "_self"}
@@ -71,7 +71,7 @@ export default function ArticleCard({
                   category: category ?? "",
                 });
               }}
-              className={`inline-flex items-center text-sm font-semibold transition-colors sm:flex-shrink-0 ${
+              className={`inline-flex items-center text-sm font-semibold transition-colors shrink-0 ${
                 article.url
                   ? "text-blue-600 hover:text-blue-700 cursor-pointer"
                   : "text-gray-400 cursor-not-allowed"
@@ -81,7 +81,7 @@ export default function ArticleCard({
               <ArrowUpRight className="w-4 h-4 ml-1" />
             </a>
 
-            <div className="flex flex-nowrap items-center gap-2 sm:ml-auto">
+            <div className="flex flex-nowrap items-center gap-2">
               <AISummaryButton
                 title={article.title}
                 description={article.description}

@@ -33,7 +33,9 @@ async function getSearchNews(query: string): Promise<Article[]> {
     );
 
     if (!res.ok) {
-      throw new Error(`Failed to fetch search news: ${res.status} ${res.statusText}`);
+      throw new Error(
+        `Failed to fetch search news: ${res.status} ${res.statusText}`,
+      );
     }
 
     const data: NewsResponse = await res.json();
@@ -60,7 +62,9 @@ export default async function SearchPage({
           <h1 className="text-3xl md:text-4xl font-extrabold text-gray-900 tracking-tight mb-2">
             Search News
           </h1>
-          <p className="text-gray-600">Enter a search term from the sidebar to see results.</p>
+          <p className="text-gray-600">
+            Enter a search term from the sidebar to see results.
+          </p>
         </div>
       </main>
     );
@@ -77,7 +81,9 @@ export default async function SearchPage({
           </h1>
           <p className="text-lg text-gray-600">
             Showing results for{" "}
-            <span className="font-semibold text-gray-800">&quot;{query}&quot;</span>
+            <span className="font-semibold text-gray-800">
+              &quot;{query}&quot;
+            </span>
           </p>
         </header>
 

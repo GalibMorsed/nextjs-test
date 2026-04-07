@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { Compass, Sparkles, Loader2, ArrowRight } from "lucide-react";
 import ReactCountryFlag from "react-country-flag";
 import { EXPLORE_REGIONS, type ExploreRegionId } from "@/lib/explore";
+import { incrementRegionSuggestionUsage } from "@/lib/activityAnalytics";
 
 interface RegionSelectorProps {
   selectedRegion: ExploreRegionId;
@@ -130,32 +131,33 @@ export default function RegionSelector({
       if (!response.ok) {
         setErrorMessage(
           payload.error ||
-          "We couldn't get AI region suggestions right now. Please try again shortly.",
+            "We couldn't get AI region suggestions right now. Please try again shortly.",
         );
         return;
       }
 
       const nextSuggestions = Array.isArray(payload.suggestions)
         ? payload.suggestions
-          .map((suggestion) => {
-            const region = EXPLORE_REGIONS.find(
-              (item) => item.id === suggestion.id,
-            );
-            if (!region) return null;
+            .map((suggestion) => {
+              const region = EXPLORE_REGIONS.find(
+                (item) => item.id === suggestion.id,
+              );
+              if (!region) return null;
 
-            return {
-              id: suggestion.id,
-              label: region.label,
-              reason: suggestion.reason,
-            };
-          })
-          .filter((suggestion): suggestion is AISuggestion =>
-            Boolean(suggestion),
-          )
+              return {
+                id: suggestion.id,
+                label: region.label,
+                reason: suggestion.reason,
+              };
+            })
+            .filter((suggestion): suggestion is AISuggestion =>
+              Boolean(suggestion),
+            )
         : [];
 
       setSuggestions(nextSuggestions);
       setShowSuggestions(nextSuggestions.length > 0);
+      incrementRegionSuggestionUsage({ region: selectedRegion });
       if (nextSuggestions.length === 0) {
         setErrorMessage("No region suggestions were returned.");
       }
@@ -199,9 +201,9 @@ export default function RegionSelector({
                     type="button"
                     onClick={() => onRegionSelect(region.id)}
                     className={`inline-flex shrink-0 items-center gap-2.5 rounded-full border px-5 py-3 text-sm font-bold tracking-tight transition-all duration-300 ${selectedRegion === region.id
-                      ? "border-[var(--foreground)] bg-[var(--foreground)] text-[var(--background)] shadow-lg shadow-black/5 scale-105"
-                      : "border-slate-200 bg-white text-[var(--foreground)] hover:border-slate-300 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:hover:border-slate-600 shadow-sm"
-                      }`}
+                        ? "border-[var(--foreground)] bg-[var(--foreground)] text-[var(--background)] shadow-lg shadow-black/5 scale-105"
+                        : "border-slate-200 bg-white text-[var(--foreground)] hover:border-slate-300 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:hover:border-slate-600 shadow-sm"
+                    }`}
                   >
                     <RegionFlag
                       id={region.id}

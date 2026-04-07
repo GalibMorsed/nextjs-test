@@ -4,6 +4,7 @@ export type ActivityEventType =
   | "article_open"
   | "ai_summary"
   | "personalization_suggestion"
+  | "region_suggestion"
   | "category_visit";
 
 export type ActivityEvent = {
@@ -17,12 +18,14 @@ export type ActivityEvent = {
 export type ActivityAnalytics = {
   aiSummaryCount: number;
   personalizationSuggestionCount: number;
+  regionSuggestionCount: number;
   events: ActivityEvent[];
 };
 
 const DEFAULT_ACTIVITY_ANALYTICS: ActivityAnalytics = {
   aiSummaryCount: 0,
   personalizationSuggestionCount: 0,
+  regionSuggestionCount: 0,
   events: [],
 };
 
@@ -44,6 +47,7 @@ export function readActivityAnalytics(): ActivityAnalytics {
       personalizationSuggestionCount: Number(
         parsed.personalizationSuggestionCount ?? 0,
       ),
+      regionSuggestionCount: Number(parsed.regionSuggestionCount ?? 0),
       events: Array.isArray(parsed.events)
         ? (parsed.events as ActivityEvent[])
         : [],
@@ -84,6 +88,10 @@ export function trackActivityEvent(
       type === "personalization_suggestion"
         ? current.personalizationSuggestionCount + 1
         : current.personalizationSuggestionCount,
+    regionSuggestionCount:
+      type === "region_suggestion"
+        ? current.regionSuggestionCount + 1
+        : current.regionSuggestionCount,
     events: [...current.events, nextEvent].slice(-500),
   });
 }
@@ -97,6 +105,12 @@ export function incrementAiSummaryUsage(details?: {
 
 export function incrementPersonalizationSuggestionUsage() {
   trackActivityEvent("personalization_suggestion");
+}
+
+export function incrementRegionSuggestionUsage(details?: {
+  region?: string;
+}) {
+  trackActivityEvent("region_suggestion", { category: details?.region });
 }
 
 export function trackCategoryVisit(category: string, durationMs: number) {

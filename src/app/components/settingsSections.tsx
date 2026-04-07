@@ -587,7 +587,7 @@ export function BillingSettingsCard({
   } | null>(null);
   const [apiUsage, setApiUsage] = useState({
     used: 0,
-    total: 100,
+    total: 600,
     percentage: 0,
   });
 
@@ -607,9 +607,9 @@ export function BillingSettingsCard({
         analytics.aiSummaryCount +
         analytics.personalizationSuggestionCount +
         analytics.events.length;
-      let planTotal = 100;
-      if (savedPlan === "Pro") planTotal = 1000;
-      if (savedPlan === "Pro+") planTotal = 10000;
+      let planTotal = 600;
+      if (savedPlan === "Pro") planTotal = 2000;
+      if (savedPlan === "Pro+") planTotal = 12000;
 
       setApiUsage({
         used: usedCalls,
