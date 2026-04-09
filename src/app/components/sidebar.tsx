@@ -155,8 +155,17 @@ export default function Sidebar({ isMobileOpen, onCloseMobile }: SidebarProps) {
             setUserEmail(user.email ?? "");
             persistClientSession(user.email ?? "", session?.access_token ?? "");
             void loadPersonalization();
-          } catch (err: any) {
-            if (err?.name === "AbortError") {
+          } catch (err: unknown) {
+            const errorName =
+              err instanceof Error
+                ? err.name
+                : typeof err === "object" &&
+                    err !== null &&
+                    "name" in err &&
+                    typeof (err as { name?: unknown }).name === "string"
+                  ? (err as { name: string }).name
+                  : "";
+            if (errorName === "AbortError") {
               console.warn("Sidebar auth operation timed out (expected behavior).");
             }
           }
@@ -513,6 +522,14 @@ function SidebarContent({
           >
             <LifeBuoy size={14} />
             Contact Support
+          </Link>
+          <Link
+            href="/privacy-policy"
+            className="inline-flex items-center gap-2 px-4 py-1 text-sm text-slate-600 hover:text-[var(--primary)] cursor-pointer transition-colors"
+            onClick={closeAndNavigate}
+          >
+            <Shield size={14} />
+            Privacy Policy
           </Link>
         </CollapsibleSection>
       </div>
