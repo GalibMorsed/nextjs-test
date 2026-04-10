@@ -103,6 +103,20 @@ export async function POST(request: Request) {
     );
   }
 
+  const { error: termsDeleteError } = await adminClient
+    .from("user_terms_policy")
+    .delete()
+    .eq("user_id", user.id);
+
+  if (termsDeleteError && !isMissingRelationError(termsDeleteError)) {
+    return NextResponse.json(
+      {
+        error: `DB delete failed for user data (user_terms_policy): ${termsDeleteError.message}`,
+      },
+      { status: 500 },
+    );
+  }
+
   const { error: authDeleteError } = await adminClient.auth.admin.deleteUser(
     user.id,
   );

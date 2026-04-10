@@ -34,6 +34,15 @@ const sections = [
     text: [
       "NextNews provides news browsing, category exploration, personalization, AI summaries, AI suggestions, notes, live-news discovery, settings, and support-related experiences. Some features may be limited by authentication status, plan level, technical constraints, rate limits, provider availability, or future billing rules.",
       "AI-generated outputs are provided for convenience and assistance only. They may be incomplete, imperfect, delayed, or affected by third-party provider behavior. You remain responsible for evaluating important information independently.",
+      "Live-stream videos and related media surfaced through NextNews are provided by third-party platforms, channels, or rights holders. NextNews does not claim ownership of that content and does not grant users any right to copy, record, download, rebroadcast, edit, redistribute, publicly perform, or otherwise reuse third-party live-stream material except as permitted by the original provider and applicable law.",
+    ],
+  },
+  {
+    title: "Third-Party Content and Copyright",
+    icon: FileText,
+    text: [
+      "News articles, live-stream videos, thumbnails, logos, titles, channel branding, and other third-party materials made available through NextNews remain the property of their respective owners, licensors, publishers, broadcasters, or platform providers.",
+      "You must not use NextNews to infringe the intellectual-property, publicity, contractual, or other rights of any third party. If you choose to access or interact with third-party live-stream content, you are responsible for following the source platform's terms and obtaining any permissions required for reuse. NextNews may remove, block, or limit access to content or features where copyright or rights-related concerns arise.",
     ],
   },
   {

@@ -132,6 +132,9 @@ const policySections: PolicySection[] = [
     bullets: [
       "News content and headline signals may be requested from NewsAPI or similar services configured by the app.",
       "Live-news discovery may use the YouTube Data API and may direct users to YouTube or embedded live streams.",
+      "Live-stream videos, thumbnails, titles, channel names, and related metadata remain the property and responsibility of their respective owners, publishers, or platform providers, not NextNews.",
+      "NextNews acts as a discovery and access layer for third-party live coverage and does not claim ownership of, license to, or editorial control over third-party live-stream content unless explicitly stated otherwise.",
+      "Users are responsible for ensuring that any recording, redistribution, clipping, downloading, public replay, or other reuse of third-party live-stream content complies with the applicable platform terms, copyright laws, and permissions from the original rights holder.",
       "Explore features may combine current article coverage with AI-generated context, category suggestions, trending topics, and source-follow recommendations.",
       "Searches and live-news queries entered by the user may be sent to relevant service providers to retrieve results.",
     ],

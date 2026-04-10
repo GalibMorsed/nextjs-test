@@ -2,17 +2,32 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import type { User } from "@supabase/supabase-js";
 import { supabase } from "../../../../lib/superbaseClient";
-import Image from "next/image";
 import {
-  BellRing,
-  BookmarkCheck,
-  BrainCircuit,
-  FilePenLine,
-  Newspaper,
-  ShieldCheck,
+  hasAcceptedTerms,
+  upsertTermsPolicyAcceptance,
+} from "@/lib/termsPolicy";
+import { AnimatePresence, motion } from "framer-motion";
+import Image from "next/image";
+import Link from "next/link";
+import {
   Sparkles,
+  X,
 } from "lucide-react";
+
+type TermsIntent = "email-signup" | "google-signup" | null;
+type PendingTermsAcceptance = {
+  mode: "email-signup" | "google-signup";
+  email: string | null;
+};
+
+const PENDING_TERMS_KEY = "pending_terms_acceptance";
+const MOBILE_POPUP_VARIANTS = {
+  initial: { opacity: 0, y: "100%" },
+  animate: { opacity: 1, y: 0 },
+  exit: { opacity: 0, y: "100%" },
+};
 
 export default function RegisterPage() {
   const [email, setEmail] = useState("");
@@ -24,6 +39,11 @@ export default function RegisterPage() {
     null,
   );
   const [currentTime, setCurrentTime] = useState(() => Date.now());
+  const [isTermsModalOpen, setIsTermsModalOpen] = useState(false);
+  const [termsAccepted, setTermsAccepted] = useState(false);
+  const [termsError, setTermsError] = useState("");
+  const [termsIntent, setTermsIntent] = useState<TermsIntent>(null);
+  const [termsSubmitting, setTermsSubmitting] = useState(false);
   const router = useRouter();
 
   const persistSession = (emailValue: string, tokenValue: string) => {
@@ -38,6 +58,33 @@ export default function RegisterPage() {
     document.cookie = "auth_token=; path=/; max-age=0; samesite=lax";
   };
 
+  const clearPendingTermsAcceptance = () => {
+    localStorage.removeItem(PENDING_TERMS_KEY);
+  };
+
+  const storePendingTermsAcceptance = (mode: PendingTermsAcceptance["mode"]) => {
+    const trimmedEmail = email.trim().toLowerCase();
+    const payload: PendingTermsAcceptance = {
+      mode,
+      email: mode === "email-signup" ? trimmedEmail : null,
+    };
+
+    localStorage.setItem(PENDING_TERMS_KEY, JSON.stringify(payload));
+  };
+
+  const getPendingTermsAcceptance = (): PendingTermsAcceptance | null => {
+    const rawValue = localStorage.getItem(PENDING_TERMS_KEY);
+    if (!rawValue) return null;
+
+    try {
+      return JSON.parse(rawValue) as PendingTermsAcceptance;
+    } catch {
+      clearPendingTermsAcceptance();
+      return null;
+    }
+  };
+
+  /* eslint-disable react-hooks/exhaustive-deps */
   useEffect(() => {
     if (signupCooldownUntil === null) return;
 
@@ -51,6 +98,68 @@ export default function RegisterPage() {
   const isCooldownActive =
     signupCooldownUntil !== null && currentTime < signupCooldownUntil;
 
+  const denyLoginForMissingTerms = async (message: string) => {
+    await supabase.auth.signOut().catch(() => {});
+    clearPendingTermsAcceptance();
+    clearSession();
+    setGoogleLoading(false);
+    setLoading(false);
+    setTermsSubmitting(false);
+    setErrorMessage(message);
+  };
+
+  const finalizeAuthenticatedUser = async (
+    user: User,
+    accessToken: string,
+    fallbackEmail: string,
+  ) => {
+    const normalizedUserEmail = (user.email ?? fallbackEmail).trim().toLowerCase();
+    const pendingTerms = getPendingTermsAcceptance();
+    const canCreateTermsRecord =
+      pendingTerms?.mode === "google-signup" ||
+      (pendingTerms?.mode === "email-signup" &&
+        pendingTerms.email === normalizedUserEmail);
+
+    try {
+      let acceptedTerms = await hasAcceptedTerms(user.id);
+
+      if (!acceptedTerms && canCreateTermsRecord) {
+        await upsertTermsPolicyAcceptance({
+          id: user.id,
+          email: user.email ?? fallbackEmail,
+        });
+        acceptedTerms = true;
+      }
+
+      if (!acceptedTerms) {
+        await denyLoginForMissingTerms(
+          "Login blocked. Please accept the Terms & Conditions during signup before accessing your account.",
+        );
+        return false;
+      }
+
+      clearPendingTermsAcceptance();
+      persistSession(user.email ?? fallbackEmail, accessToken);
+      setGoogleLoading(false);
+      setLoading(false);
+      setTermsSubmitting(false);
+      router.replace("/");
+      return true;
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "We could not verify your Terms & Conditions status. Please try again.";
+
+      clearSession();
+      setGoogleLoading(false);
+      setLoading(false);
+      setTermsSubmitting(false);
+      setErrorMessage(message);
+      return false;
+    }
+  };
+
   useEffect(() => {
     const { data: authListener } = supabase.auth.onAuthStateChange(
       async (_event, session) => {
@@ -59,15 +168,34 @@ export default function RegisterPage() {
           return;
         }
 
-        persistSession(session.user.email ?? "", session.access_token ?? "");
-        router.replace("/");
+        await finalizeAuthenticatedUser(
+          session.user,
+          session.access_token ?? "",
+          session.user.email ?? "",
+        );
       },
     );
 
     return () => {
       authListener.subscription.unsubscribe();
     };
-  }, [router]);
+  }, [finalizeAuthenticatedUser]);
+  /* eslint-enable react-hooks/exhaustive-deps */
+
+  const openTermsModal = (intent: Exclude<TermsIntent, null>) => {
+    setTermsIntent(intent);
+    setTermsAccepted(false);
+    setTermsError("");
+    setIsTermsModalOpen(true);
+  };
+
+  const closeTermsModal = () => {
+    if (termsSubmitting) return;
+    setIsTermsModalOpen(false);
+    setTermsIntent(null);
+    setTermsAccepted(false);
+    setTermsError("");
+  };
 
   const handleRegister = async () => {
     const now = Date.now();
@@ -89,27 +217,84 @@ export default function RegisterPage() {
     setLoading(true);
     setErrorMessage("");
 
-    const { data: loginData } = await supabase.auth.signInWithPassword({
-      email: trimmedEmail,
-      password,
-    });
+    const { data: loginData, error: loginError } =
+      await supabase.auth.signInWithPassword({
+        email: trimmedEmail,
+        password,
+      });
 
     if (loginData.session?.user) {
-      setLoading(false);
-      persistSession(
-        loginData.session.user.email ?? trimmedEmail,
+      await finalizeAuthenticatedUser(
+        loginData.session.user,
         loginData.session.access_token ?? "",
+        trimmedEmail,
       );
-      router.replace("/");
       return;
     }
 
-    const { data: signupData, error: signupError } = await supabase.auth.signUp(
-      {
-        email: trimmedEmail,
-        password,
-      },
-    );
+    setLoading(false);
+
+    if (
+      loginError &&
+      !loginError.message.toLowerCase().includes("invalid login credentials")
+    ) {
+      setErrorMessage(loginError.message);
+      return;
+    }
+
+    openTermsModal("email-signup");
+  };
+
+  const handleTermsSubmit = async () => {
+    if (!termsAccepted) {
+      setTermsError("Please accept the Terms & Conditions to continue.");
+      return;
+    }
+
+    setTermsSubmitting(true);
+    setTermsError("");
+    setErrorMessage("");
+
+    if (termsIntent === "google-signup") {
+      storePendingTermsAcceptance("google-signup");
+
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: `${window.location.origin}/auth/register`,
+        },
+      });
+
+      if (error) {
+        clearPendingTermsAcceptance();
+        setTermsSubmitting(false);
+        setGoogleLoading(false);
+        setTermsError(
+          error.message.toLowerCase().includes("missing oauth secret")
+            ? "Google auth is not fully configured in Supabase. Add Google Client ID and Client Secret in Supabase Auth Providers, then retry."
+            : error.message,
+        );
+        return;
+      }
+
+      setGoogleLoading(true);
+      return;
+    }
+
+    const trimmedEmail = email.trim();
+
+    if (!trimmedEmail || !password.trim()) {
+      setTermsSubmitting(false);
+      setTermsError("Email and password are required.");
+      return;
+    }
+
+    storePendingTermsAcceptance("email-signup");
+
+    const { data: signupData, error: signupError } = await supabase.auth.signUp({
+      email: trimmedEmail,
+      password,
+    });
 
     if (signupError) {
       const isRateLimited =
@@ -119,7 +304,9 @@ export default function RegisterPage() {
 
       if (isRateLimited) {
         setSignupCooldownUntil(Date.now() + 60_000);
-        setLoading(false);
+        clearPendingTermsAcceptance();
+        setTermsSubmitting(false);
+        setIsTermsModalOpen(false);
         setErrorMessage("Too many signup attempts. Please wait and try again.");
         return;
       }
@@ -127,6 +314,7 @@ export default function RegisterPage() {
       const isAlreadyRegistered = signupError.message
         .toLowerCase()
         .includes("already registered");
+
       if (isAlreadyRegistered) {
         const { data: existingLoginData, error: existingLoginError } =
           await supabase.auth.signInWithPassword({
@@ -134,35 +322,38 @@ export default function RegisterPage() {
             password,
           });
 
-        setLoading(false);
-
         if (existingLoginData.session?.user) {
-          persistSession(
-            existingLoginData.session.user.email ?? trimmedEmail,
+          setIsTermsModalOpen(false);
+          await finalizeAuthenticatedUser(
+            existingLoginData.session.user,
             existingLoginData.session.access_token ?? "",
+            trimmedEmail,
           );
-          router.replace("/");
           return;
         }
 
+        clearPendingTermsAcceptance();
+        setTermsSubmitting(false);
         setErrorMessage(
           existingLoginError?.message ?? "Invalid login credentials.",
         );
         return;
       }
 
-      setLoading(false);
+      clearPendingTermsAcceptance();
+      setTermsSubmitting(false);
       setErrorMessage(signupError.message);
       return;
     }
 
+    setIsTermsModalOpen(false);
+
     if (signupData.session?.user) {
-      setLoading(false);
-      persistSession(
-        signupData.session.user.email ?? trimmedEmail,
+      await finalizeAuthenticatedUser(
+        signupData.session.user,
         signupData.session.access_token ?? "",
+        trimmedEmail,
       );
-      router.replace("/");
       return;
     }
 
@@ -172,88 +363,115 @@ export default function RegisterPage() {
         password,
       });
 
-    setLoading(false);
-
     if (postSignupLoginData.session?.user) {
-      persistSession(
-        postSignupLoginData.session.user.email ?? trimmedEmail,
+      await finalizeAuthenticatedUser(
+        postSignupLoginData.session.user,
         postSignupLoginData.session.access_token ?? "",
+        trimmedEmail,
       );
-      router.replace("/");
       return;
     }
 
+    clearPendingTermsAcceptance();
+    setTermsSubmitting(false);
     setErrorMessage(
       postSignupLoginError?.message ??
-        "Account created. Please verify your email, then login.",
+        "Account created. Please verify your email, then login again to complete Terms acceptance.",
     );
   };
 
   const handleGoogleRegister = async () => {
-    setGoogleLoading(true);
     setErrorMessage("");
+    storePendingTermsAcceptance("google-signup");
+    setGoogleLoading(true);
 
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: `${window.location.origin}/`,
+        redirectTo: `${window.location.origin}/auth/register`,
       },
     });
 
     if (error) {
-      if (error.message.toLowerCase().includes("missing oauth secret")) {
-        setErrorMessage(
-          "Google auth is not fully configured in Supabase. Add Google Client ID and Client Secret in Supabase Auth Providers, then retry.",
-        );
-      } else {
-        setErrorMessage(error.message);
-      }
+      clearPendingTermsAcceptance();
       setGoogleLoading(false);
+      setErrorMessage(
+        error.message.toLowerCase().includes("missing oauth secret")
+          ? "Google auth is not fully configured in Supabase. Add Google Client ID and Client Secret in Supabase Auth Providers, then retry."
+          : error.message,
+      );
     }
   };
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-gradient-to-b from-amber-50 via-white to-sky-50 px-4 py-8 sm:px-6 md:py-10">
-      <div className="pointer-events-none absolute -left-14 top-8 h-40 w-40 rounded-full bg-amber-200/40 blur-3xl animate-float-soft motion-reduce:animate-none" />
-      <div className="pointer-events-none absolute -right-16 bottom-8 h-44 w-44 rounded-full bg-sky-200/50 blur-3xl animate-float-soft-delayed motion-reduce:animate-none" />
+    <>
+      <div className="relative min-h-screen overflow-hidden bg-gradient-to-b from-amber-50 via-white to-sky-50 px-4 py-8 sm:px-6 md:py-10">
+        <div className="pointer-events-none absolute -left-14 top-8 h-40 w-40 rounded-full bg-amber-200/40 blur-3xl animate-float-soft motion-reduce:animate-none" />
+        <div className="pointer-events-none absolute -right-16 bottom-8 h-44 w-44 rounded-full bg-sky-200/50 blur-3xl animate-float-soft-delayed motion-reduce:animate-none" />
 
-      <div className="mx-auto grid w-full max-w-6xl gap-5 lg:grid-cols-[1.05fr_0.95fr] lg:items-stretch">
-        <section className="animate-fade-up rounded-2xl border border-amber-100 bg-white/90 p-5 shadow-lg shadow-amber-100/50 backdrop-blur transition-transform duration-500 motion-reduce:animate-none motion-reduce:transition-none sm:p-7 lg:hover:-translate-y-0.5">
-          <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-semibold tracking-wide text-amber-700">
-            <Sparkles className="h-4 w-4" />
-            Join NextNews
-          </div>
-
-          <h1 className="text-2xl font-bold leading-tight text-slate-900 sm:text-3xl">
-            Create your account and personalize your next news flow.😉
-          </h1>
-          <p className="mt-2 text-sm leading-relaxed text-slate-600 sm:text-base">
-            Get curated categories, saved preferences, and faster access across
-            devices in under a minute.
-          </p>
-
-          <div className="mt-5 grid gap-2 text-sm text-slate-700 sm:grid-cols-2">
-            <div
-              className="rounded-lg border border-sky-200 bg-sky-50 px-3 py-2 text-center font-medium text-sky-700"
-              style={{
-                animation: "fade-up 0.5s ease-out both",
-                animationDelay: "120ms",
-              }}
-            >
-              Save and organize Notes
+        <div className="mx-auto grid w-full max-w-5xl gap-6 xl:grid-cols-2 xl:items-stretch">
+          {/* ── Left column: branding & info ── */}
+          <section className="animate-fade-up order-2 xl:order-1 flex flex-col justify-center rounded-2xl border border-amber-100 bg-white/90 p-6 shadow-lg shadow-amber-100/50 backdrop-blur transition-transform duration-500 motion-reduce:animate-none motion-reduce:transition-none sm:p-8 xl:hover:-translate-y-0.5">
+            <div className="mb-5 inline-flex w-fit items-center gap-2 rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-semibold tracking-wide text-amber-700">
+              <Sparkles className="h-4 w-4" />
+              Join NextNews Family 
             </div>
-            <div
-              className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-center font-medium text-amber-700"
-              style={{
-                animation: "fade-up 0.5s ease-out both",
-                animationDelay: "60ms",
-              }}
-            >
-              Personalized feed setup
-            </div>
-          </div>
 
-          <div className="mt-5">
+            <h1 className="text-2xl font-bold leading-tight text-slate-900 sm:text-3xl">
+              Create your account and personalize your news flow.
+            </h1>
+            <p className="mt-3 text-sm leading-relaxed text-slate-600 sm:text-base">
+              Get curated categories, saved preferences, and faster access
+              across devices in under a minute.
+            </p>
+
+            <div className="mt-6 grid gap-2 text-sm sm:grid-cols-2">
+              <div className="rounded-lg border border-sky-200 bg-sky-50 px-3 py-2.5 text-center font-medium text-sky-700">
+                Save &amp; Organize Notes
+              </div>
+              <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5 text-center font-medium text-amber-700">
+                Personalized Feed Setup
+              </div>
+              <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2.5 text-center font-medium text-emerald-700">
+                Reliable and secure
+              </div>
+              <div className="rounded-lg border border-violet-200 bg-violet-50 px-3 py-2.5 text-center font-medium text-violet-700">
+                Smart AI Recommendations
+              </div>
+            </div>
+
+            <div className="mt-6 rounded-xl border border-slate-100 bg-slate-50 px-4 py-3">
+              <p className="text-xs leading-relaxed text-slate-500">
+                By creating an account you agree to our{" "}
+                <Link
+                  href="/terms-and-conditions"
+                  target="_blank"
+                  className="font-semibold text-slate-700 underline hover:text-slate-900"
+                >
+                  Terms &amp; Conditions
+                </Link>
+                {" "}and{" "}
+                <Link
+                  href="/privacy-policy"
+                  target="_blank"
+                  className="font-semibold text-slate-700 underline hover:text-slate-900"
+                >
+                  Privacy Policy
+                </Link>
+                . We handle your data with care — no spam, no selling, ever.
+              </p>
+            </div>
+          </section>
+
+          {/* ── Right column: form ── */}
+          <section className="animate-fade-up order-1 xl:order-2 flex flex-col justify-center rounded-2xl border border-slate-200 bg-white p-6 shadow-lg shadow-slate-100/60 backdrop-blur transition-transform duration-500 motion-reduce:animate-none motion-reduce:transition-none sm:p-8 xl:hover:-translate-y-0.5">
+            <h2 className="mb-1 text-xl font-bold text-slate-900">
+              Get started for free
+            </h2>
+            <p className="mb-6 text-sm text-slate-500">
+              Enter your details below to create your account.
+            </p>
+
             <input
               type="email"
               placeholder="Email address"
@@ -272,195 +490,164 @@ export default function RegisterPage() {
 
             <button
               onClick={handleRegister}
-              disabled={loading || isCooldownActive}
+              disabled={loading || isCooldownActive || termsSubmitting}
               className="w-full rounded-lg bg-slate-900 py-3 text-sm font-semibold text-white transition-all duration-300 hover:-translate-y-0.5 hover:bg-slate-800 hover:shadow-lg hover:shadow-slate-300/60 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {loading
-                ? "Creating your account..."
+                ? "Checking your account..."
                 : isCooldownActive
                   ? "Please wait..."
-                  : "Create My Account"}
+                  : "Verify Account"}
             </button>
-          </div>
 
-          <div className="my-5 flex items-center gap-3">
-            <div className="h-px w-full bg-slate-200" />
-            <p className="shrink-0 text-xs font-medium uppercase tracking-wide text-slate-400">
-              or continue with
+            <p className="mt-2 text-center text-xs text-slate-400">
+              View our{" "}
+              <button
+                type="button"
+                onClick={() => openTermsModal("email-signup")}
+                className="text-slate-500 underline hover:text-slate-700"
+              >
+                Terms &amp; Conditions
+              </button>
             </p>
-            <div className="h-px w-full bg-slate-200" />
-          </div>
 
-          <button
-            onClick={handleGoogleRegister}
-            disabled={googleLoading}
-            className="flex w-full items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white py-3 text-sm font-medium text-slate-700 transition-all duration-300 hover:-translate-y-0.5 hover:bg-slate-50 hover:shadow-md hover:shadow-slate-200/60 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            <Image
-              src="https://www.svgrepo.com/show/475656/google-color.svg"
-              alt="Google"
-              width={18}
-              height={18}
-            />
-            {googleLoading ? "Connecting..." : "Sign up with Google"}
-          </button>
-
-          {errorMessage ? (
-            <p className="mt-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-              {errorMessage}
-            </p>
-          ) : null}
-
-          <p className="mt-4 text-center text-sm text-slate-600 underline">
-            Already registered? Use the same credentials and register again.
-          </p>
-        </section>
-
-        <section
-          className="animate-fade-in rounded-2xl border border-sky-100 bg-gradient-to-br from-sky-50 to-white p-5 shadow-lg shadow-sky-100/60 transition-transform duration-500 motion-reduce:animate-none motion-reduce:transition-none sm:p-7 lg:hover:-translate-y-0.5"
-          style={{ animationDelay: "120ms" }}
-        >
-          <div className="mb-4 flex items-center gap-2 text-base font-semibold text-slate-800">
-            <Newspaper className="h-5 w-5 text-sky-700" />
-            Why register with NextNews?⚡
-          </div>
-
-          <ul className="space-y-3">
-            <li
-              className="flex items-start gap-3 rounded-lg bg-white/80 p-3 ring-1 ring-sky-100 transition-all duration-300 hover:-translate-y-0.5 hover:bg-white hover:shadow-md hover:shadow-sky-100/70"
-              style={{
-                animation: "fade-up 0.5s ease-out both",
-                animationDelay: "140ms",
-              }}
-            >
-              <BookmarkCheck className="mt-0.5 h-5 w-5 shrink-0 text-sky-700" />
-              <div>
-                <p className="text-sm font-semibold text-slate-800">
-                  Save what matters
-                </p>
-                <p className="text-sm text-slate-600">
-                  Bookmark key stories and revisit them anytime without losing
-                  context.
-                </p>
-              </div>
-            </li>
-            <li
-              className="flex items-start gap-3 rounded-lg bg-white/80 p-3 ring-1 ring-sky-100 transition-all duration-300 hover:-translate-y-0.5 hover:bg-white hover:shadow-md hover:shadow-sky-100/70"
-              style={{
-                animation: "fade-up 0.5s ease-out both",
-                animationDelay: "220ms",
-              }}
-            >
-              <FilePenLine className="mt-0.5 h-5 w-5 shrink-0 text-sky-700" />
-              <div>
-                <p className="text-sm font-semibold text-slate-800">
-                  Notes with customization
-                </p>
-                <p className="text-sm text-slate-600">
-                  Create and customize notes on articles to capture your
-                  thoughts.
-                </p>
-              </div>
-            </li>
-            <li
-              className="flex items-start gap-3 rounded-lg bg-white/80 p-3 ring-1 ring-sky-100 transition-all duration-300 hover:-translate-y-0.5 hover:bg-white hover:shadow-md hover:shadow-sky-100/70"
-              style={{
-                animation: "fade-up 0.5s ease-out both",
-                animationDelay: "300ms",
-              }}
-            >
-              <BrainCircuit className="mt-0.5 h-5 w-5 shrink-0 text-sky-700" />
-              <div>
-                <p className="text-sm font-semibold text-slate-800">
-                  AI Summary for every article
-                </p>
-                <p className="text-sm text-slate-600">
-                  Get a quick summary of any news article with the power of AI.
-                </p>
-              </div>
-            </li>
-            <li
-              className="flex items-start gap-3 rounded-lg bg-white/80 p-3 ring-1 ring-sky-100 transition-all duration-300 hover:-translate-y-0.5 hover:bg-white hover:shadow-md hover:shadow-sky-100/70"
-              style={{
-                animation: "fade-up 0.5s ease-out both",
-                animationDelay: "380ms",
-              }}
-            >
-              <BellRing className="mt-0.5 h-5 w-5 shrink-0 text-sky-700" />
-              <div>
-                <p className="text-sm font-semibold text-slate-800">
-                  Faster daily updates
-                </p>
-                <p className="text-sm text-slate-600">
-                  Set your interests once and get news streams tuned to your
-                  priorities.
-                </p>
-              </div>
-            </li>
-            <li
-              className="flex items-start gap-3 rounded-lg bg-white/80 p-3 ring-1 ring-sky-100 transition-all duration-300 hover:-translate-y-0.5 hover:bg-white hover:shadow-md hover:shadow-sky-100/70"
-              style={{
-                animation: "fade-up 0.5s ease-out both",
-                animationDelay: "460ms",
-              }}
-            >
-              <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-sky-700" />
-              <div>
-                <p className="text-sm font-semibold text-slate-800">
-                  Reliable and secure
-                </p>
-                <p className="text-sm text-slate-600">
-                  Your account settings and reading preferences are protected
-                  and portable.
-                </p>
-              </div>
-            </li>
-          </ul>
-
-          <div className="mt-6 grid gap-3 sm:grid-cols-3">
-            <div
-              className="group rounded-xl border border-amber-100 bg-amber-50/30 px-3 py-4 text-center transition-all duration-300 hover:-translate-y-1 hover:border-amber-200 hover:bg-amber-50 hover:shadow-lg hover:shadow-amber-100/40"
-              style={{
-                animation: "fade-up 0.5s ease-out both",
-                animationDelay: "220ms",
-              }}
-            >
-              <p className="text-xl font-bold text-amber-700 transition-transform duration-300 group-hover:scale-110">
-                1 min
+            <div className="my-5 flex items-center gap-3">
+              <div className="h-px w-full bg-slate-200" />
+              <p className="shrink-0 text-xs font-medium uppercase tracking-wide text-slate-400">
+                or
               </p>
-              <p className="text-xs font-medium text-amber-600/80">
-                Quick setup
+              <div className="h-px w-full bg-slate-200" />
+            </div>
+
+            <button
+              onClick={handleGoogleRegister}
+              disabled={googleLoading || termsSubmitting}
+              className="flex w-full items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white py-3 text-sm font-medium text-slate-700 transition-all duration-300 hover:-translate-y-0.5 hover:bg-slate-50 hover:shadow-md hover:shadow-slate-200/60 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <Image
+                src="https://www.svgrepo.com/show/475656/google-color.svg"
+                alt="Google"
+                width={18}
+                height={18}
+              />
+              {googleLoading ? "Connecting..." : "Continue with Google"}
+            </button>
+
+            {errorMessage ? (
+              <p className="mt-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+                {errorMessage}
+              </p>
+            ) : null}
+
+            <div className="mt-5 rounded-lg border border-sky-200 bg-sky-50 px-4 py-3">
+              <p className="text-xs font-semibold text-sky-700">
+                Already have an account?
+              </p>
+              <p className="mt-0.5 text-xs leading-relaxed text-sky-600">
+                Enter your existing email &amp; password above and it will sign you straight in.
               </p>
             </div>
-            <div
-              className="group rounded-xl border border-sky-100 bg-sky-50/30 px-3 py-4 text-center transition-all duration-300 hover:-translate-y-1 hover:border-sky-200 hover:bg-sky-50 hover:shadow-lg hover:shadow-sky-100/40"
-              style={{
-                animation: "fade-up 0.5s ease-out both",
-                animationDelay: "300ms",
-              }}
-            >
-              <p className="text-xl font-bold text-sky-700 transition-transform duration-300 group-hover:scale-110">
-                24/7
-              </p>
-              <p className="text-xs font-medium text-sky-600/80">News access</p>
-            </div>
-            <div
-              className="group rounded-xl border border-emerald-100 bg-emerald-50/30 px-3 py-4 text-center transition-all duration-300 hover:-translate-y-1 hover:border-emerald-200 hover:bg-emerald-50 hover:shadow-lg hover:shadow-emerald-100/40"
-              style={{
-                animation: "fade-up 0.5s ease-out both",
-                animationDelay: "380ms",
-              }}
-            >
-              <p className="text-xl font-bold text-emerald-700 transition-transform duration-300 group-hover:scale-110">
-                100%
-              </p>
-              <p className="text-xs font-medium text-emerald-600/80">
-                Mobile friendly
-              </p>
-            </div>
-          </div>
-        </section>
+          </section>
+        </div>
       </div>
-    </div>
+
+      <AnimatePresence>
+        {isTermsModalOpen ? (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-end justify-center bg-slate-950/50 p-0 backdrop-blur-sm sm:items-center sm:px-4"
+            onClick={closeTermsModal}
+          >
+            <motion.div
+              variants={MOBILE_POPUP_VARIANTS}
+              initial="initial"
+              animate="animate"
+              exit="exit"
+              transition={{ ease: [0.16, 1, 0.3, 1], duration: 0.28 }}
+              className="w-full rounded-t-3xl border border-slate-200 bg-white p-5 shadow-2xl sm:max-w-md sm:rounded-2xl"
+              onClick={(event) => event.stopPropagation()}
+            >
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-sky-700">
+                    Terms & Conditions
+                  </p>
+                  <h2 className="mt-2 text-xl font-bold text-slate-900">
+                    Accept the policy before signup
+                  </h2>
+                </div>
+                <button
+                  type="button"
+                  onClick={closeTermsModal}
+                  disabled={termsSubmitting}
+                  className="rounded-full p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+                  aria-label="Close Terms popup"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+
+              <p className="mt-3 text-sm leading-6 text-slate-600">
+                Please review and accept our Terms &amp; Conditions to continue.
+                By agreeing, you confirm that you have read and understood how
+                NextNews collects, uses, and protects your information.
+              </p>
+
+              <label className="mt-4 flex items-start gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
+                <input
+                  type="checkbox"
+                  checked={termsAccepted}
+                  onChange={(e) => {
+                    setTermsAccepted(e.target.checked);
+                    if (e.target.checked) {
+                      setTermsError("");
+                    }
+                  }}
+                  className="mt-1 h-4 w-4 rounded border-slate-300 text-slate-900 focus:ring-slate-400"
+                />
+                <span>
+                  I agree to the{" "}
+                  <Link
+                    href="/terms-and-conditions"
+                    target="_blank"
+                    className="font-semibold text-sky-700 underline"
+                  >
+                    Terms & Conditions
+                  </Link>
+                  .
+                </span>
+              </label>
+
+              {termsError ? (
+                <p className="mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+                  {termsError}
+                </p>
+              ) : null}
+
+              <div className="mt-5 flex gap-3">
+                <button
+                  type="button"
+                  onClick={closeTermsModal}
+                  disabled={termsSubmitting}
+                  className="flex-1 rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleTermsSubmit}
+                  disabled={termsSubmitting}
+                  className="flex-1 rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {termsSubmitting ? "Submitting..." : "Submit"}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
+    </>
   );
 }

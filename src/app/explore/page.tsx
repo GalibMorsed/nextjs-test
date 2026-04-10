@@ -376,7 +376,7 @@ export default function ExplorePage() {
                     <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
                       <div className="max-w-3xl flex-1">
                         <span className="mb-3 inline-flex rounded-full bg-indigo-100 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.2em] text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300">
-                          World is Yours
+                          World is Your's
                         </span>
                         <h1 className="text-3xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-slate-900 via-indigo-900 to-violet-900 sm:text-5xl dark:from-white dark:via-indigo-100 dark:to-violet-200">
                           Explore
