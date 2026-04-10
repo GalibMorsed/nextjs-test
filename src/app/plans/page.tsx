@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import clsx from "clsx";
 import {
   CheckCircle2,
@@ -24,12 +24,15 @@ const planCatalog = [
     name: "Free",
     monthlyPrice: 0,
     yearlyPrice: 0,
-    desc: "A solid everyday plan for casual readers who want the core NextNews experience.",
+    desc: "A dependable everyday plan for casual readers, including a 7-day free trial.",
+    credits: {
+      monthly: "600 API call credits for 7 days",
+      yearly: "600 API call credits for 7 days",
+    },
     features: [
       "Core news access and daily reading",
       "Basic personalization",
       "Standard article browsing",
-      "Preview of upcoming premium tools",
     ],
   },
   {
@@ -38,13 +41,16 @@ const planCatalog = [
     yearlyPrice: 790,
     desc: "For regular readers who want deeper coverage, more control, and early premium value.",
     featured: true,
+    credits: {
+      monthly: "8,000 API call credits per month",
+      yearly: "200,000 API call credits per year",
+    },
     features: [
       "Everything is more polished with Pro",
       "Deeper personalization controls",
       "Higher AI summary and assistant limits",
       "Priority access to premium reader tools",
       "Tailored specific space for Pro users in the app",
-      "Extra perks with Advance NextNews 😉",
     ],
   },
   {
@@ -52,11 +58,14 @@ const planCatalog = [
     monthlyPrice: 199,
     yearlyPrice: 1990,
     desc: "Built for power users who want the fullest NextNews experience as advanced.",
+    credits: {
+      monthly: "45,000 API call credits per month",
+      yearly: "Unlimited API call credits per year",
+    },
     features: [
       "Pro+ includes you in the inner circle of NextNews",
       "Expanded usage limits with Regions and AI",
       "Early access to upcoming premium features",
-      "Over-the-top with Advance NextNews",
       "Unlimited access to all premium News and AI API calls for Pro+ users",
       "Priority support and direct line for feedback and feature requests",
       "Access to exclusive Pro+ community and events",
@@ -64,6 +73,10 @@ const planCatalog = [
     ],
   },
 ];
+
+const FREE_PLAN_EXPIRY_KEY = "nextnews-plan-expiry";
+const FREE_PLAN_DAYS = 7;
+const MS_IN_DAY = 24 * 60 * 60 * 1000;
 
 const productPerks = [
   {
@@ -95,14 +108,70 @@ export default function PlansPage() {
   const [showChaiPopup, setShowChaiPopup] = useState(false);
   const [showCancelConfirmation, setShowCancelConfirmation] = useState(false);
   const [showCelebration, setShowCelebration] = useState(false);
+  const [freePlanExpiry, setFreePlanExpiry] = useState<number | null>(null);
   const [currentPlan, setCurrentPlan] = useState<string | null>(() => {
     if (typeof window === "undefined") return null;
     return localStorage.getItem("nextnews-plan");
   });
 
-  const handleActivateFreePlan = () => {
-    localStorage.setItem("nextnews-plan", "Free");
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const storedPlan = localStorage.getItem("nextnews-plan");
+    if (storedPlan !== "Free") {
+      setCurrentPlan(storedPlan);
+      setFreePlanExpiry(null);
+      return;
+    }
+
+    const expiryRaw = localStorage.getItem(FREE_PLAN_EXPIRY_KEY);
+    let expiry = expiryRaw ? Number(expiryRaw) : Number.NaN;
+
+    if (!expiryRaw || Number.isNaN(expiry)) {
+      expiry = Date.now() + FREE_PLAN_DAYS * MS_IN_DAY;
+      localStorage.setItem(FREE_PLAN_EXPIRY_KEY, String(expiry));
+    }
+
+    if (Date.now() >= expiry) {
+      localStorage.removeItem("nextnews-plan");
+      localStorage.removeItem(FREE_PLAN_EXPIRY_KEY);
+      setCurrentPlan(null);
+      setFreePlanExpiry(null);
+      return;
+    }
+
     setCurrentPlan("Free");
+    setFreePlanExpiry(expiry);
+  }, []);
+
+  useEffect(() => {
+    if (!freePlanExpiry) return undefined;
+
+    const timeLeft = freePlanExpiry - Date.now();
+    if (timeLeft <= 0) {
+      localStorage.removeItem("nextnews-plan");
+      localStorage.removeItem(FREE_PLAN_EXPIRY_KEY);
+      setCurrentPlan(null);
+      setFreePlanExpiry(null);
+      return undefined;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      localStorage.removeItem("nextnews-plan");
+      localStorage.removeItem(FREE_PLAN_EXPIRY_KEY);
+      setCurrentPlan(null);
+      setFreePlanExpiry(null);
+    }, timeLeft);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [freePlanExpiry]);
+
+  const handleActivateFreePlan = () => {
+    const expiry = Date.now() + FREE_PLAN_DAYS * MS_IN_DAY;
+    localStorage.setItem("nextnews-plan", "Free");
+    localStorage.setItem(FREE_PLAN_EXPIRY_KEY, String(expiry));
+    setCurrentPlan("Free");
+    setFreePlanExpiry(expiry);
     setSelectedPlan(null);
     setShowCelebration(true);
     setTimeout(() => setShowCelebration(false), 4200);
@@ -114,7 +183,9 @@ export default function PlansPage() {
 
   const handleConfirmCancel = () => {
     localStorage.removeItem("nextnews-plan");
+    localStorage.removeItem(FREE_PLAN_EXPIRY_KEY);
     setCurrentPlan(null);
+    setFreePlanExpiry(null);
     setShowCancelConfirmation(false);
   };
 
@@ -139,6 +210,14 @@ export default function PlansPage() {
     e.currentTarget.reset();
     setTimeout(() => setSubscribed(false), 5000);
   };
+
+  const freePlanExpiryDate = freePlanExpiry
+    ? new Date(freePlanExpiry).toLocaleDateString(undefined, {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+      })
+    : null;
 
   return (
     <div className="min-h-screen overflow-x-hidden bg-gradient-to-br from-indigo-50 via-blue-50 to-purple-50 text-slate-900 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 dark:text-slate-100">
@@ -222,6 +301,11 @@ export default function PlansPage() {
                 </div>
                 <p className="text-slate-600 dark:text-slate-300">
                   You have access to core news and daily reading features.
+                </p>
+                <p className="mt-2 text-xs font-medium text-slate-500 dark:text-slate-400">
+                  {freePlanExpiryDate
+                    ? `Free plan expires on ${freePlanExpiryDate}.`
+                    : "Free plan expires 7 days after activation."}
                 </p>
               </div>
               <button
@@ -316,6 +400,12 @@ export default function PlansPage() {
                 </div>
 
                 <ul className="mt-6 space-y-3 text-sm text-slate-700 dark:text-slate-300">
+                  <li className="flex items-start gap-2">
+                    <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-teal-600" />
+                    <span>
+                      {yearly ? plan.credits.yearly : plan.credits.monthly}
+                    </span>
+                  </li>
                   {plan.features.map((feature) => (
                     <li key={feature} className="flex items-start gap-2">
                       <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-teal-600" />
@@ -528,8 +618,8 @@ export default function PlansPage() {
                   Cancel Free Plan?
                 </h3>
                 <p className="mb-6 text-sm text-slate-600 dark:text-slate-300">
-                  Are you sure you want to cancel? You&apos;ll lose access to your
-                  current curated news feed settings.
+                  Are you sure you want to cancel? You&apos;ll lose access to
+                  your current curated news feed settings.
                 </p>
                 <div className="flex w-full gap-3">
                   <button

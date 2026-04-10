@@ -608,8 +608,8 @@ export function BillingSettingsCard({
         analytics.personalizationSuggestionCount +
         analytics.events.length;
       let planTotal = 600;
-      if (savedPlan === "Pro") planTotal = 2000;
-      if (savedPlan === "Pro+") planTotal = 12000;
+      if (savedPlan === "Pro") planTotal = 8000;
+      if (savedPlan === "Pro+") planTotal = 45000;
 
       setApiUsage({
         used: usedCalls,
