@@ -20,13 +20,16 @@ interface YoutubeSearchResponse {
 
 const DEFAULT_QUERY = "live news";
 const GUEST_VIDEO_LIMIT = 4;
-const YOUTUBE_SEARCH_ENDPOINT = "https://www.googleapis.com/youtube/v3/search";
-
-const normalizeApiKey = (rawKey: string | undefined) =>
-  (rawKey ?? "").trim().replace(/^=+/, "");
+const YOUTUBE_PROXY_ENDPOINT = "/api/youtube-live";
 
 const getYoutubeResultsUrl = (query: string) =>
   `https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`;
+
+const getYoutubeEmbedUrl = (videoId: string) =>
+  `https://www.youtube-nocookie.com/embed/${videoId}?rel=0&modestbranding=1&playsinline=1&autoplay=1`;
+
+const getYoutubeThumbnailUrl = (videoId: string) =>
+  `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`;
 
 const hasLocalAuth = () => {
   if (typeof window === "undefined") return false;
@@ -51,6 +54,7 @@ export default function LiveNewsPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [hasFreePlan, setHasFreePlan] = useState(false);
   const [searchQuery, setSearchQuery] = useState(DEFAULT_QUERY);
+  const [activeVideoId, setActiveVideoId] = useState<string | null>(null);
 
   useEffect(() => {
     const syncAccessState = () => {
@@ -70,44 +74,22 @@ export default function LiveNewsPage() {
 
   const fetchLiveNewsVideos = useCallback(async (query: string) => {
     const normalizedQuery = query.trim() || DEFAULT_QUERY;
-    const apiKey = normalizeApiKey(process.env.NEXT_PUBLIC_YOUTUBE_API_KEY);
-
-    if (!apiKey) {
-      setError(
-        "API key is missing or invalid. Please check your configuration Developer.",
-      );
-      setFallbackQuery(normalizedQuery);
-      setLoading(false);
-      return;
-    }
-
-    const params = new URLSearchParams({
-      part: "snippet",
-      q: normalizedQuery,
-      type: "video",
-      eventType: "live",
-      maxResults: "12",
-      relevanceLanguage: "en",
-      regionCode: "US",
-      videoEmbeddable: "true",
-      key: apiKey,
-    });
-
     try {
       const response = await fetch(
-        `${YOUTUBE_SEARCH_ENDPOINT}?${params.toString()}`,
-        {
-          cache: "no-store",
-        },
+        `${YOUTUBE_PROXY_ENDPOINT}?q=${encodeURIComponent(normalizedQuery)}`,
+        { cache: "no-store" },
       );
+
+      const data: YoutubeSearchResponse & { error?: string } =
+        await response.json();
 
       if (!response.ok) {
         throw new Error(
-          `YouTube API request failed with status ${response.status}`,
+          data?.error ||
+            `YouTube API request failed with status ${response.status}`,
         );
       }
 
-      const data: YoutubeSearchResponse = await response.json();
       const nextVideos = (data.items ?? []).filter((item) =>
         Boolean(item.id?.videoId),
       );
@@ -122,6 +104,7 @@ export default function LiveNewsPage() {
       }
 
       setVideos(nextVideos);
+      setActiveVideoId(null);
       setError(null);
       setFallbackQuery(normalizedQuery);
       setLoading(false);
@@ -162,7 +145,9 @@ export default function LiveNewsPage() {
           <h1 className="mb-2 text-3xl font-extrabold text-slate-900 dark:text-slate-100">
             🔴LiveNews
           </h1>
-          <p className="text-slate-600 dark:text-slate-400">Loading live streams...</p>
+          <p className="text-slate-600 dark:text-slate-400">
+            Loading live streams...
+          </p>
         </div>
       </main>
     );
@@ -215,8 +200,9 @@ export default function LiveNewsPage() {
                     Unlock Custom Search
                   </h3>
                   <p className="mx-auto mt-1 max-w-md text-sm text-slate-600 dark:text-slate-400">
-                    Register to start search for specific live feeds, with more unlocked videos. We&apos;ve
-                    curated some popular live news streams for you below.
+                    Register to start search for specific live feeds, with more
+                    unlocked videos. We&apos;ve curated some popular live news
+                    streams for you below.
                   </p>
                 </div>
               </div>
@@ -258,6 +244,7 @@ export default function LiveNewsPage() {
         <div className="grid gap-6 sm:grid-cols-1 lg:grid-cols-2">
           {visibleVideos.map((video) => {
             const videoUrl = `https://www.youtube.com/watch?v=${video.id.videoId}`;
+            const isActive = activeVideoId === video.id.videoId;
 
             return (
               <article
@@ -265,14 +252,36 @@ export default function LiveNewsPage() {
                 className="overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-sm"
               >
                 <div className="aspect-video w-full bg-black">
-                  <iframe
-                    className="h-full w-full"
-                    src={`https://www.youtube.com/embed/${video.id.videoId}?rel=0`}
-                    title={video.snippet.title}
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                    allowFullScreen
-                    onError={() => handleVideoError(video.id.videoId)}
-                  />
+                  {isActive ? (
+                    <iframe
+                      className="h-full w-full"
+                      src={getYoutubeEmbedUrl(video.id.videoId)}
+                      title={video.snippet.title}
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                      allowFullScreen
+                      referrerPolicy="strict-origin-when-cross-origin"
+                      onError={() => handleVideoError(video.id.videoId)}
+                    />
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => setActiveVideoId(video.id.videoId)}
+                      className="relative h-full w-full text-left"
+                      aria-label={`Play ${video.snippet.title}`}
+                    >
+                      <img
+                        src={getYoutubeThumbnailUrl(video.id.videoId)}
+                        alt={video.snippet.title}
+                        className="h-full w-full object-cover"
+                        loading="lazy"
+                      />
+                      <span className="absolute inset-0 flex items-center justify-center bg-black/35">
+                        <span className="rounded-full bg-white/90 px-4 py-2 text-sm font-semibold text-black">
+                          Play Now
+                        </span>
+                      </span>
+                    </button>
+                  )}
                 </div>
 
                 <div className="space-y-3 p-4">
