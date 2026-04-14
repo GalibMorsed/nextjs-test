@@ -17,6 +17,7 @@ type NewsApiArticle = {
     title?: string | null;
     description?: string | null;
     url?: string | null;
+    urlToImage?: string | null;
     publishedAt?: string | null;
 };
 
@@ -52,7 +53,7 @@ function escapeHtml(value: string) {
         .replace(/&/g, "&amp;")
         .replace(/</g, "&lt;")
         .replace(/>/g, "&gt;")
-        .replace(/\"/g, "&quot;")
+        .replace(/"/g, "&quot;")
         .replace(/'/g, "&#39;");
 }
 
@@ -61,6 +62,46 @@ function getBearerToken(request: Request): string | null {
     if (!authHeader.toLowerCase().startsWith("bearer ")) return null;
     const token = authHeader.slice(7).trim();
     return token || null;
+}
+
+function getApiKeyHeader(request: Request): string | null {
+    const apiKeyHeader = request.headers.get("apikey")?.trim();
+    return apiKeyHeader || null;
+}
+
+function getProjectRefFromSupabaseUrl(url: string): string | null {
+    try {
+        const host = new URL(url).hostname;
+        return host.split(".")[0] || null;
+    } catch {
+        return null;
+    }
+}
+
+function decodeBase64Url(value: string): string | null {
+    try {
+        const normalized = value.replace(/-/g, "+").replace(/_/g, "/");
+        const padLength = normalized.length % 4;
+        const padded = padLength === 0 ? normalized : normalized + "=".repeat(4 - padLength);
+        return atob(padded);
+    } catch {
+        return null;
+    }
+}
+
+function isProjectAnonJwt(token: string, projectRef: string): boolean {
+    const parts = token.split(".");
+    if (parts.length !== 3) return false;
+
+    const payloadRaw = decodeBase64Url(parts[1]);
+    if (!payloadRaw) return false;
+
+    try {
+        const payload = JSON.parse(payloadRaw) as { role?: string; ref?: string };
+        return payload.role === "anon" && payload.ref === projectRef;
+    } catch {
+        return false;
+    }
 }
 
 async function fetchTopHeadlines(country: string, maxArticles: number) {
@@ -97,6 +138,7 @@ async function fetchTopHeadlines(country: string, maxArticles: number) {
                     description: (article.description ?? "").trim(),
                     source: (article.source?.name ?? "Unknown source").trim() || "Unknown source",
                     publishedAt: (article.publishedAt ?? "").trim(),
+                    imageUrl: (article.urlToImage ?? "").trim(),
                 };
             })
             .filter(
@@ -106,6 +148,7 @@ async function fetchTopHeadlines(country: string, maxArticles: number) {
                     description: string;
                     source: string;
                     publishedAt: string;
+                    imageUrl: string;
                 } => Boolean(article),
             )
         : [];
@@ -130,38 +173,89 @@ function buildDigestHtml(
         description: string;
         source: string;
         publishedAt: string;
+        imageUrl: string;
     }>,
 ) {
+    const appUrl = "https://www.nextnews.co.in/";
+    
     const headlineItems = articles
-        .map((article, index) => {
+        .map((article) => {
             const sourceText = escapeHtml(article.source);
             const titleText = escapeHtml(article.title);
-            const descriptionText = article.description
-                ? `<p style="margin: 8px 0 0; color: #334155; line-height: 1.5;">${escapeHtml(article.description)}</p>`
-                : "";
+            const descriptionText = escapeHtml(article.description || "Click to read the full story on NextNews.");
             const publishedText = article.publishedAt
-                ? `<p style="margin: 8px 0 0; color: #64748b; font-size: 12px;">Published: ${escapeHtml(new Date(article.publishedAt).toLocaleString())}</p>`
+                ? `<span style="color: #6b7280; font-size: 12px; display: inline-block;">${escapeHtml(new Date(article.publishedAt).toLocaleString())}</span>`
                 : "";
 
-            return `<li style="margin: 0 0 18px;">
-  <div style="font-weight: 700; color: #0f172a; margin-bottom: 6px;">${index + 1}. ${titleText}</div>
-  <div style="color: #475569; font-size: 13px;">Source: ${sourceText}</div>
-  ${descriptionText}
-  ${publishedText}
-  <a href="${escapeHtml(article.url)}" style="display: inline-block; margin-top: 8px; color: #0369a1; text-decoration: none; font-weight: 600;">Read full article</a>
-</li>`;
+            const imageHtml = article.imageUrl
+                ? `<a href="${appUrl}" style="display: block; text-decoration: none;">
+                     <img src="${escapeHtml(article.imageUrl)}" alt="${titleText}" style="width: 100%; height: 200px; object-fit: cover; display: block;" onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1585829365295-ab7cd400c167?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80';"/>
+                   </a>`
+                : `<a href="${appUrl}" style="display: block; text-decoration: none;">
+                     <div style="width: 100%; height: 120px; background-color: #e5e7eb; display: flex; align-items: center; justify-content: center;">
+                       <span style="color: #9ca3af; font-size: 14px;">NextNews</span>
+                     </div>
+                   </a>`;
+
+            return `
+            <div style="background-color: #ffffff; border-radius: 16px; overflow: hidden; margin-bottom: 24px; border: 1px solid #f3f4f6; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
+                ${imageHtml}
+                <div style="padding: 20px;">
+                    <div style="margin-bottom: 12px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                        <span style="background-color: #111827; color: #ffffff; font-size: 10px; font-weight: bold; padding: 4px 10px; border-radius: 999px; text-transform: uppercase; display: inline-block;">${sourceText}</span>
+                        ${publishedText}
+                    </div>
+                    <h2 style="margin: 0 0 12px; font-size: 18px; line-height: 1.4;">
+                        <a href="${appUrl}" style="color: #111827; text-decoration: none; font-weight: 700;">${titleText}</a>
+                    </h2>
+                    <p style="margin: 0 0 16px; color: #4b5563; font-size: 14px; line-height: 1.6;">
+                        ${descriptionText}
+                    </p>
+                    <div style="border-top: 1px solid #f3f4f6; padding-top: 16px;">
+                        <a href="${appUrl}" style="color: #2563eb; text-decoration: none; font-weight: 600; font-size: 14px; display: inline-flex; align-items: center;">Read Full Story &rarr;</a>
+                    </div>
+                </div>
+            </div>`;
         })
         .join("\n");
 
+    const categories = ["Technology", "Business", "Entertainment", "Health", "Science", "Sports"];
+    const categoriesHtml = categories.map(cat => 
+        `<a href="${appUrl}" style="display: inline-block; background-color: #f3f4f6; color: #374151; padding: 6px 14px; border-radius: 999px; text-decoration: none; font-size: 13px; font-weight: 600; margin: 4px;">${cat}</a>`
+    ).join("");
+
     return `<!doctype html>
 <html>
-    <body style="margin:0;padding:24px;background:#f8fafc;font-family:Arial,Helvetica,sans-serif;">
-        <div style="max-width:640px;margin:0 auto;background:#ffffff;border:1px solid #e2e8f0;border-radius:16px;padding:24px;">
-            <h1 style="margin:0 0 8px;color:#0f172a;font-size:24px;">NextNews Morning Brief</h1>
-            <p style="margin:0 0 18px;color:#475569;line-height:1.6;">Here are today\'s top headlines curated for registered NextNews users.</p>
-            <ol style="padding-left:20px;margin:0;">${headlineItems}</ol>
-            <hr style="margin:24px 0;border:none;border-top:1px solid #e2e8f0;" />
-            <p style="margin:0;color:#64748b;font-size:12px;line-height:1.5;">You are receiving this because you have a registered account on NextNews.</p>
+    <body style="margin:0;padding:20px;background:#f9fafb;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+        <div style="max-width:600px;margin:0 auto;">
+            <!-- Header -->
+            <div style="text-align:center;padding:24px 0;">
+                <h1 style="margin:0 0 8px;color:#111827;font-size:28px;font-weight:800;letter-spacing:-0.5px;">NextNews</h1>
+                <p style="margin:0;color:#6b7280;font-size:16px;">Your Daily Morning Brief</p>
+            </div>
+
+            <!-- Articles -->
+            <div style="margin-bottom: 24px;">
+                ${headlineItems}
+            </div>
+
+            <!-- Trending Categories -->
+            <div style="background-color:#ffffff;border-radius:16px;padding:24px;border:1px solid #f3f4f6;text-align:center;margin-bottom:32px;">
+                <h2 style="margin:0 0 16px;font-size:18px;color:#111827;font-weight:700;">&#128293; Trending Categories Today</h2>
+                <div style="margin-bottom:20px;">
+                    ${categoriesHtml}
+                </div>
+                <a href="${appUrl}" style="display:inline-block;background-color:#2563eb;color:#ffffff;padding:12px 24px;border-radius:999px;text-decoration:none;font-weight:600;font-size:15px;box-shadow:0 2px 4px rgba(37,99,235,0.2);">Explore More on NextNews</a>
+            </div>
+
+            <!-- Footer -->
+            <div style="text-align:center;color:#9ca3af;font-size:13px;line-height:1.6;padding-bottom:24px;">
+                <p style="margin:0 0 8px;">You're receiving this because you want to stay updated with NextNews.</p>
+                <p style="margin:0;">
+                    <a href="${appUrl}" style="color:#6b7280;text-decoration:underline;">Visit NextNews</a> &bull; 
+                    <a href="${appUrl}" style="color:#6b7280;text-decoration:underline;">Manage Preferences</a>
+                </p>
+            </div>
         </div>
     </body>
 </html>`;
@@ -174,10 +268,13 @@ function buildDigestText(
         description: string;
         source: string;
         publishedAt: string;
+        imageUrl: string;
     }>,
 ) {
+    const appUrl = "https://www.nextnews.co.in/";
     const lines = [
         "NextNews Morning Brief",
+        "======================",
         "",
         "Top headlines for today:",
         "",
@@ -190,10 +287,16 @@ function buildDigestText(
         if (article.publishedAt) {
             lines.push(`Published: ${new Date(article.publishedAt).toLocaleString()}`);
         }
-        lines.push(`Read: ${article.url}`);
+        lines.push(`Read more on our app: ${appUrl}`);
+        lines.push("");
+        lines.push("----------------------");
         lines.push("");
     });
 
+    lines.push("🔥 Trending Categories Today:");
+    lines.push("Technology, Business, Entertainment, Health, Science, Sports");
+    lines.push(`Explore more: ${appUrl}`);
+    lines.push("");
     lines.push("You are receiving this because you have a registered account on NextNews.");
     return lines.join("\n");
 }
@@ -269,16 +372,24 @@ Deno.serve(async (request: Request) => {
             return new Response("Method Not Allowed", { status: 405 });
         }
 
-        const cronSecret =
-            Deno.env.get("CRON_SECRET")?.trim() ||
-            Deno.env.get("SUPABASE_ANON_KEY")?.trim();
+        const supabaseUrl = getEnv("SUPABASE_URL");
+        const projectRef = getProjectRefFromSupabaseUrl(supabaseUrl);
+        const anonKey = getEnv("SUPABASE_ANON_KEY");
         const bearerToken = getBearerToken(request);
+        const apiKeyHeader = getApiKeyHeader(request);
+        const providedToken = bearerToken || apiKeyHeader;
+        const matchesAnonSecret = Boolean(providedToken && providedToken === anonKey);
+        const matchesProjectAnon = Boolean(
+            projectRef && providedToken && isProjectAnonJwt(providedToken, projectRef),
+        );
 
-        if (!cronSecret || !bearerToken || bearerToken !== cronSecret) {
-            return new Response("Unauthorized", { status: 401 });
+        if (!matchesAnonSecret && !matchesProjectAnon) {
+            return new Response(
+                "Unauthorized. Use SUPABASE_ANON_KEY in Authorization Bearer header (or apikey header).",
+                { status: 401 },
+            );
         }
 
-        const supabaseUrl = getEnv("SUPABASE_URL");
         const serviceRoleKey = getEnv("SUPABASE_SERVICE_ROLE_KEY");
         const resendApiKey = getEnv("RESEND_API_KEY");
         const resendFromEmail = getEnv("RESEND_FROM_EMAIL");
