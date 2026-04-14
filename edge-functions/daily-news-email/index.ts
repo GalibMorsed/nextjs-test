@@ -68,6 +68,41 @@ function getApiKeyHeader(request: Request): string | null {
     return apiKeyHeader || null;
 }
 
+function getProjectRefFromSupabaseUrl(url: string): string | null {
+    try {
+        const host = new URL(url).hostname;
+        return host.split(".")[0] || null;
+    } catch {
+        return null;
+    }
+}
+
+function decodeBase64Url(value: string): string | null {
+    try {
+        const normalized = value.replace(/-/g, "+").replace(/_/g, "/");
+        const padLength = normalized.length % 4;
+        const padded = padLength === 0 ? normalized : normalized + "=".repeat(4 - padLength);
+        return atob(padded);
+    } catch {
+        return null;
+    }
+}
+
+function isProjectAnonJwt(token: string, projectRef: string): boolean {
+    const parts = token.split(".");
+    if (parts.length !== 3) return false;
+
+    const payloadRaw = decodeBase64Url(parts[1]);
+    if (!payloadRaw) return false;
+
+    try {
+        const payload = JSON.parse(payloadRaw) as { role?: string; ref?: string };
+        return payload.role === "anon" && payload.ref === projectRef;
+    } catch {
+        return false;
+    }
+}
+
 async function fetchTopHeadlines(country: string, maxArticles: number) {
     const apiKey =
         Deno.env.get("NEWS_API_KEY")?.trim() ||
@@ -274,19 +309,24 @@ Deno.serve(async (request: Request) => {
             return new Response("Method Not Allowed", { status: 405 });
         }
 
+        const supabaseUrl = getEnv("SUPABASE_URL");
+        const projectRef = getProjectRefFromSupabaseUrl(supabaseUrl);
         const anonKey = getEnv("SUPABASE_ANON_KEY");
         const bearerToken = getBearerToken(request);
         const apiKeyHeader = getApiKeyHeader(request);
         const providedToken = bearerToken || apiKeyHeader;
+        const matchesAnonSecret = Boolean(providedToken && providedToken === anonKey);
+        const matchesProjectAnon = Boolean(
+            projectRef && providedToken && isProjectAnonJwt(providedToken, projectRef),
+        );
 
-        if (!providedToken || providedToken !== anonKey) {
+        if (!matchesAnonSecret && !matchesProjectAnon) {
             return new Response(
                 "Unauthorized. Use SUPABASE_ANON_KEY in Authorization Bearer header (or apikey header).",
                 { status: 401 },
             );
         }
 
-        const supabaseUrl = getEnv("SUPABASE_URL");
         const serviceRoleKey = getEnv("SUPABASE_SERVICE_ROLE_KEY");
         const resendApiKey = getEnv("RESEND_API_KEY");
         const resendFromEmail = getEnv("RESEND_FROM_EMAIL");
