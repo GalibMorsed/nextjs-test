@@ -38,10 +38,15 @@ type NormalizedArticle = {
     score: number;
 };
 
+type TrendingCategory = {
+    name: string;
+    reason: string;
+};
+
 const RESEND_BATCH_ENDPOINT = "https://api.resend.com/emails/batch";
 const OPENROUTER_ENDPOINT = "https://openrouter.ai/api/v1/chat/completions";
 const DEFAULT_COUNTRY = "us";
-const DEFAULT_MAX_ARTICLES = 5;
+const DEFAULT_MAX_ARTICLES = 4;
 const DEFAULT_MAX_RECIPIENTS = 100;
 const DEFAULT_CATEGORY_PAGE_SIZE = 6;
 const DEFAULT_NEWS_CATEGORIES = [
@@ -330,7 +335,7 @@ async function suggestCategoriesWithOpenRouter(
     country: string,
     categories: string[],
     headlineSignals: string,
-) {
+): Promise<TrendingCategory[] | null> {
     const apiKey = Deno.env.get("OPENROUTER_API_KEY")?.trim();
     if (!apiKey) return null;
     const model = Deno.env.get("OPENROUTER_MODEL")?.trim() || "nvidia/nemotron-3-nano-30b-a3b:free";
@@ -340,7 +345,7 @@ async function suggestCategoriesWithOpenRouter(
             "You are a news recommendation assistant.",
             `Today is ${new Date().toISOString().slice(0, 10)}.`,
             `Country: ${country.toUpperCase()}.`,
-            "Pick the most relevant categories for today from ONLY this list:",
+            "Pick the most relevant 4 to 5 categories for today from ONLY this list and provide a short, catchy reason (max 6 words) for each based on current trends:",
             categories.map(formatCategoryLabel).join(", "),
             "",
             "Live headline signals:",
@@ -348,9 +353,10 @@ async function suggestCategoriesWithOpenRouter(
             "",
             "Return ONLY valid JSON with this exact shape:",
             "{",
-            '  "categories": ["Category", "Category"]',
+            '  "categories": [',
+            '    { "name": "Category Name", "reason": "Short catchy reason why it is trending" }',
+            '  ]',
             "}",
-            "Return 4 to 5 categories.",
         ].join("\n");
 
         const response = await fetch(OPENROUTER_ENDPOINT, {
@@ -360,7 +366,7 @@ async function suggestCategoriesWithOpenRouter(
                 "Content-Type": "application/json",
                 "HTTP-Referer":
                     Deno.env.get("OPENROUTER_SITE_URL")?.trim() ||
-                    "https://next-news-delta-brown.vercel.app",
+                    "https://www.nextnews.co.in",
                 "X-Title": Deno.env.get("OPENROUTER_APP_NAME")?.trim() || "NextNews",
             },
             body: JSON.stringify({
@@ -368,11 +374,11 @@ async function suggestCategoriesWithOpenRouter(
                 messages: [
                     {
                         role: "system",
-                        content: "Return JSON only. Categories must be from the allowed list.",
+                        content: "Return JSON only. Categories must be from the allowed list. Reasons must be catchy and informative.",
                     },
                     { role: "user", content: prompt },
                 ],
-                temperature: 0.2,
+                temperature: 0.3,
             }),
         });
 
@@ -384,14 +390,27 @@ async function suggestCategoriesWithOpenRouter(
         const parsed = extractJsonObject(content);
         const raw = Array.isArray(parsed?.categories) ? parsed?.categories : [];
         const allowed = new Set(categories);
-        const normalized = raw
-            .map((entry) => (typeof entry === "string" ? entry.trim() : ""))
-            .filter(Boolean)
-            .map((entry) => normalizeCategory(entry, allowed))
-            .filter((entry): entry is string => Boolean(entry));
+        
+        const results: TrendingCategory[] = [];
+        const seen = new Set<string>();
 
-        const unique = Array.from(new Set(normalized));
-        return unique.length ? unique : null;
+        for (const entry of raw) {
+            if (typeof entry !== "object" || !entry) continue;
+            const name = entry.name?.trim();
+            const reason = entry.reason?.trim();
+            if (!name || !reason) continue;
+
+            const normalizedName = normalizeCategory(name, allowed);
+            if (normalizedName && !seen.has(normalizedName)) {
+                results.push({
+                    name: formatCategoryLabel(normalizedName),
+                    reason: reason,
+                });
+                seen.add(normalizedName);
+            }
+        }
+
+        return results.length ? results : null;
     } catch {
         return null;
     }
@@ -417,9 +436,13 @@ function buildDigestHtml(
         imageUrl: string;
         category: string;
     }>,
-    categories: string[],
+    categories: TrendingCategory[],
 ) {
     const appUrl = "https://www.nextnews.co.in/";
+    const logoUrl = "https://github.com/GalibMorsed/NextNews/blob/3f94a442bdea7fc1ade2c070d0ef61bd36f7508a/public/logo2.jpg";
+    const privacyUrl = "https://www.nextnews.co.in/privacy-policy";
+    const termsUrl = "https://www.nextnews.co.in/terms-and-conditions";
+    const supportUrl = "https://www.nextnews.co.in/support";
 
     const headlineItems = articles
         .map((article) => {
@@ -428,78 +451,108 @@ function buildDigestHtml(
             const descriptionText = escapeHtml(article.description || "Click to read the full story on NextNews.");
             const categoryText = escapeHtml(formatCategoryLabel(article.category));
             const publishedText = article.publishedAt
-                ? `<span style="color: #6b7280; font-size: 12px; display: inline-block;">${escapeHtml(new Date(article.publishedAt).toLocaleString())}</span>`
+                ? `<span style="color: #6b7280; font-size: 11px; display: inline-block;">${escapeHtml(new Date(article.publishedAt).toLocaleString("en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }))}</span>`
                 : "";
 
             const imageHtml = article.imageUrl
                 ? `<a href="${appUrl}" style="display: block; text-decoration: none;">
-                     <img src="${escapeHtml(article.imageUrl)}" alt="${titleText}" style="width: 100%; height: 200px; object-fit: cover; display: block;" onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1585829365295-ab7cd400c167?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80';"/>
+                     <img src="${escapeHtml(article.imageUrl)}" alt="${titleText}" style="width: 100%; height: 220px; object-fit: cover; display: block;" onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1585829365295-ab7cd400c167?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80';"/>
                    </a>`
                 : `<a href="${appUrl}" style="display: block; text-decoration: none;">
-                     <div style="width: 100%; height: 120px; background-color: #e5e7eb; display: flex; align-items: center; justify-content: center;">
-                       <span style="color: #9ca3af; font-size: 14px;">NextNews</span>
+                     <div style="width: 100%; height: 120px; background-color: #f3f4f6; display: flex; align-items: center; justify-content: center;">
+                       <span style="color: #9ca3af; font-size: 14px; font-weight: 600;">NextNews</span>
                      </div>
                    </a>`;
 
             return `
-            <div style="background-color: #ffffff; border-radius: 16px; overflow: hidden; margin-bottom: 24px; border: 1px solid #f3f4f6; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
+            <div style="background-color: #ffffff; border-radius: 12px; overflow: hidden; margin-bottom: 24px; border: 1px solid #e5e7eb; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
                 ${imageHtml}
                 <div style="padding: 20px;">
-                    <div style="margin-bottom: 12px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-                        <span style="background-color: #111827; color: #ffffff; font-size: 10px; font-weight: bold; padding: 4px 10px; border-radius: 999px; text-transform: uppercase; display: inline-block;">${sourceText}</span>
-                        <span style="background-color: #e5e7eb; color: #111827; font-size: 10px; font-weight: 700; padding: 4px 10px; border-radius: 999px; text-transform: uppercase; display: inline-block;">${categoryText}</span>
-                        ${publishedText}
+                    <div style="margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+                        <span style="background-color: #000000; color: #ffffff; font-size: 10px; font-weight: 800; padding: 3px 8px; border-radius: 4px; text-transform: uppercase;">${sourceText}</span>
+                        <span style="background-color: #f3f4f6; color: #4b5563; font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 4px; text-transform: uppercase;">${categoryText}</span>
+                        <div style="flex-grow: 1; text-align: right;">${publishedText}</div>
                     </div>
-                    <h2 style="margin: 0 0 12px; font-size: 18px; line-height: 1.4;">
-                        <a href="${appUrl}" style="color: #111827; text-decoration: none; font-weight: 700;">${titleText}</a>
+                    <h2 style="margin: 0 0 10px; font-size: 20px; line-height: 1.3; font-weight: 800;">
+                        <a href="${appUrl}" style="color: #111827; text-decoration: none;">${titleText}</a>
                     </h2>
-                    <p style="margin: 0 0 16px; color: #4b5563; font-size: 14px; line-height: 1.6;">
+                    <p style="margin: 0 0 16px; color: #4b5563; font-size: 15px; line-height: 1.6;">
                         ${descriptionText}
                     </p>
                     <div style="border-top: 1px solid #f3f4f6; padding-top: 16px;">
-                        <a href="${appUrl}" style="color: #2563eb; text-decoration: none; font-weight: 600; font-size: 14px; display: inline-flex; align-items: center;">Read Full Story &rarr;</a>
+                        <a href="${appUrl}" style="color: #2563eb; text-decoration: none; font-weight: 700; font-size: 14px; display: inline-flex; align-items: center;">Read Full Story &rarr;</a>
                     </div>
                 </div>
             </div>`;
         })
         .join("\n");
 
-    const categoriesHtml = categories.map((cat) =>
-        `<a href="${appUrl}" style="display: inline-block; background-color: #f3f4f6; color: #374151; padding: 6px 14px; border-radius: 999px; text-decoration: none; font-size: 13px; font-weight: 600; margin: 4px;">${cat}</a>`
-    ).join("");
+    const categoriesHtml = categories.map((cat) => `
+        <div style="text-align: left; padding: 12px; background-color: #f9fafb; border-radius: 8px; border: 1px solid #f3f4f6; margin-bottom: 12px;">
+            <div style="font-weight: 800; color: #111827; font-size: 14px; margin-bottom: 4px; display: flex; align-items: center; gap: 6px;">
+                <span style="display: inline-block; width: 6px; height: 6px; background-color: #2563eb; border-radius: 50%;"></span>
+                ${escapeHtml(cat.name)}
+            </div>
+            <div style="color: #6b7280; font-size: 13px; line-height: 1.4;">${escapeHtml(cat.reason)}</div>
+        </div>
+    `).join("");
 
     return `<!doctype html>
-<html>
-    <body style="margin:0;padding:20px;background:#f9fafb;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
-        <div style="max-width:600px;margin:0 auto;">
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>NextNews Daily Digest</title>
+    </head>
+    <body style="margin:0;padding:20px 10px;background-color:#f8fafc;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+        <div style="max-width:600px;margin:0 auto;background-color:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 10px 15px -3px rgba(0,0,0,0.1);">
             <!-- Header -->
-            <div style="text-align:center;padding:24px 0;">
-                <h1 style="margin:0 0 8px;color:#111827;font-size:28px;font-weight:800;letter-spacing:-0.5px;">NextNews</h1>
-                <p style="margin:0;color:#6b7280;font-size:16px;">Your Daily Morning Brief</p>
+            <div style="text-align:center;padding:32px 20px;background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);color: #ffffff;">
+                <h1 style="margin:0 0 8px;font-size:32px;font-weight:900;letter-spacing:-1px;">NextNews</h1>
+                <p style="margin:0;color:#94a3b8;font-size:16px;font-weight:500;">Your AI-Powered Morning Briefing</p>
             </div>
 
-            <!-- Articles -->
-            <div style="margin-bottom: 24px;">
-                ${headlineItems}
-            </div>
-
-            <!-- Trending Categories -->
-            <div style="background-color:#ffffff;border-radius:16px;padding:24px;border:1px solid #f3f4f6;text-align:center;margin-bottom:32px;">
-                <h2 style="margin:0 0 8px;font-size:18px;color:#111827;font-weight:700;">&#128293; Today's Recommended Categories</h2>
-                <p style="margin:0 0 16px;color:#6b7280;font-size:14px;">AI-picked from what's hot right now.</p>
-                <div style="margin-bottom:20px;">
-                    ${categoriesHtml}
+            <div style="padding: 24px;">
+                <!-- Articles -->
+                <div style="margin-bottom: 32px;">
+                    ${headlineItems}
                 </div>
-                <a href="${appUrl}" style="display:inline-block;background-color:#2563eb;color:#ffffff;padding:12px 24px;border-radius:999px;text-decoration:none;font-weight:600;font-size:15px;box-shadow:0 2px 4px rgba(37,99,235,0.2);">Explore More on NextNews</a>
+
+                <!-- Trending Categories -->
+                <div style="background-color:#ffffff;border-radius:12px;padding:24px;border:2px solid #f1f5f9;text-align:center;margin-bottom:32px;">
+                    <div style="margin-bottom: 20px;">
+                        <h2 style="margin:0 0 6px;font-size:22px;color:#111827;font-weight:800;">🔥 Today's Recommended Categories</h2>
+                        <p style="margin:0;color:#64748b;font-size:14px;font-weight:500;">AI-curated based on live news updates.</p>
+                    </div>
+                    
+                    <div style="margin-bottom:16px;">
+                        ${categoriesHtml}
+                    </div>
+                    
+                    <a href="${appUrl}" style="display:inline-block;background-color:#2563eb;color:#ffffff;padding:14px 28px;border-radius:10px;text-decoration:none;font-weight:700;font-size:16px;box-shadow:0 4px 6px -1px rgba(37,99,235,0.2);">Explore More Categories</a>
+                </div>
             </div>
 
             <!-- Footer -->
-            <div style="text-align:center;color:#9ca3af;font-size:13px;line-height:1.6;padding-bottom:24px;">
-                <p style="margin:0 0 8px;">You're receiving this because you want to stay updated with NextNews.</p>
-                <p style="margin:0;">
-                    <a href="${appUrl}" style="color:#6b7280;text-decoration:underline;">Visit NextNews</a> &bull; 
-                    <a href="${appUrl}" style="color:#6b7280;text-decoration:underline;">Manage Preferences</a>
+            <div style="background-color: #f1f5f9; padding: 40px 24px; text-align: center; border-top: 1px solid #e2e8f0;">
+                <a href="${appUrl}" style="display: inline-block; margin-bottom: 24px;">
+                    <img src="${logoUrl}" alt="NextNews" style="height: 32px; width: auto;" onerror="this.style.display='none';">
+                </a>
+                
+                <p style="margin: 0 auto 24px; color: #475569; font-size: 14px; line-height: 1.6; max-width: 440px;">
+                    NextNews delivers the world's most critical updates summarized by AI. Stay informed, stay ahead, and make better decisions every day.
                 </p>
+                
+                <div style="margin-bottom: 24px; display: flex; justify-content: center; gap: 20px; flex-wrap: wrap;">
+                    <a href="${privacyUrl}" style="color: #64748b; text-decoration: none; font-size: 13px; font-weight: 600;">Privacy Policy</a>
+                    <a href="${termsUrl}" style="color: #64748b; text-decoration: none; font-size: 13px; font-weight: 600;">Terms & Conditions</a>
+                    <a href="${supportUrl}" style="color: #64748b; text-decoration: none; font-size: 13px; font-weight: 600;">Support</a>
+                </div>
+                
+                <div style="border-top: 1px solid #cbd5e1; padding-top: 24px; color: #94a3b8; font-size: 12px; font-weight: 500;">
+                    <p style="margin: 0 0 8px;">&copy; 2026 NextNews. All rights reserved.</p>
+                    <p style="margin: 0;">You're receiving this because you're a registered member of NextNews.</p>
+                </div>
             </div>
         </div>
     </body>
@@ -516,9 +569,12 @@ function buildDigestText(
         imageUrl: string;
         category: string;
     }>,
-    categories: string[],
+    categories: TrendingCategory[],
 ) {
     const appUrl = "https://www.nextnews.co.in/";
+    const privacyUrl = "https://www.nextnews.co.in/privacy-policy";
+    const termsUrl = "https://www.nextnews.co.in/terms-and-conditions";
+    const supportUrl = "https://www.nextnews.co.in/support";
     const now = new Intl.DateTimeFormat("en-US", {
         weekday: "long",
         month: "long",
@@ -528,47 +584,56 @@ function buildDigestText(
 
     const lines = [
         "NEXTNEWS MORNING BRIEF",
-        "Your personalized daily update",
+        "Your AI-Powered Daily News Update",
         "-----------------------------------------",
         `Date: ${now}`,
         "-----------------------------------------",
         "",
-        "TOP STORIES FOR YOU",
+        "TOP STORIES",
         "===================",
         "",
     ];
 
-    articles.forEach((article, index) => {
+    articles.forEach((article) => {
         const categoryLabel = formatCategoryLabel(article.category).toUpperCase();
-        lines.push(`[${categoryLabel}] ${article.title}`);
+        lines.push(`[${categoryLabel}] ${article.title.toUpperCase()}`);
         lines.push(`Source: ${article.source}`);
         
         if (article.description) {
-            // Simple truncation for text version if it's too long
-            const desc = article.description.length > 160 
-                ? article.description.slice(0, 157) + "..." 
+            const desc = article.description.length > 200 
+                ? article.description.slice(0, 197) + "..." 
                 : article.description;
             lines.push(desc);
         }
         
-        lines.push(`Read the full story: ${appUrl}`);
+        lines.push(`Go to story: ${appUrl}`);
         lines.push("");
     });
 
     lines.push("-----------------------------------------");
-    lines.push("🔥 TODAY'S RECOMMENDED CATEGORIES");
-    lines.push("AI-picked based on current trends:");
-    lines.push("");
-    lines.push(categories.map(c => `• ${c}`).join("\n"));
-    lines.push("");
-    lines.push(`Explore more categories in the app: ${appUrl}`);
+    lines.push("🔥 TRENDING CATEGORIES TODAY");
     lines.push("-----------------------------------------");
     lines.push("");
-    lines.push("NextNews - All the news that matters, in one place.");
-    lines.push("Visit us at: https://www.nextnews.co.in");
+    
+    categories.forEach(cat => {
+        lines.push(`• ${cat.name.toUpperCase()}`);
+        lines.push(`  ${cat.reason}`);
+        lines.push("");
+    });
+
+    lines.push(`Explore more in the app: ${appUrl}explore`);
     lines.push("");
-    lines.push("You are receiving this daily brief because you have a account on NextNews.");
-    lines.push("To manage your email preferences, please visit the app settings.");
+    lines.push("-----------------------------------------");
+    lines.push("NextNews - AI-powered news summaries.");
+    lines.push("Visit us: https://www.nextnews.co.in");
+    lines.push("");
+    lines.push("Legal Information:");
+    lines.push(`- Privacy Policy: ${privacyUrl}`);
+    lines.push(`- Terms & Conditions: ${termsUrl}`);
+    lines.push(`- Support: ${supportUrl}`);
+    lines.push("");
+    lines.push("You are receiving this because you are a registered user of NextNews.");
+    lines.push("© 2026 NextNews. All rights reserved.");
 
     return lines.join("\n");
 }
@@ -747,14 +812,14 @@ Deno.serve(async (request: Request) => {
             categoryList,
             headlineSignals,
         );
-        const fallbackCategories = rotateByDay(
-            categoryList
-                .slice()
-                .sort((a, b) => (categoryScores[b] || 0) - (categoryScores[a] || 0)),
-        );
-        const trendingCategories = (suggestedCategories || fallbackCategories)
-            .slice(0, 7)
-            .map(formatCategoryLabel);
+        const fallbackCategories: TrendingCategory[] = rotateByDay(categoryList)
+            .slice(0, 5)
+            .map(cat => ({
+                name: formatCategoryLabel(cat),
+                reason: `Discover the latest updates and trending stories in ${formatCategoryLabel(cat)}.`
+            }));
+
+        const trendingCategories = suggestedCategories || fallbackCategories;
 
         const subject = buildDigestSubject();
         const html = buildDigestHtml(headlines, trendingCategories);
