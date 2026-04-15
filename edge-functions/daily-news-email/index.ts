@@ -440,7 +440,7 @@ function buildDigestHtml(
 ) {
     const appUrl = "https://www.nextnews.co.in/";
     const exploreUrl = `${appUrl}explore`;
-    const logoUrl = "https://res.cloudinary.com/dyettbmfd/image/upload/v1776265955/logo2_rpcaid.jpg";
+    const logoUrl = "https://res.cloudinary.com/dyettbmfd/image/upload/v1776277678/logo3_njvstm.jpg";
     const privacyUrl = "https://www.nextnews.co.in/privacy-policy";
     const termsUrl = "https://www.nextnews.co.in/terms-and-conditions";
     const supportUrl = "https://www.nextnews.co.in/support";
