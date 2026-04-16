@@ -440,7 +440,7 @@ function buildDigestHtml(
 ) {
     const appUrl = "https://www.nextnews.co.in/";
     const exploreUrl = `${appUrl}explore`;
-    const logoUrl = "https://res.cloudinary.com/dyettbmfd/image/upload/v1776265955/logo2_rpcaid.jpg";
+    const logoUrl = "https://res.cloudinary.com/dyettbmfd/image/upload/v1776277678/logo3_njvstm.jpg";
     const privacyUrl = "https://www.nextnews.co.in/privacy-policy";
     const termsUrl = "https://www.nextnews.co.in/terms-and-conditions";
     const supportUrl = "https://www.nextnews.co.in/support";
@@ -557,17 +557,19 @@ function buildDigestHtml(
                     <img src="${logoUrl}" alt="NextNews" style="height: 42px; width: auto; max-width: 100%; border-radius: 4px;" onerror="this.style.display='none';">
                 </a>
                 
-                <p style="margin: 0 auto 28px; color: #334155; font-size: 15px; line-height: 1.6; max-width: 480px; font-weight: 500; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+                <p style="margin: 0 auto 28px; color: #64748b; font-size: 14px; line-height: 1.6; max-width: 480px; font-weight: 500; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
                     NextNews delivers the world's most critical news updates with AI-powered recommendations. Stay informed, stay ahead, and make smarter decisions every day.
                 </p>
                 
-                <div style="margin-bottom: 36px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
-                    <a href="${privacyUrl}" style="color: #0369a1; text-decoration: none; font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px; display: inline-block; margin: 8px 14px; padding: 6px;">Privacy Policy</a>
-                    <a href="${termsUrl}" style="color: #0369a1; text-decoration: none; font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px; display: inline-block; margin: 8px 14px; padding: 6px;">Terms & Conditions</a>
-                    <a href="${supportUrl}" style="color: #0369a1; text-decoration: none; font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px; display: inline-block; margin: 8px 14px; padding: 6px;">Support</a>
+                <div style="margin-bottom: 36px; color: #64748b; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;">
+                    <a href="${privacyUrl}" style="color: #64748b; text-decoration: underline;">Policy</a>
+                    <span style="margin: 0 10px; color: #94a3b8;">&middot;</span>
+                    <a href="${termsUrl}" style="color: #64748b; text-decoration: underline;">T&C</a>
+                    <span style="margin: 0 10px; color: #94a3b8;">&middot;</span>
+                    <a href="${supportUrl}" style="color: #64748b; text-decoration: underline;">Support</a>
                 </div>
                 
-                <div style="border-top: 1px solid #bae6fd; margin: 0 auto; padding-top: 28px; color: #475569; font-size: 13px; font-weight: 500; line-height: 1.6; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+                <div style="border-top: 1px solid #bae6fd; margin: 0 auto; padding-top: 28px; color: #64748b; font-size: 13px; font-weight: 500; line-height: 1.6; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
                     <p style="margin: 0 0 8px;">&copy; 2026 NextNews. All rights reserved.</p>
                     <p style="margin: 0;">You're receiving this email because you're a registered member of NextNews.</p>
                 </div>
