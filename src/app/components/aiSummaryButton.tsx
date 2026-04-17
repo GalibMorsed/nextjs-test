@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Bot, Loader2, Sparkles, X } from "lucide-react";
 import { supabase } from "../../../lib/superbaseClient";
@@ -12,7 +12,10 @@ interface AISummaryButtonProps {
   content: string | null;
   sourceName?: string;
   category?: string;
+  showPromo?: boolean;
 }
+
+const AI_SUMMARY_PROMO_DISMISS_KEY = "ai_summary_promo_dismissed";
 
 function toBulletPoints(rawSummary: string) {
   const normalized = rawSummary.trim();
@@ -25,9 +28,7 @@ function toBulletPoints(rawSummary: string) {
 
   if (lines.length > 1) {
     return lines
-      .map((line) =>
-        line.replace(/^(\d+[\).\s-]+|[-*\u2022]+\s*)/, "").trim(),
-      )
+      .map((line) => line.replace(/^(\d+[\).\s-]+|[-*\u2022]+\s*)/, "").trim())
       .filter(Boolean);
   }
 
@@ -43,12 +44,26 @@ export default function AISummaryButton({
   content,
   sourceName,
   category,
+  showPromo = false,
 }: AISummaryButtonProps) {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [summary, setSummary] = useState("");
   const [error, setError] = useState("");
+  const [showSummaryPromo, setShowSummaryPromo] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return localStorage.getItem(AI_SUMMARY_PROMO_DISMISS_KEY) !== "true";
+  });
+  const [promoStyle, setPromoStyle] = useState<
+    { left: number; top: number } | undefined
+  >();
+  const [promoPlacement, setPromoPlacement] = useState<"above" | "below">(
+    "below",
+  );
+  const [promoArrowLeft, setPromoArrowLeft] = useState(0);
+  const anchorRef = useRef<HTMLDivElement | null>(null);
+  const promoRef = useRef<HTMLDivElement | null>(null);
   const summaryPoints = toBulletPoints(summary);
 
   useEffect(() => {
@@ -57,7 +72,10 @@ export default function AISummaryButton({
     const checkAuth = async () => {
       try {
         // Use cached local token — no Supabase call needed
-        if (localStorage.getItem("auth_token") || localStorage.getItem("auth_email")) {
+        if (
+          localStorage.getItem("auth_token") ||
+          localStorage.getItem("auth_email")
+        ) {
           if (isMounted) setIsLoggedIn(true);
           return;
         }
@@ -94,11 +112,80 @@ export default function AISummaryButton({
     };
   }, []);
 
+  useLayoutEffect(() => {
+    if (!showPromo || !showSummaryPromo) return undefined;
+
+    const updatePromoPosition = () => {
+      const anchor = anchorRef.current;
+      const promo = promoRef.current;
+      if (!anchor || !promo) return;
+
+      const anchorRect = anchor.getBoundingClientRect();
+      const promoRect = promo.getBoundingClientRect();
+      const viewportPadding = 12;
+      const spacing = 12;
+
+      const prefersAbove = window.innerWidth >= 768;
+      let placement: "above" | "below" = prefersAbove ? "above" : "below";
+
+      let top =
+        placement === "above"
+          ? anchorRect.top - promoRect.height - spacing
+          : anchorRect.bottom + spacing;
+
+      if (placement === "above" && top < viewportPadding) {
+        placement = "below";
+        top = anchorRect.bottom + spacing;
+      }
+
+      if (
+        placement === "below" &&
+        top + promoRect.height > window.innerHeight - viewportPadding
+      ) {
+        placement = "above";
+        top = anchorRect.top - promoRect.height - spacing;
+      }
+
+      const centeredLeft =
+        anchorRect.left + anchorRect.width / 2 - promoRect.width / 2;
+      const minLeft = viewportPadding;
+      const maxLeft = window.innerWidth - promoRect.width - viewportPadding;
+      const left = Math.min(Math.max(centeredLeft, minLeft), maxLeft);
+      const anchorCenter = anchorRect.left + anchorRect.width / 2;
+      const minArrowLeft = 28;
+      const maxArrowLeft = promoRect.width - 28;
+      const arrowLeft = Math.min(
+        Math.max(anchorCenter - left, minArrowLeft),
+        maxArrowLeft,
+      );
+
+      setPromoPlacement(placement);
+      setPromoStyle({ left, top });
+      setPromoArrowLeft(arrowLeft);
+    };
+
+    const raf = window.requestAnimationFrame(updatePromoPosition);
+    window.addEventListener("resize", updatePromoPosition);
+    window.addEventListener("scroll", updatePromoPosition, true);
+
+    return () => {
+      window.cancelAnimationFrame(raf);
+      window.removeEventListener("resize", updatePromoPosition);
+      window.removeEventListener("scroll", updatePromoPosition, true);
+    };
+  }, [showPromo, showSummaryPromo]);
+
   if (!isLoggedIn) {
     return null;
   }
 
+  const dismissSummaryPromo = () => {
+    localStorage.setItem(AI_SUMMARY_PROMO_DISMISS_KEY, "true");
+    setShowSummaryPromo(false);
+  };
+
   const openSummary = async () => {
+    dismissSummaryPromo();
     setIsOpen(true);
     setError("");
 
@@ -154,18 +241,70 @@ export default function AISummaryButton({
 
   return (
     <>
-      <button
-        type="button"
-        onClick={openSummary}
-        className="group relative inline-flex items-center justify-center overflow-hidden rounded-xl bg-gradient-to-r from-blue-600 via-indigo-500 to-sky-500 px-4 py-2.5 text-sm font-semibold text-white shadow-md shadow-blue-500/30 transition-all duration-300 hover:scale-[1.05] hover:shadow-lg hover:shadow-blue-500/40 focus:outline-none disabled:cursor-not-allowed disabled:opacity-70"
-        aria-label="AI summary"
-        title="AI summary"
-      >
-        {/* Shimmer sweep effect */}
-        <span className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform duration-700 ease-in-out group-hover:translate-x-full" />
+      <div ref={anchorRef} className="relative inline-flex">
+        <AnimatePresence>
+          {showPromo && showSummaryPromo && (
+            <motion.div
+              ref={promoRef}
+              initial={{ opacity: 0, y: 8, scale: 0.96 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 6, scale: 0.96 }}
+              transition={{ duration: 0.18, ease: "easeOut" }}
+              style={promoStyle}
+              className="fixed z-20 w-64 max-w-[85vw] rounded-2xl border border-sky-200/90 bg-sky-50/95 p-3 pr-8 text-left shadow-xl shadow-sky-500/10 backdrop-blur-sm dark:border-sky-900/70 dark:bg-sky-950/90 sm:max-w-[70vw]"
+            >
+              <div className="flex items-start gap-2.5">
+                <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-blue-600 text-white shadow-sm shadow-blue-500/30">
+                  <Bot size={16} />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-xs font-bold text-sky-950 dark:text-sky-100">
+                    Use AI Summary
+                  </p>
+                  <p className="mt-1 text-[11px] leading-relaxed text-sky-800/90 dark:text-sky-200/90">
+                    Get the key points faster for a better reading experience.
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={dismissSummaryPromo}
+                className="absolute right-2 top-2 flex h-6 w-6 items-center justify-center rounded-full text-sky-700 transition hover:bg-sky-100 hover:text-sky-900 dark:text-sky-300 dark:hover:bg-sky-900/60 dark:hover:text-sky-100"
+                aria-label="Dismiss AI summary tip"
+              >
+                <X size={14} />
+              </button>
+              <span
+                className={`absolute h-3.5 w-3.5 bg-sky-50 dark:bg-sky-950 ${
+                  promoPlacement === "above"
+                    ? "-bottom-2 border-b border-r border-sky-200/90 dark:border-sky-900/70"
+                    : "-top-2 border-l border-t border-sky-200/90 dark:border-sky-900/70"
+                }`}
+                style={{
+                  left: promoArrowLeft,
+                  transform: "translateX(-50%) rotate(45deg)",
+                }}
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
 
-        <Sparkles size={18} className="transition-transform duration-300 group-hover:rotate-12 group-hover:scale-110" />
-      </button>
+        <button
+          type="button"
+          onClick={openSummary}
+          className="group relative inline-flex items-center justify-center overflow-hidden rounded-xl bg-gradient-to-r from-blue-600 via-indigo-500 to-sky-500 px-4 py-2.5 text-sm font-semibold text-white shadow-md shadow-blue-500/30 transition-all duration-300 hover:scale-[1.05] hover:shadow-lg hover:shadow-blue-500/40 focus:outline-none disabled:cursor-not-allowed disabled:opacity-70"
+          aria-label="AI summary"
+          title="AI summary"
+        >
+          {/* Shimmer sweep effect */}
+          <span className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform duration-700 ease-in-out group-hover:translate-x-full" />
+
+          <Sparkles
+            size={18}
+            className="transition-transform duration-300 group-hover:rotate-12 group-hover:scale-110"
+          />
+        </button>
+      </div>
 
       <AnimatePresence>
         {isOpen && (
@@ -190,7 +329,10 @@ export default function AISummaryButton({
               <div className="mb-4 flex items-start justify-between gap-3 border-b border-slate-200 pb-4 dark:border-slate-700">
                 <div className="flex items-center gap-2">
                   <div className="rounded-lg bg-blue-50 p-2 dark:bg-blue-500/15">
-                    <Bot size={18} className="text-blue-600 dark:text-blue-300" />
+                    <Bot
+                      size={18}
+                      className="text-blue-600 dark:text-blue-300"
+                    />
                   </div>
                   <div>
                     <h3
@@ -231,7 +373,10 @@ export default function AISummaryButton({
                 ) : summaryPoints.length > 0 ? (
                   <ul className="space-y-3">
                     {summaryPoints.map((point, index) => (
-                      <li key={`${point.slice(0, 24)}-${index}`} className="flex items-start gap-3">
+                      <li
+                        key={`${point.slice(0, 24)}-${index}`}
+                        className="flex items-start gap-3"
+                      >
                         <span className="mt-2 h-2 w-2 flex-shrink-0 rounded-full bg-blue-500 dark:bg-blue-400" />
                         <p className="text-sm leading-7 text-slate-800 sm:text-[15px] dark:text-slate-200">
                           {point}

@@ -5,49 +5,27 @@ import { useCallback, useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import {
-  Briefcase,
   ChevronDown,
-  Clapperboard,
-  Palette,
-  BookOpen,
-  Car,
-  Sprout,
-  Shield,
-  Gamepad2,
-  Gem,
-  GraduationCap,
-  Info,
-  Leaf,
   LifeBuoy,
-  Map,
-  Music2,
-  Film,
-  FlaskConical,
-  Shirt,
-  Heart,
-  Home,
-  Laptop,
-  Landmark,
   LogOut,
-  Plane,
-  Radio,
   Search,
   Settings,
-  ShieldAlert,
   SlidersHorizontal,
-  Trophy,
-  UtensilsCrossed,
-  Wallet,
   StickyNote,
   UserPlus,
   X,
 } from "lucide-react";
+import { DynamicIcon, type IconName } from "lucide-react/dynamic";
 import { supabase } from "../../../lib/superbaseClient";
 import {
   PERSONALIZATION_UPDATED_EVENT,
   getUserPersonalization,
 } from "../services/personalizationService";
 import { clearClientSession, getVerifiedAuthUser, persistClientSession } from "@/lib/clientAuth";
+import {
+  sanitizePersonalizationTopic,
+  slugifyPersonalizationTopic,
+} from "@/lib/personalizationTopics";
 
 interface SidebarProps {
   isMobileOpen: boolean;
@@ -57,56 +35,160 @@ interface SidebarProps {
 type CategoryNavItem = {
   topic: string;
   href: string;
-  icon: React.ComponentType<{ size?: number; className?: string }>;
+  iconName: IconName;
 };
 
 const CATEGORY_NAV_ITEMS: CategoryNavItem[] = [
-  { topic: "Top Headlines", href: "/", icon: Home },
-  { topic: "Technology", href: "/categories/technology", icon: Laptop },
-  { topic: "Business", href: "/categories/business", icon: Briefcase },
-  { topic: "Entertainment", href: "/categories/entertainment", icon: Film },
-  { topic: "Sports", href: "/categories/sports", icon: Trophy },
-  { topic: "Health", href: "/categories/health", icon: Heart },
-  { topic: "Science", href: "/categories/science", icon: FlaskConical },
-  { topic: "Politics", href: "/categories/politics", icon: Landmark },
-  { topic: "Tourism", href: "/categories/tourism", icon: Plane },
-  { topic: "Crime", href: "/categories/crime", icon: ShieldAlert },
-  { topic: "Environment", href: "/categories/environment", icon: Leaf },
-  { topic: "Education", href: "/categories/education", icon: GraduationCap },
-  { topic: "Travel", href: "/categories/travel", icon: Map },
-  { topic: "Food", href: "/categories/food", icon: UtensilsCrossed },
-  { topic: "Fashion", href: "/categories/fashion", icon: Shirt },
-  { topic: "Finance", href: "/categories/finance", icon: Wallet },
-  { topic: "Automotive", href: "/categories/automotive", icon: Car },
-  { topic: "Music", href: "/categories/music", icon: Music2 },
-  { topic: "Movies", href: "/categories/movies", icon: Clapperboard },
-  { topic: "Books", href: "/categories/books", icon: BookOpen },
-  { topic: "Art", href: "/categories/art", icon: Palette },
-  { topic: "Culture", href: "/categories/culture", icon: Palette },
-  { topic: "Gaming", href: "/categories/gaming", icon: Gamepad2 },
+  { topic: "Top Headlines", href: "/", iconName: "home" },
+  { topic: "Technology", href: "/categories/technology", iconName: "laptop" },
+  { topic: "Business", href: "/categories/business", iconName: "briefcase" },
+  { topic: "Entertainment", href: "/categories/entertainment", iconName: "film" },
+  { topic: "Sports", href: "/categories/sports", iconName: "trophy" },
+  { topic: "Health", href: "/categories/health", iconName: "heart" },
+  { topic: "Science", href: "/categories/science", iconName: "flask-conical" },
+  { topic: "Politics", href: "/categories/politics", iconName: "landmark" },
+  { topic: "Tourism", href: "/categories/tourism", iconName: "plane" },
+  { topic: "Crime", href: "/categories/crime", iconName: "shield-alert" },
+  { topic: "Environment", href: "/categories/environment", iconName: "leaf" },
+  { topic: "Education", href: "/categories/education", iconName: "graduation-cap" },
+  { topic: "Travel", href: "/categories/travel", iconName: "map" },
+  { topic: "Food", href: "/categories/food", iconName: "utensils-crossed" },
+  { topic: "Fashion", href: "/categories/fashion", iconName: "shirt" },
+  { topic: "Finance", href: "/categories/finance", iconName: "wallet" },
+  { topic: "Automotive", href: "/categories/automotive", iconName: "car" },
+  { topic: "Music", href: "/categories/music", iconName: "music-2" },
+  { topic: "Movies", href: "/categories/movies", iconName: "clapperboard" },
+  { topic: "Books", href: "/categories/books", iconName: "book-open" },
+  { topic: "Art", href: "/categories/art", iconName: "palette" },
+  { topic: "Culture", href: "/categories/culture", iconName: "palette" },
+  { topic: "Gaming", href: "/categories/gaming", iconName: "gamepad-2" },
   {
     topic: "Spirituality & Religion",
     href: "/categories/spirituality-religion",
-    icon: Gem,
+    iconName: "gem",
   },
-  { topic: "Mental Health", href: "/categories/mental-health", icon: Heart },
+  { topic: "Mental Health", href: "/categories/mental-health", iconName: "heart" },
   {
     topic: "Artificial Intelligence",
     href: "/categories/artificial-intelligence",
-    icon: Laptop,
+    iconName: "bot",
   },
-  { topic: "Cybersecurity", href: "/categories/cybersecurity", icon: ShieldAlert },
-  { topic: "Space & Astronomy", href: "/categories/space-astronomy", icon: Info },
-  { topic: "Stock Market", href: "/categories/stock-market", icon: Wallet },
-  { topic: "Trade & Economy", href: "/categories/trade-economy", icon: Landmark },
-  { topic: "Real Estate", href: "/categories/real-estate", icon: Home },
-  { topic: "Defense & Military", href: "/categories/defense-military", icon: Shield },
+  { topic: "Cybersecurity", href: "/categories/cybersecurity", iconName: "shield-alert" },
+  { topic: "Space & Astronomy", href: "/categories/space-astronomy", iconName: "telescope" },
+  { topic: "Stock Market", href: "/categories/stock-market", iconName: "chart-candlestick" },
+  { topic: "Trade & Economy", href: "/categories/trade-economy", iconName: "trending-up" },
+  { topic: "Real Estate", href: "/categories/real-estate", iconName: "building-2" },
+  { topic: "Defense & Military", href: "/categories/defense-military", iconName: "shield" },
   {
     topic: "Agriculture & Farming",
     href: "/categories/agriculture-farming",
-    icon: Sprout,
+    iconName: "sprout",
+  },
+  { topic: "World News", href: "/categories/world-news", iconName: "globe-2" },
+  { topic: "Weather", href: "/categories/weather", iconName: "cloud-sun" },
+  { topic: "Energy", href: "/categories/energy", iconName: "zap" },
+  { topic: "Startups", href: "/categories/startups", iconName: "rocket" },
+  { topic: "Law & Justice", href: "/categories/law-justice", iconName: "scale" },
+  { topic: "Social Media", href: "/categories/social-media", iconName: "share-2" },
+  {
+    topic: "Personal Finance",
+    href: "/categories/personal-finance",
+    iconName: "piggy-bank",
   },
 ];
+
+const CATEGORY_NAV_BY_TOPIC = new Map(
+  CATEGORY_NAV_ITEMS.map((item) => [item.topic.toLowerCase(), item]),
+);
+
+function SidebarIcon({
+  name,
+  size = 18,
+  className,
+}: {
+  name: IconName;
+  size?: number;
+  className?: string;
+}) {
+  return (
+    <DynamicIcon
+      name={name}
+      size={size}
+      className={className}
+      fallback={() => null}
+    />
+  );
+}
+
+const TOPIC_ICON_RULES: Array<[RegExp, IconName]> = [
+  [/\b(ai|artificial intelligence|machine learning|generative|llm|chatbot|robot|automation)\b/, "bot"],
+  [/\b(chip|semiconductor|processor|cpu|gpu|hardware|quantum|device)\b/, "cpu"],
+  [/\b(neural|brain|cognitive|mental health|psychology|therapy)\b/, "brain-circuit"],
+  [/\b(cyber|cybersecurity|hack|hacker|ransomware|malware|phishing|breach|password|privacy|encryption)\b/, "lock-keyhole"],
+  [/\b(bug|vulnerability|zero-day|exploit|patch)\b/, "bug"],
+  [/\b(software|app|apps|platform|internet|cloud|database|data|server|saas|code|developer)\b/, "database"],
+  [/\b(phone|smartphone|mobile|ios|android|telecom|5g|network)\b/, "smartphone"],
+  [/\b(startup|startups|founder|venture|funding|ipo|entrepreneur)\b/, "rocket"],
+  [/\b(election|vote|voting|poll|campaign|ballot|democrat|republican)\b/, "vote"],
+  [/\b(politic|government|parliament|congress|senate|policy|minister|president|diplomacy)\b/, "landmark"],
+  [/\b(court|law|justice|legal|judge|lawsuit|trial|ruling)\b/, "gavel"],
+  [/\b(war|defense|military|army|navy|air force|missile|weapon|border|conflict|troop)\b/, "shield"],
+  [/\b(crime|police|arrest|fraud|murder|homicide|theft)\b/, "siren"],
+  [/\b(health|medical|medicine|doctor|hospital|patient|disease|virus|vaccine|covid|flu|wellness)\b/, "stethoscope"],
+  [/\b(biotech|biology|genetic|dna|pharma|drug|clinical)\b/, "dna"],
+  [/\b(science|research|lab|physics|chemistry|discovery|experiment)\b/, "atom"],
+  [/\b(space|astronomy|nasa|satellite|moon|mars|rocket|planet)\b/, "telescope"],
+  [/\b(stock|stocks|market|trading|wall street|invest|investment|shares|equity)\b/, "chart-candlestick"],
+  [/\b(economy|inflation|gdp|recession|growth|trade|export|import|tariff)\b/, "trending-up"],
+  [/\b(finance|bank|money|tax|loan|mortgage|credit|debt|retirement|savings)\b/, "banknote"],
+  [/\b(crypto|bitcoin|blockchain|ethereum|web3|token)\b/, "bitcoin"],
+  [/\b(real estate|housing|property|rent|home price|mortgage)\b/, "building-2"],
+  [/\b(business|company|corporate|earnings|retail|consumer|brand|industry)\b/, "briefcase"],
+  [/\b(energy|oil|gas|fuel|petrol|diesel|electricity|power grid)\b/, "fuel"],
+  [/\b(solar|wind|renewable|battery|ev charging)\b/, "solar-panel"],
+  [/\b(weather|storm|rain|heatwave|temperature|forecast|snow)\b/, "thermometer"],
+  [/\b(climate|environment|pollution|forest|wildfire|carbon)\b/, "tree-pine"],
+  [/\b(flood|ocean|sea|water|hurricane|cyclone|tsunami)\b/, "waves"],
+  [/\b(fire|wildfire|heat|volcano)\b/, "flame"],
+  [/\b(farm|farming|agriculture|crop|wheat|rice|livestock|irrigation|food security)\b/, "wheat"],
+  [/\b(food|restaurant|recipe|chef|cuisine|nutrition)\b/, "chef-hat"],
+  [/\b(travel|tourism|tourist|hotel|airline|visa|destination)\b/, "plane"],
+  [/\b(car|auto|automotive|vehicle|ev|tesla|transport)\b/, "car"],
+  [/\b(train|rail|metro|subway)\b/, "train"],
+  [/\b(bus|transit|public transport)\b/, "bus"],
+  [/\b(ship|shipping|port|supply chain|cargo|freight|logistics)\b/, "ship"],
+  [/\b(truck|delivery|warehouse)\b/, "truck"],
+  [/\b(movie|film|cinema|box office|actor|director)\b/, "clapperboard"],
+  [/\b(music|album|song|singer|concert|band)\b/, "music-2"],
+  [/\b(tv|television|streaming|netflix|series|show)\b/, "tv"],
+  [/\b(celebrity|entertainment|influencer|creator)\b/, "camera"],
+  [/\b(social media|tiktok|instagram|youtube|x|twitter|facebook)\b/, "share-2"],
+  [/\b(media|press|journalism|headline|news)\b/, "newspaper"],
+  [/\b(book|author|publishing|literature|novel)\b/, "book-marked"],
+  [/\b(art|artist|gallery|museum|painting|design)\b/, "palette"],
+  [/\b(fashion|style|clothing|designer|runway)\b/, "shirt"],
+  [/\b(game|gaming|esports|console|playstation|xbox)\b/, "gamepad-2"],
+  [/\b(sport|sports|cricket|football|soccer|tennis|basketball|nba|nfl|olympic)\b/, "trophy"],
+  [/\b(school|education|university|college|student|exam)\b/, "graduation-cap"],
+  [/\b(religion|faith|spirituality|church|temple|mosque)\b/, "gem"],
+  [/\b(shopping|commerce|ecommerce|store|consumer)\b/, "shopping-cart"],
+  [/\b(community|society|people|labor|workers|migration)\b/, "users"],
+  [/\b(world|global|international|geopolitics|foreign)\b/, "globe-2"],
+  [/\b(live|breaking|alert|urgent)\b/, "activity"],
+  [/\b(factory|manufacturing|industrial|supply)\b/, "factory"],
+  [/\b(public|announcement|campaign|communication)\b/, "megaphone"],
+  [/\b(chart|analytics|trend|statistics|data)\b/, "chart-line"],
+];
+
+function getDynamicTopicIcon(topic: string): IconName {
+  const normalized = topic.toLowerCase();
+
+  for (const [pattern, iconName] of TOPIC_ICON_RULES) {
+    if (pattern.test(normalized)) return iconName;
+  }
+
+  return "newspaper";
+}
 
 const DEFAULT_TOPIC_SELECTION = [
   "top headlines",
@@ -336,8 +418,11 @@ function SidebarContent({
 }) {
   const closeAndNavigate = () => onCloseMobile();
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const selectedTopicLabels = selectedTopics
+    .map((topic) => sanitizePersonalizationTopic(topic))
+    .filter(Boolean);
   const selectedTopicSet = new Set(
-    selectedTopics.map((topic) => topic.trim().toLowerCase()),
+    selectedTopicLabels.map((topic) => topic.toLowerCase()),
   );
   const effectiveTopicSet = new Set<string>();
   effectiveTopicSet.add("top headlines");
@@ -355,6 +440,31 @@ function SidebarContent({
   const visibleCategoryItems = CATEGORY_NAV_ITEMS.filter((item) =>
     effectiveTopicSet.has(item.topic.toLowerCase()),
   );
+  const customCategoryItems: CategoryNavItem[] = [];
+  const customTopicSet = new Set<string>();
+
+  for (const topic of selectedTopicLabels) {
+    const topicKey = topic.toLowerCase();
+    if (
+      CATEGORY_NAV_BY_TOPIC.has(topicKey) ||
+      customTopicSet.has(topicKey) ||
+      !effectiveTopicSet.has(topicKey)
+    ) {
+      continue;
+    }
+
+    customTopicSet.add(topicKey);
+    customCategoryItems.push({
+      topic,
+      href: `/categories/${slugifyPersonalizationTopic(topic)}`,
+      iconName: getDynamicTopicIcon(topic),
+    });
+  }
+
+  const visibleNavigationItems = [
+    ...visibleCategoryItems,
+    ...customCategoryItems,
+  ];
   const handleSignOut = async () => {
     try {
       await supabase.auth.signOut();
@@ -407,14 +517,14 @@ function SidebarContent({
             className={navItemClass(pathname.startsWith("/live-news"))}
             onClick={closeAndNavigate}
           >
-            <Radio
+            <SidebarIcon
+              name="radio"
               size={18}
               className="transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6"
             />
             Live News Streaming
           </Link>
-          {visibleCategoryItems.map((item) => {
-            const Icon = item.icon;
+          {visibleNavigationItems.map((item) => {
             const isActive =
               item.href === "/"
                 ? pathname === "/"
@@ -427,7 +537,8 @@ function SidebarContent({
                 className={navItemClass(isActive)}
                 onClick={closeAndNavigate}
               >
-                <Icon
+                <SidebarIcon
+                  name={item.iconName}
                   size={18}
                   className="transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6"
                 />
@@ -437,7 +548,7 @@ function SidebarContent({
           })}
           {isAuthenticated &&
             isPersonalizationLoaded &&
-            visibleCategoryItems.length === 0 && (
+            visibleNavigationItems.length === 0 && (
               <p className="px-4 py-2 text-xs text-slate-500">
                 No topics selected. Add topics in Personalization.
               </p>
@@ -492,7 +603,7 @@ function SidebarContent({
               className="inline-flex items-center gap-2 px-4 py-1 text-sm text-slate-600 hover:text-[var(--primary)] cursor-pointer transition-colors"
               onClick={closeAndNavigate}
             >
-              <Palette size={14} />
+              <SidebarIcon name="palette" size={14} />
               Appearance
             </Link>
             <Link
@@ -500,7 +611,7 @@ function SidebarContent({
               className="inline-flex items-center gap-2 px-4 py-1 text-sm text-slate-600 hover:text-indigo-600 cursor-pointer transition-colors dark:text-slate-400 dark:hover:text-indigo-400"
               onClick={closeAndNavigate}
             >
-              <Gem size={14} />
+              <SidebarIcon name="gem" size={14} />
               Subscriptions
             </Link>
           </CollapsibleSection>
@@ -512,7 +623,7 @@ function SidebarContent({
             className="inline-flex items-center gap-2 px-4 py-1 text-sm text-slate-600 transition-colors hover:text-[var(--primary)]"
             onClick={closeAndNavigate}
           >
-            <Info size={14} />
+            <SidebarIcon name="info" size={14} />
             About NextNews
           </Link>
           <Link
@@ -528,7 +639,7 @@ function SidebarContent({
             className="inline-flex items-center gap-2 px-4 py-1 text-sm text-slate-600 hover:text-[var(--primary)] cursor-pointer transition-colors"
             onClick={closeAndNavigate}
           >
-            <Shield size={14} />
+            <SidebarIcon name="shield" size={14} />
             Privacy Policy
           </Link>
         </CollapsibleSection>

@@ -277,6 +277,7 @@ export default function NewsFeedWithLoadMore({
             }}
             formattedDate={formatPublishedDate(article.publishedAt)}
             category={category}
+            showAiSummaryPromo={index === 0}
           />
         ))}
       </div>

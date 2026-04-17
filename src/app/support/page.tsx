@@ -5,9 +5,9 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Heart, Sparkles } from "lucide-react";
 import {
   FaComments,
+  FaEnvelope,
   FaPhoneAlt,
   FaQuestionCircle,
-  FaTicketAlt,
   FaTimes,
 } from "react-icons/fa";
 
@@ -82,9 +82,9 @@ export default function SupportPage() {
       icon: <FaPhoneAlt className="text-2xl text-teal-400" />,
     },
     {
-      title: "Track Ticket",
-      desc: "Check the status of your requests.",
-      icon: <FaTicketAlt className="text-2xl text-teal-400" />,
+      title: "Email Support",
+      desc: "Write us about any Assistance or Feedback.",
+      icon: <FaEnvelope className="text-2xl text-teal-400" />,
     },
   ];
 
@@ -359,16 +359,46 @@ export default function SupportPage() {
                           className="w-full rounded-lg border border-slate-300 bg-white px-4 py-3 shadow-sm outline-none transition-all duration-200 hover:shadow-md focus:border-teal-400 focus:ring-2 focus:ring-teal-400 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100"
                           required
                         >
-                          <option value="">Select issue type...</option>
-                          <option value="Technical Issue">
-                            Technical Issue
+                          <option value="">Select an option...</option>
+                          <option value="General Support & Questions">
+                            General Support & Questions
                           </option>
-                          <option value="Payment Issue">Payment Issue</option>
-                          <option value="Account Issue">Account Issue</option>
-                          <option value="Registration Related Issue">
-                            Registration Related Issue
+                          <option value="Account & Login Help">
+                            Account & Login Help
                           </option>
-                          <option value="Notes Issue">Notes Issue</option>
+                          <option value="Sign-up & Registration">
+                            Sign-up & Registration
+                          </option>
+                          <option value="Profile & Settings Updates">
+                            Profile & Settings Updates
+                          </option>
+                          <option value="Billing & Payments">
+                            Billing & Payments
+                          </option>
+                          <option value="Report a Bug / Technical Issue">
+                            Report a Bug / Technical Issue
+                          </option>
+                          <option value="Feed & Personalization Setup">
+                            Feed & Personalization Setup
+                          </option>
+                          <option value="API Credits & Limits">
+                            API Credits & Limits
+                          </option>
+                          <option value="Search Functionality Help">
+                            Search Functionality Help
+                          </option>
+                          <option value="AI Summaries & Suggestions">
+                            AI Summaries & Suggestions
+                          </option>
+                          <option value="Saved Notes Help">
+                            Saved Notes Help
+                          </option>
+                          <option value="Live News & Video Playback">
+                            Live News & Video Playback
+                          </option>
+                          <option value="Privacy & Data Requests">
+                            Privacy & Data Requests
+                          </option>
                         </select>
                       </div>
 
@@ -548,20 +578,23 @@ export default function SupportPage() {
                   </div>
                 )}
 
-                {activeModal === "Track Ticket" && (
+                {activeModal === "Email Support" && (
                   <div className="space-y-4 py-6 text-center">
-                    <div className="mb-4 text-3xl">🎫</div>
-                    <p className="text-base leading-relaxed text-slate-700 dark:text-slate-200">
-                      Enter your ticket ID on the support dashboard to track
-                      updates in real time.
+                    <div className="mb-4 text-3xl">✉️</div>
+                    <p className="text-lg leading-relaxed text-slate-700 dark:text-slate-200">
+                      galib.morsed@nextnews.co.in <br />
+                      <span className="text-sm text-slate-500 dark:text-slate-400">
+                        Our support team typically responds within 24 hours
+                      </span>
                     </p>
-                    <motion.button
-                      onClick={() => setActiveModal(null)}
-                      className="w-full rounded-lg bg-slate-100 py-2.5 font-semibold text-slate-900 transition-all duration-200 hover:bg-slate-200 dark:bg-slate-700 dark:text-slate-100 dark:hover:bg-slate-600"
-                      whileHover={{ scale: 1.02 }}
+                    <motion.a
+                      href="mailto:galib.morsed@nextnews.co.in"
+                      className="inline-block rounded-full bg-teal-500 px-8 py-3 font-semibold text-white shadow-lg transition-all duration-200 hover:-translate-y-1 hover:bg-teal-600 hover:shadow-xl active:translate-y-0 active:bg-teal-700"
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
                     >
-                      Go to Dashboard
-                    </motion.button>
+                      Email Us
+                    </motion.a>
                   </div>
                 )}
               </div>

@@ -3,13 +3,16 @@
 import { motion } from "framer-motion";
 import {
   AlertTriangle,
+  ArrowRight,
   Bot,
   CreditCard,
   FileText,
+  HeadphonesIcon,
   LockKeyhole,
   ShieldCheck,
   UserRound,
 } from "lucide-react";
+import Link from "next/link";
 
 const sections = [
   {
@@ -129,6 +132,49 @@ export default function TermsAndConditionsPage() {
             </motion.section>
           );
         })}
+
+        <section className="rounded-[28px] border border-slate-200/80 bg-gradient-to-br from-slate-900 via-slate-800 to-blue-950 p-6 text-slate-100 shadow-sm sm:p-8">
+          <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
+            <div className="lg:max-w-2xl">
+              <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-blue-200">
+                <LockKeyhole className="h-4 w-4" />
+                Questions or Concerns
+              </div>
+              <h2 className="mt-4 text-2xl font-semibold tracking-tight sm:text-3xl lg:text-3xl">
+                Need help with our Terms or Account rules?
+              </h2>
+              <p className="mt-3 text-sm leading-7 text-slate-300 sm:text-base">
+                If you have any questions regarding these Terms &amp; Conditions,
+                account responsibilities, AI usage limits, or upcoming billing
+                and credit policies, please reach out to our support team.
+              </p>
+            </div>
+
+            <div className="flex w-full shrink-0 flex-col gap-3 border-t border-white/10 pt-5 lg:w-auto lg:max-w-xs lg:border-t-0 lg:pt-0">
+              <Link
+                href="/support"
+                className="group flex items-center gap-3 rounded-[20px] border border-white/15 bg-white/10 px-5 py-4 backdrop-blur transition-all duration-200 hover:border-blue-400/40 hover:bg-white/15"
+              >
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-blue-500/20 text-blue-300 transition-colors duration-200 group-hover:bg-blue-500/30">
+                  <HeadphonesIcon className="h-5 w-5" />
+                </span>
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-white">
+                    Visit Support
+                  </p>
+                  <p className="mt-0.5 text-xs leading-5 text-slate-300">
+                    Get help with terms, usage, or billing queries
+                  </p>
+                </div>
+                <ArrowRight className="ml-auto h-4 w-4 shrink-0 text-slate-400 transition-transform duration-200 group-hover:translate-x-0.5 group-hover:text-blue-300" />
+              </Link>
+              <p className="px-1 text-xs leading-5 text-slate-400">
+                Our support team is available to clarify rules, investigate
+                account concerns, and assist with service-related inquiries.
+              </p>
+            </div>
+          </div>
+        </section>
       </div>
     </motion.main>
   );

@@ -467,7 +467,7 @@ export default function PlansPage() {
                   Contact Number
                 </a>
                 <a
-                  href="mailto:morsedgalib982@gmail.com"
+                  href="mailto:galib.morsed@nextnews.co.in"
                   className="text-sm text-slate-300 hover:text-teal-400"
                 >
                   Email

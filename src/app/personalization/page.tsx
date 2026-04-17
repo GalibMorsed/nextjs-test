@@ -5,20 +5,29 @@ import { AnimatePresence, motion, type Variants } from "framer-motion";
 import {
   AlertTriangle,
   ArrowRight,
+  Check,
   Loader2,
   Save,
   Trash2,
   X,
 } from "lucide-react";
-import { supabase } from "../../../lib/superbaseClient";
+import {
+  AVAILABLE_PERSONALIZATION_TOPICS,
+  DEFAULT_PERSONALIZATION_TOPICS,
+  MAX_PERSONALIZATION_TOPICS,
+  sanitizePersonalizationTopic,
+} from "@/lib/personalizationTopics";
 import {
   broadcastPersonalizationUpdated,
   discardUserPersonalization,
   getUserPersonalization,
   saveUserPersonalization,
 } from "../services/personalizationService";
-import PersonalizationAiSuggestions from "../components/personalizationAiSuggestions";
+import PersonalizationAiSuggestions from "./components/personalizationAiSuggestions";
 import StatusPopup from "../components/statusPopup";
+import PersonalizationPromoAd, {
+  PERSONALIZATION_PROMO_DISMISS_KEY,
+} from "./components/personalizatioPopup";
 
 type PopupMessage = {
   tone: "success" | "error" | "info";
@@ -27,6 +36,7 @@ type PopupMessage = {
 
 type SuggestedTopicToast = {
   text: string;
+  tone: "success" | "warning";
 } | null;
 
 const AVAILABLE_SOURCES = [
@@ -35,52 +45,10 @@ const AVAILABLE_SOURCES = [
   "YouTube Live News Streams",
 ];
 
-const AVAILABLE_TOPICS = [
-  "Top Headlines",
-  "Technology",
-  "Business",
-  "Entertainment",
-  "Sports",
-  "Health",
-  "Science",
-  "Politics",
-  "Crime",
-  "Environment",
-  "Education",
-  "Travel",
-  "Food",
-  "Fashion",
-  "Finance",
-  "Automotive",
-  "Music",
-  "Movies",
-  "Books",
-  "Art",
-  "Culture",
-  "Gaming",
-  "Spirituality & Religion",
-  "Mental Health",
-  "Artificial Intelligence",
-  "Cybersecurity",
-  "Space & Astronomy",
-  "Stock Market",
-  "Trade & Economy",
-  "Real Estate",
-  "Defense & Military",
-  "Agriculture & Farming",
-];
-
-const MAX_TOPICS = 10;
+const AVAILABLE_TOPICS = [...AVAILABLE_PERSONALIZATION_TOPICS];
+const MAX_TOPICS = MAX_PERSONALIZATION_TOPICS;
 const INITIAL_VISIBLE_TOPICS = 12;
-const DEFAULT_TOPIC_SELECTION = [
-  "Top Headlines",
-  "Technology",
-  "Business",
-  "Entertainment",
-  "Sports",
-  "Health",
-  "Science",
-];
+const DEFAULT_TOPIC_SELECTION = [...DEFAULT_PERSONALIZATION_TOPICS];
 
 function toggleValue(current: string[], value: string): string[] {
   if (current.includes(value)) {
@@ -117,6 +85,7 @@ export default function PersonalizationPage() {
   const [isDeletePopupOpen, setIsDeletePopupOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [showAllTopics, setShowAllTopics] = useState(false);
+  const [promoResetKey, setPromoResetKey] = useState(0);
 
   const hasSelection = useMemo(
     () => favoriteSources.length > 0 || favoriteTopics.length > 0,
@@ -171,7 +140,7 @@ export default function PersonalizationPage() {
           if (mounted) {
             setPopupMessage({
               tone: "error",
-              text: `Oops! ${fetchError.message} 😕`,
+              text: `Oops! ${fetchError.message}`,
             });
           }
           return;
@@ -195,16 +164,16 @@ export default function PersonalizationPage() {
             ? persistedTopics
             : DEFAULT_TOPIC_SELECTION,
         );
-      } catch (loadError: any) {
+      } catch (loadError: unknown) {
         if (!mounted) return;
-        if (loadError?.name === "AbortError") {
+        if (loadError instanceof Error && loadError.name === "AbortError") {
           console.warn("Personalization data load aborted/timed out.");
           return;
         }
         const messageText =
           loadError instanceof Error
             ? loadError.message
-            : "We couldn't load your personalization right now. Please try again in a moment. 😕";
+            : "We couldn't load your personalization right now. Please try again in a moment.";
         setPopupMessage({ tone: "error", text: `Oops! ${messageText}` });
       } finally {
         if (mounted) setIsLoading(false);
@@ -251,7 +220,7 @@ export default function PersonalizationPage() {
       if (saveError) {
         setPopupMessage({
           tone: "error",
-          text: `Oops! ${saveError.message} 😕`,
+          text: `Oops! ${saveError.message}`,
         });
         return;
       }
@@ -265,7 +234,7 @@ export default function PersonalizationPage() {
       const messageText =
         saveActionError instanceof Error
           ? saveActionError.message
-          : "We couldn't save your preferences right now. Please try again. 😕";
+          : "We couldn't save your preferences right now. Please try again.";
       setPopupMessage({ tone: "error", text: `Oops! ${messageText}` });
     } finally {
       setIsSaving(false);
@@ -276,9 +245,9 @@ export default function PersonalizationPage() {
     const isSelected = favoriteTopics.includes(topic);
 
     if (!isSelected && favoriteTopics.length >= MAX_TOPICS) {
-      setPopupMessage({
-        tone: "error",
-        text: `You can pick up to ${MAX_TOPICS} topics. Please remove one to add another. 🙂`,
+      setSuggestedTopicToast({
+        tone: "warning",
+        text: `Limit of ${MAX_TOPICS} topics reached.`,
       });
       return;
     }
@@ -295,19 +264,27 @@ export default function PersonalizationPage() {
   };
 
   const handleAddSuggestedTopic = (topic: string) => {
-    if (favoriteTopics.includes(topic)) return;
+    const normalizedTopic = sanitizePersonalizationTopic(topic);
+    if (!normalizedTopic) return;
+
+    const alreadyAdded = favoriteTopics.some(
+      (favoriteTopic) =>
+        favoriteTopic.trim().toLowerCase() === normalizedTopic.toLowerCase(),
+    );
+    if (alreadyAdded) return;
 
     if (favoriteTopics.length >= MAX_TOPICS) {
-      setPopupMessage({
-        tone: "error",
-        text: `You can pick up to ${MAX_TOPICS} topics. Please remove one to add another. 🙂`,
+      setSuggestedTopicToast({
+        tone: "warning",
+        text: `Limit of ${MAX_TOPICS} topics reached. Remove one to add more.`,
       });
       return;
     }
 
-    setFavoriteTopics((prev) => [...prev, topic]);
+    setFavoriteTopics((prev) => [...prev, normalizedTopic]);
     setSuggestedTopicToast({
-      text: `"${topic}" preference is selected.`,
+      tone: "success",
+      text: `"${normalizedTopic}" preference is selected.`,
     });
   };
 
@@ -320,13 +297,15 @@ export default function PersonalizationPage() {
       if (discardError) {
         setPopupMessage({
           tone: "error",
-          text: `Oops! ${discardError.message} 😕`,
+          text: `Oops! ${discardError.message}`,
         });
         return;
       }
 
       setFavoriteSources([]);
       setFavoriteTopics([]);
+      localStorage.removeItem(PERSONALIZATION_PROMO_DISMISS_KEY);
+      setPromoResetKey((prev) => prev + 1);
       broadcastPersonalizationUpdated();
       setPopupMessage({
         tone: "success",
@@ -336,7 +315,7 @@ export default function PersonalizationPage() {
       const messageText =
         discardActionError instanceof Error
           ? discardActionError.message
-          : "We couldn't clear your personalization right now. Please try again. 😕";
+          : "We couldn't clear your personalization right now. Please try again.";
       setPopupMessage({ tone: "error", text: `Oops! ${messageText}` });
     } finally {
       setIsDiscarding(false);
@@ -421,17 +400,18 @@ export default function PersonalizationPage() {
             <div className="h-px flex-1 bg-slate-200 dark:bg-slate-700" />
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             {AVAILABLE_SOURCES.map((source) => {
               const isSelected = favoriteSources.includes(source);
               return (
                 <motion.label
                   key={source}
-                  whileHover={{ scale: 1.01 }}
-                  className={`group flex cursor-pointer items-center gap-4 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50/80 dark:bg-slate-800/80 p-5 transition-all hover:border-[var(--primary)] hover:shadow-sm ${
+                  whileHover={{ y: -1, scale: 1.01 }}
+                  whileTap={{ scale: 0.99 }}
+                  className={`group relative flex cursor-pointer items-center gap-3 rounded-2xl border transition-all duration-300 px-4 py-3 sm:gap-4 sm:p-5 shadow-sm hover:shadow-md ${
                     isSelected
-                      ? "border-[var(--primary)] bg-[var(--primary)]/10 dark:bg-[var(--primary)]/15"
-                      : ""
+                      ? "border-[var(--primary)] bg-[var(--primary)]/[0.08] dark:bg-[var(--primary)]/[0.12] ring-1 ring-[var(--primary)]/20"
+                      : "border-slate-200 dark:border-slate-800 bg-white/70 dark:bg-slate-900/60 hover:border-slate-300 dark:hover:border-slate-600"
                   }`}
                 >
                   <input
@@ -440,9 +420,29 @@ export default function PersonalizationPage() {
                     onChange={() =>
                       setFavoriteSources((prev) => toggleValue(prev, source))
                     }
-                    className="h-5 w-5 accent-[var(--primary)]"
+                    className="sr-only"
                   />
-                  <span className="flex-1 text-sm font-medium text-slate-800 dark:text-slate-200">
+                  <div
+                    className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-md border transition-all duration-300 ${
+                      isSelected
+                        ? "bg-[var(--primary)] border-[var(--primary)] shadow-[0_0_10px_rgba(99,102,241,0.3)]"
+                        : "border-slate-300 bg-white dark:border-slate-600 dark:bg-slate-800 group-hover:border-[var(--primary)]/50"
+                    }`}
+                  >
+                    <AnimatePresence>
+                      {isSelected && (
+                        <motion.div
+                          initial={{ scale: 0, opacity: 0 }}
+                          animate={{ scale: 1, opacity: 1 }}
+                          exit={{ scale: 0, opacity: 0 }}
+                          transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                        >
+                          <Check size={14} strokeWidth={3.5} className="text-white" />
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                  <span className="flex-1 text-sm font-semibold tracking-tight text-slate-800 dark:text-slate-100 transition-colors group-hover:text-slate-900 dark:group-hover:text-white">
                     {source}
                   </span>
                 </motion.label>
@@ -499,7 +499,7 @@ export default function PersonalizationPage() {
             />
           </div>
 
-          <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="mt-6 grid grid-cols-2 gap-2 sm:grid-cols-2 sm:gap-3 lg:grid-cols-3">
             {visibleTopics.map((topic, index) => {
               const isSelected = favoriteTopics.includes(topic);
               const isDisabled =
@@ -511,24 +511,44 @@ export default function PersonalizationPage() {
                   variants={cardVariants}
                   initial="hidden"
                   animate="visible"
-                  transition={{ delay: index * 0.015 }}
-                  whileHover={{ scale: 1.015 }}
-                  className={`group flex cursor-pointer items-center gap-4 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50/80 dark:bg-slate-800/80 px-5 py-4 transition-all hover:border-[var(--primary)] hover:shadow ${
+                  transition={{ delay: index * 0.012 }}
+                  whileHover={{ y: -1, scale: 1.015 }}
+                  whileTap={{ scale: 0.985 }}
+                  className={`group relative flex cursor-pointer items-center gap-3 rounded-2xl border transition-all duration-300 px-3.5 py-3 sm:gap-4 sm:px-5 sm:py-4 shadow-sm hover:shadow-md ${
                     isSelected
-                      ? "border-[var(--primary)] bg-[var(--primary)]/10 dark:bg-[var(--primary)]/15 shadow-sm"
+                      ? "border-[var(--primary)] bg-[var(--primary)]/[0.08] dark:bg-[var(--primary)]/[0.12] ring-1 ring-[var(--primary)]/20"
                       : isDisabled
-                        ? "opacity-40"
-                        : ""
+                        ? "opacity-60 border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-900/40"
+                        : "border-slate-200 dark:border-slate-800 bg-white/70 dark:bg-slate-900/60 hover:border-slate-300 dark:hover:border-slate-600"
                   }`}
                 >
                   <input
                     type="checkbox"
                     checked={isSelected}
-                    disabled={isDisabled}
                     onChange={() => handleTopicToggle(topic)}
-                    className="h-5 w-5 accent-[var(--primary)]"
+                    className="sr-only"
                   />
-                  <span className="text-sm font-medium text-slate-800 dark:text-slate-200">
+                  <div
+                    className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-md border transition-all duration-300 ${
+                      isSelected
+                        ? "bg-[var(--primary)] border-[var(--primary)] shadow-[0_0_10px_rgba(99,102,241,0.3)]"
+                        : "border-slate-300 bg-white dark:border-slate-600 dark:bg-slate-800 group-hover:border-[var(--primary)]/50"
+                    }`}
+                  >
+                    <AnimatePresence>
+                      {isSelected && (
+                        <motion.div
+                          initial={{ scale: 0, opacity: 0 }}
+                          animate={{ scale: 1, opacity: 1 }}
+                          exit={{ scale: 0, opacity: 0 }}
+                          transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                        >
+                          <Check size={14} strokeWidth={3.5} className="text-white" />
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                  <span className="text-sm font-semibold tracking-tight text-slate-800 dark:text-slate-100 transition-colors group-hover:text-slate-900 dark:group-hover:text-white">
                     {topic}
                   </span>
                 </motion.label>
@@ -560,6 +580,7 @@ export default function PersonalizationPage() {
           animate="visible"
           variants={sectionVariants}
           custom={3}
+          id="ai-topic-suggestions"
         >
           <PersonalizationAiSuggestions
             favoriteTopics={favoriteTopics}
@@ -743,7 +764,13 @@ export default function PersonalizationPage() {
             transition={{ duration: 0.18, ease: "easeOut" }}
             className="pointer-events-none fixed inset-x-0 bottom-4 z-50 flex justify-center px-4 sm:bottom-6"
           >
-            <div className="w-full max-w-xs rounded-full border border-emerald-200/80 bg-white/95 px-4 py-2.5 text-center text-sm font-medium text-emerald-700 shadow-lg shadow-emerald-500/10 backdrop-blur dark:border-emerald-500/20 dark:bg-slate-900/95 dark:text-emerald-300">
+            <div
+              className={`w-full max-w-xs rounded-full border px-4 py-2.5 text-center text-sm font-medium shadow-lg backdrop-blur ${
+                suggestedTopicToast.tone === "success"
+                  ? "border-emerald-200/80 bg-white/95 text-emerald-700 shadow-emerald-500/10 dark:border-emerald-500/20 dark:bg-slate-900/95 dark:text-emerald-300"
+                  : "border-red-200/80 bg-white/95 text-red-700 shadow-red-500/10 dark:border-red-500/20 dark:bg-slate-900/95 dark:text-red-300"
+              }`}
+            >
               {suggestedTopicToast.text}
             </div>
           </motion.div>
@@ -766,6 +793,12 @@ export default function PersonalizationPage() {
               }
             : undefined
         }
+      />
+
+      <PersonalizationPromoAd
+        key={promoResetKey}
+        favoriteSourcesCount={favoriteSources.length}
+        favoriteTopicsCount={favoriteTopics.length}
       />
 
       <AnimatePresence>

@@ -3,8 +3,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { motion, type Variants } from "framer-motion";
 import { Loader2, Sparkles } from "lucide-react";
-import { supabase } from "../../../lib/superbaseClient";
 import { incrementPersonalizationSuggestionUsage } from "@/lib/activityAnalytics";
+import { PERSONALIZATION_PROMO_HIDE_EVENT } from "./personalizatioPopup";
 
 type TopicSuggestion = {
   topic: string;
@@ -63,6 +63,7 @@ export default function PersonalizationAiSuggestions({
   const isAiTakingLong = aiElapsedSeconds >= 8;
 
   const handleGetAiSuggestions = async () => {
+    window.dispatchEvent(new Event(PERSONALIZATION_PROMO_HIDE_EVENT));
     setIsSuggesting(true);
     setSuggestions([]);
 
@@ -134,6 +135,7 @@ export default function PersonalizationAiSuggestions({
         </p>
 
         <button
+          id="ai-topic-suggestions-button"
           type="button"
           onClick={handleGetAiSuggestions}
           disabled={isSuggesting}
@@ -194,7 +196,11 @@ export default function PersonalizationAiSuggestions({
           className="mt-8 grid gap-4 lg:grid-cols-2 xl:grid-cols-3"
         >
           {suggestions.map((item, index) => {
-            const alreadySelected = favoriteTopics.includes(item.topic);
+            const alreadySelected = favoriteTopics.some(
+              (topic) =>
+                topic.trim().toLowerCase() === item.topic.trim().toLowerCase(),
+            );
+            const isNewTopic = !availableTopics.includes(item.topic);
 
             return (
               <motion.article
@@ -211,16 +217,23 @@ export default function PersonalizationAiSuggestions({
                     <h3 className="text-base font-semibold leading-snug text-slate-900 dark:text-slate-100">
                       {item.topic}
                     </h3>
-                    <span
-                      className={`shrink-0 rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-widest ${item.confidence === "high"
-                          ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300"
-                          : item.confidence === "medium"
-                            ? "bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300"
-                            : "bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300"
-                        }`}
-                    >
-                      {item.confidence}
-                    </span>
+                    <div className="flex shrink-0 flex-col items-end gap-1">
+                      {isNewTopic && (
+                        <span className="rounded-full bg-sky-100 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-widest text-sky-700 dark:bg-sky-900 dark:text-sky-300">
+                          New topic
+                        </span>
+                      )}
+                      <span
+                        className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-widest ${item.confidence === "high"
+                            ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300"
+                            : item.confidence === "medium"
+                              ? "bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300"
+                              : "bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300"
+                          }`}
+                      >
+                        {item.confidence}
+                      </span>
+                    </div>
                   </div>
 
                 <div className="mt-5 space-y-3 text-xs mb-6">

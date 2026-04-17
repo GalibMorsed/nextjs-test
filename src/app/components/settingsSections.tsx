@@ -374,7 +374,7 @@ export function NotificationsSection({
             className="mt-4 space-y-3 overflow-hidden"
           >
             <ToggleRow
-              label="Account activity"
+              label="Daily Email Updates"
               checked={notifications.accountActivity}
               onChange={(checked) =>
                 onUpdateNotification("accountActivity", checked)

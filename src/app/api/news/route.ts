@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
 import { getExploreRegion } from "@/lib/explore";
-import { getCategoryDisplayName, getCategorySearchConfig } from "@/lib/newsCategories";
+import {
+  getCategoryDisplayName,
+  getCategorySearchConfig,
+  isNewsApiTopHeadlineCategory,
+} from "@/lib/newsCategories";
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
@@ -51,8 +55,14 @@ export async function GET(req: Request) {
         ? `(${categoryQuery}) AND ${region.topicQuery}`
         : categoryQuery;
       url = `${baseUrl}/everything?q=${encodeURIComponent(scopedQuery)}&page=${page}&pageSize=${pageSize}&apiKey=${apiKey}&sortBy=publishedAt`;
-    } else {
+    } else if (isNewsApiTopHeadlineCategory(category)) {
       url += `&category=${encodeURIComponent(category)}`;
+    } else {
+      const categoryQuery = getCategoryDisplayName(category);
+      const scopedQuery = region && region.id !== "world"
+        ? `(${categoryQuery}) AND ${region.topicQuery}`
+        : categoryQuery;
+      url = `${baseUrl}/everything?q=${encodeURIComponent(scopedQuery)}&page=${page}&pageSize=${pageSize}&apiKey=${apiKey}&sortBy=publishedAt`;
     }
   }
 

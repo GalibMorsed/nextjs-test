@@ -21,15 +21,17 @@ interface ArticleCardProps {
   article: Article;
   formattedDate: string;
   category?: string;
+  showAiSummaryPromo?: boolean;
 }
 
 export default function ArticleCard({
   article,
   formattedDate,
   category,
+  showAiSummaryPromo = false,
 }: ArticleCardProps) {
   return (
-    <article className="flex flex-col bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden group border border-gray-100">
+    <article className="flex flex-col bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 overflow-visible group border border-gray-100">
       <div className="relative h-52 w-full overflow-hidden bg-gray-200">
         <img
           src={getNewsImageSrc(article.urlToImage)}
@@ -48,7 +50,10 @@ export default function ArticleCard({
       </div>
 
       <div className="flex flex-1 flex-col p-5">
-        <div suppressHydrationWarning className="mb-3 flex items-center text-xs text-gray-500 font-medium uppercase tracking-wider">
+        <div
+          suppressHydrationWarning
+          className="mb-3 flex items-center text-xs text-gray-500 font-medium uppercase tracking-wider"
+        >
           {formattedDate || "Date Not Available"}
         </div>
 
@@ -88,6 +93,7 @@ export default function ArticleCard({
                 content={article.content}
                 sourceName={article.source?.name}
                 category={category}
+                showPromo={showAiSummaryPromo}
               />
               <AddNoteButton
                 title={article.title}

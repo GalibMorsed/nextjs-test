@@ -5,6 +5,10 @@ import {
   getClientIp,
   verifySupabaseAccessToken,
 } from "@/lib/apiSecurity";
+import {
+  AVAILABLE_PERSONALIZATION_TOPICS,
+  sanitizePersonalizationTopic,
+} from "@/lib/personalizationTopics";
 
 const OPENROUTER_ENDPOINT = "https://openrouter.ai/api/v1/chat/completions";
 const RATE_LIMIT_WINDOW_MS = 60_000;
@@ -44,11 +48,13 @@ function normalizeConfidence(value: unknown): "high" | "medium" | "low" {
 
 function normalizeSuggestions(
   raw: unknown,
-  availableTopics: string[],
+  selectedTopics: string[],
 ): TopicSuggestion[] {
   if (!Array.isArray(raw)) return [];
 
-  const allowedTopics = new Set(availableTopics.map((topic) => topic.trim()));
+  const selectedTopicSet = new Set(
+    selectedTopics.map((topic) => topic.toLowerCase()),
+  );
   const seen = new Set<string>();
   const normalized: TopicSuggestion[] = [];
 
@@ -56,7 +62,7 @@ function normalizeSuggestions(
     if (!item || typeof item !== "object") continue;
 
     const topic = typeof (item as { topic?: unknown }).topic === "string"
-      ? (item as { topic: string }).topic.trim()
+      ? sanitizePersonalizationTopic((item as { topic: string }).topic)
       : "";
     const whyNow = typeof (item as { whyNow?: unknown }).whyNow === "string"
       ? (item as { whyNow: string }).whyNow.trim()
@@ -66,9 +72,18 @@ function normalizeSuggestions(
         ? (item as { whatToWatch: string }).whatToWatch.trim()
         : "";
 
-    if (!topic || !allowedTopics.has(topic) || seen.has(topic)) continue;
+    const topicKey = topic.toLowerCase();
 
-    seen.add(topic);
+    if (
+      !topic ||
+      topic.length < 3 ||
+      selectedTopicSet.has(topicKey) ||
+      seen.has(topicKey)
+    ) {
+      continue;
+    }
+
+    seen.add(topicKey);
     normalized.push({
       topic,
       whyNow: whyNow || "This topic is currently receiving notable coverage.",
@@ -80,6 +95,21 @@ function normalizeSuggestions(
   }
 
   return normalized.slice(0, 6);
+}
+
+function normalizeAllowedTopics(raw: unknown): string[] {
+  const canonicalTopicSet = new Set<string>(AVAILABLE_PERSONALIZATION_TOPICS);
+  const requestedTopics = Array.isArray(raw)
+    ? raw.map((topic) => (typeof topic === "string" ? topic.trim() : ""))
+    : [];
+
+  const requestedTopicSet = new Set(
+    requestedTopics.filter((topic) => canonicalTopicSet.has(topic)),
+  );
+
+  return AVAILABLE_PERSONALIZATION_TOPICS.filter((topic) =>
+    requestedTopicSet.has(topic),
+  );
 }
 
 async function fetchHeadlineSignals(country: string): Promise<string[]> {
@@ -145,14 +175,12 @@ export async function POST(req: Request) {
     }
 
     const body = (await req.json()) as TopicSuggestionsPayload;
-    const availableTopics = Array.isArray(body.availableTopics)
-      ? body.availableTopics
-          .map((topic) => topic.trim().slice(0, 80))
-          .filter(Boolean)
-      : [];
+    const availableTopics = normalizeAllowedTopics(body.availableTopics);
     const selectedTopics = Array.isArray(body.selectedTopics)
       ? body.selectedTopics
-          .map((topic) => topic.trim().slice(0, 80))
+          .map((topic) =>
+            typeof topic === "string" ? sanitizePersonalizationTopic(topic) : "",
+          )
           .filter(Boolean)
       : [];
     const country = typeof body.country === "string" && body.country.trim()
@@ -176,8 +204,10 @@ export async function POST(req: Request) {
       `Today is ${new Date().toISOString().slice(0, 10)}.`,
       `Country preference: ${country.toUpperCase()}`,
       "",
-      "Choose the best currently trending topics from ONLY this allowed list:",
+      "Start with these in-app topics:",
       availableTopics.join(", "),
+      "You may also suggest a small number of new custom topics when live headline signals make them clearly useful right now.",
+      "Custom topic rules: short news topic labels, 2 to 4 words when possible, no clickbait, no full article titles, no duplicates of the selected topics.",
       "",
       "User currently selected topics:",
       selectedTopics.length > 0 ? selectedTopics.join(", ") : "None",
@@ -188,10 +218,12 @@ export async function POST(req: Request) {
       "Return ONLY valid JSON with this exact shape:",
       "{",
       '  "suggestions": [',
-      '    { "topic": "Topic from allowed list", "whyNow": "Simple explanation (1-2 lines)", "whatToWatch": "Simple follow-up guidance (1 line)", "confidence": "high|medium|low" }',
+      '    { "topic": "Existing or new topic label", "whyNow": "Simple explanation (1-2 lines)", "whatToWatch": "Simple follow-up guidance (1 line)", "confidence": "high|medium|low" }',
       "  ]",
       "}",
-      "Return 6 to 8 suggestions, easy to understand.",
+      "Return up to 6 suggestions, easy to understand.",
+      "Prefer 3 to 4 existing in-app topics and up to 2 new custom topics when justified by the headline signals.",
+      "Each whyNow and whatToWatch must be related to its exact topic.",
     ].join("\n");
 
     const upstreamResponse = await fetch(OPENROUTER_ENDPOINT, {
@@ -208,7 +240,7 @@ export async function POST(req: Request) {
           {
             role: "system",
             content:
-              "You produce concise, accurate topic suggestions using current headline signals. JSON only.",
+              "You produce concise, accurate news topic suggestions using current headline signals. You can suggest existing in-app topics and timely custom topic labels. JSON only.",
           },
           { role: "user", content: prompt },
         ],
@@ -232,7 +264,7 @@ export async function POST(req: Request) {
     }
 
     const parsed = extractJsonObject(content);
-    const suggestions = normalizeSuggestions(parsed?.suggestions, availableTopics);
+    const suggestions = normalizeSuggestions(parsed?.suggestions, selectedTopics);
 
     if (suggestions.length === 0) {
       return NextResponse.json(

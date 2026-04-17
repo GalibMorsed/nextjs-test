@@ -419,8 +419,7 @@ export default function PrivacyPolicyPage() {
                 If you need help understanding this policy, want clarification
                 about account data, notes, personalization, AI features, future
                 subscriptions, or billing plans, use the app support route to
-                contact the project owner before production launch or after
-                monetization goes live.
+                contact the project owner or support team.
               </p>
             </div>
 

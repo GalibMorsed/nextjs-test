@@ -3,6 +3,16 @@ interface CustomCategoryConfig {
   searchIn?: string;
 }
 
+const NEWS_API_TOP_HEADLINE_CATEGORIES = new Set([
+  "business",
+  "entertainment",
+  "general",
+  "health",
+  "science",
+  "sports",
+  "technology",
+]);
+
 export const CUSTOM_CATEGORY_SEARCH_CONFIG: Record<string, CustomCategoryConfig> = {
   politics: {
     query:
@@ -134,12 +144,51 @@ export const CUSTOM_CATEGORY_SEARCH_CONFIG: Record<string, CustomCategoryConfig>
       "(agriculture OR farming OR farm policy OR crops OR irrigation OR agritech OR livestock)",
     searchIn: "title,description",
   },
+  "world-news": {
+    query:
+      "(world news OR international relations OR global affairs OR diplomacy OR United Nations OR geopolitics)",
+    searchIn: "title,description",
+  },
+  weather: {
+    query:
+      "(weather OR storm OR hurricane OR cyclone OR flood OR heatwave OR forecast)",
+    searchIn: "title,description",
+  },
+  energy: {
+    query:
+      "(energy OR oil OR gas OR electricity OR power grid OR renewable energy OR solar OR wind)",
+    searchIn: "title,description",
+  },
+  startups: {
+    query:
+      "(startup OR startups OR venture capital OR funding round OR founder OR tech startup)",
+    searchIn: "title,description",
+  },
+  "law-justice": {
+    query:
+      "(law OR justice OR court OR supreme court OR lawsuit OR legal ruling OR judiciary)",
+    searchIn: "title,description",
+  },
+  "social-media": {
+    query:
+      "(social media OR creator economy OR influencer OR platform policy OR TikTok OR Instagram OR X)",
+    searchIn: "title,description",
+  },
+  "personal-finance": {
+    query:
+      "(personal finance OR savings OR retirement OR credit card OR mortgage rates OR taxes OR consumer debt)",
+    searchIn: "title,description",
+  },
 };
 
 export function getCategorySearchConfig(
   category: string,
 ): CustomCategoryConfig | null {
   return CUSTOM_CATEGORY_SEARCH_CONFIG[category] ?? null;
+}
+
+export function isNewsApiTopHeadlineCategory(category: string): boolean {
+  return NEWS_API_TOP_HEADLINE_CATEGORIES.has(category);
 }
 
 export function getCategoryDisplayName(category: string): string {

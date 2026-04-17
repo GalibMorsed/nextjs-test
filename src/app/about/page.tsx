@@ -425,7 +425,7 @@ export default function AboutPage() {
               <Instagram className="h-6 w-6" />
             </a>
             <a
-              href="mailto:morsedgalib982@gmail.com"
+              href="mailto:galib.morsed@nextnews.co.in"
               className="text-slate-400 transition-colors duration-300 hover:text-blue-400"
               aria-label="Email"
             >

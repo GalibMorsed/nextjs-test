@@ -3,6 +3,7 @@ import { getExploreRegion } from "@/lib/explore";
 import {
   getCategoryDisplayName,
   getCategorySearchConfig,
+  isNewsApiTopHeadlineCategory,
 } from "@/lib/newsCategories";
 
 interface Article {
@@ -46,8 +47,11 @@ async function getCategoryNews(category: string, regionId?: string) {
           : categoryQuery;
       endpoint = `${baseUrl}/everything?q=${encodeURIComponent(scopedQuery)}&page=1&pageSize=20&sortBy=publishedAt&apiKey=${apiKey}`;
     }
-  } else {
+  } else if (isNewsApiTopHeadlineCategory(category)) {
     endpoint = `${baseUrl}/top-headlines?country=us&category=${encodeURIComponent(category)}&page=1&pageSize=20&apiKey=${apiKey}`;
+  } else {
+    const categoryQuery = getCategoryDisplayName(category);
+    endpoint = `${baseUrl}/everything?q=${encodeURIComponent(categoryQuery)}&page=1&pageSize=20&sortBy=publishedAt&apiKey=${apiKey}`;
   }
 
   const res = await fetch(endpoint, { next: { revalidate: 300 } });
