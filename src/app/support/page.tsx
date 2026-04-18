@@ -582,13 +582,13 @@ export default function SupportPage() {
                   <div className="space-y-4 py-6 text-center">
                     <div className="mb-4 text-3xl">✉️</div>
                     <p className="text-lg leading-relaxed text-slate-700 dark:text-slate-200">
-                      galib.morsed@nextnews.co.in <br />
+                      nextnews.co.in@gmail.com <br />
                       <span className="text-sm text-slate-500 dark:text-slate-400">
                         Our support team typically responds within 24 hours
                       </span>
                     </p>
                     <motion.a
-                      href="mailto:galib.morsed@nextnews.co.in"
+                      href="mailto:nextnews.co.in@gmail.com"
                       className="inline-block rounded-full bg-teal-500 px-8 py-3 font-semibold text-white shadow-lg transition-all duration-200 hover:-translate-y-1 hover:bg-teal-600 hover:shadow-xl active:translate-y-0 active:bg-teal-700"
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}

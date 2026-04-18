@@ -23,7 +23,7 @@ import {
   SettingsActionFooter,
   SettingsHeaderSection,
   ToggleRow,
-} from "../components/settingsSections";
+} from "./component/settingsSections";
 
 type NotificationSettings = {
   accountActivity: boolean;
@@ -86,12 +86,7 @@ const LANGUAGES = [
   { code: "fr", label: "French" },
 ];
 
-const GENDERS = [
-  "Male 🗿",
-  "Female 👗",
-  "Non-binary (Chakka👺)",
-  "Prefer not to say 🏳️‍🌈",
-];
+const GENDERS = ["Male", "Female", "Prefer not to say"];
 
 function mergeSettings(raw: unknown): AccountSettings {
   if (!raw || typeof raw !== "object") return DEFAULT_SETTINGS;
