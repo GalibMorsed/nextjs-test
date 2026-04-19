@@ -3,7 +3,7 @@
 import { motion } from "framer-motion";
 import { ArrowUpRight, Loader2, Newspaper, TrendingUp } from "lucide-react";
 import { SOURCE_ACCENT_STYLES, type ExploreResponse } from "@/lib/explore";
-import type { ReactNode, RefObject } from "react";
+import type { ReactElement, ReactNode, RefObject } from "react";
 
 type PageSurfaceProps = {
   children?: ReactNode;
@@ -12,7 +12,7 @@ type PageSurfaceProps = {
 };
 
 type ExploreLiveStoriesAndVoicesProps = {
-  PageSurface: (props: PageSurfaceProps) => JSX.Element;
+  PageSurface: (props: PageSurfaceProps) => ReactElement;
   regionLabel?: string;
   trendingTopics: ExploreResponse["trendingTopics"];
   sources: ExploreResponse["sourceSuggestions"];
