@@ -287,12 +287,12 @@ export default function MemberDropdownMenu({
   const panelMotion = reduceMotion
     ? { initial: false, animate: { opacity: 1 }, exit: { opacity: 0 } }
     : {
-        initial: { opacity: 0, y: -14, scale: 0.94 },
+        initial: { opacity: 0, y: -30, scale: 0.96 },
         animate: { opacity: 1, y: 0, scale: 1 },
         exit: {
           opacity: 0,
-          y: -10,
-          scale: 0.97,
+          y: -20,
+          scale: 0.96,
           transition: { duration: 0.16, ease: [0.4, 0, 1, 1] as const },
         },
       };
@@ -351,7 +351,7 @@ export default function MemberDropdownMenu({
                 className="
                   fixed inset-x-0 bottom-0 top-[4.65rem] z-40 backdrop-blur-[3px]
                   bg-[color:color-mix(in_srgb,#0f172a_22%,var(--primary)_10%)]
-                  md:pointer-events-none md:bg-transparent md:backdrop-blur-none md:inset-auto
+                  lg:pointer-events-none lg:bg-transparent lg:backdrop-blur-none lg:inset-auto
                 "
                 aria-hidden="true"
               />
@@ -365,7 +365,7 @@ export default function MemberDropdownMenu({
                 transition={panelTransition}
                 className="
                   fixed inset-x-3 top-[4.65rem] z-50 max-h-[min(78vh,32rem)] overflow-visible
-                  md:absolute md:left-1/2 md:right-auto md:top-[calc(100%+0.6rem)] md:max-h-none md:w-[min(94vw,28.75rem)] md:-translate-x-1/2
+                  lg:absolute lg:left-1/2 lg:right-auto lg:top-[calc(100%+1.25rem)] lg:max-h-none lg:w-[min(96vw,52rem)] lg:-translate-x-1/2
                 "
               >
                 <div
@@ -376,6 +376,7 @@ export default function MemberDropdownMenu({
                     shadow-[0_0_0_1px_color-mix(in_srgb,var(--primary)_12%,transparent),0_20px_50px_-12px_color-mix(in_srgb,#0f172a_16%,var(--primary)_8%),0_8px_24px_-8px_rgba(15,23,42,0.12)]
                     dark:border-[color:color-mix(in_srgb,var(--primary)_22%,var(--border))]
                     dark:shadow-[0_0_0_1px_color-mix(in_srgb,var(--primary)_15%,transparent),0_24px_56px_-12px_rgba(0,0,0,0.55),0_0_40px_-12px_color-mix(in_srgb,transparent_40%,var(--primary)_12%)]
+                    lg:rounded-2xl lg:shadow-xl
                   "
                 >
                   <motion.div
@@ -384,6 +385,7 @@ export default function MemberDropdownMenu({
                       pointer-events-none absolute inset-x-6 top-0 z-10 h-px rounded-full
                       bg-gradient-to-r from-transparent via-[var(--primary)] to-transparent
                       opacity-90 shadow-[0_0_12px_1px_color-mix(in_srgb,var(--primary)_35%,transparent)]
+                      lg:inset-x-12 lg:via-[var(--foreground)] lg:shadow-[0_0_12px_1px_color-mix(in_srgb,var(--foreground)_25%,transparent)]
                     "
                     initial={
                       reduceMotion
@@ -399,7 +401,7 @@ export default function MemberDropdownMenu({
                     style={{ transformOrigin: "50% 50%" }}
                   />
                   <motion.div
-                    className="flex shrink-0 items-start justify-between gap-3 border-b border-[var(--border)] px-4 pb-4 pt-5 md:px-5 md:pb-5 md:pt-6"
+                    className="flex shrink-0 items-start justify-between gap-3 border-b border-[var(--border)] px-4 pb-4 pt-5 lg:hidden"
                     initial={reduceMotion ? {} : { opacity: 0, y: -6 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={
@@ -411,11 +413,11 @@ export default function MemberDropdownMenu({
                     <div className="min-w-0 pr-2">
                       <p
                         id={titleId}
-                        className="text-[11px] font-bold uppercase tracking-[0.12em] text-blue-600 dark:text-blue-400 md:text-xs md:tracking-[0.15em]"
+                        className="text-[11px] font-bold uppercase tracking-[0.12em] text-blue-600 dark:text-blue-400 lg:text-xs lg:tracking-[0.15em]"
                       >
                         Advance NextNews
                       </p>
-                      <p className="mt-1.5 text-xs font-normal leading-relaxed text-[var(--muted)] md:mt-2 md:text-sm">
+                      <p className="mt-1.5 text-xs font-normal leading-relaxed text-[var(--muted)] lg:mt-2 lg:text-sm">
                         Pick one to jump
                         there in a single tap-no digging through menus.🤫
                       </p>
@@ -437,7 +439,7 @@ export default function MemberDropdownMenu({
                   </motion.div>
 
                   <motion.ul
-                    className="flex flex-col gap-2.5 overflow-y-auto overscroll-contain px-3.5 py-3.5 md:gap-3 md:px-4 md:py-4"
+                    className="flex flex-col gap-2.5 overflow-y-auto overscroll-contain px-3.5 py-3.5 lg:flex-row lg:items-stretch lg:gap-0 lg:overflow-visible lg:px-3 lg:py-3"
                     role="none"
                     variants={menuListVariants}
                     initial="hidden"
@@ -453,119 +455,154 @@ export default function MemberDropdownMenu({
                           key={item.id}
                           role="none"
                           variants={menuItemVariants}
+                          className="w-full lg:flex-1"
                         >
-                          <motion.button
-                            ref={(el) => {
-                              menuItemsRef.current[index] = el;
-                            }}
-                            type="button"
-                            role="menuitem"
-                            aria-disabled={inactive}
-                            tabIndex={isOpen && isSelected ? 0 : -1}
-                            aria-label={item.label}
-                            onClick={() => {
-                              if (inactive) handleComingSoonClick();
-                              else handleMemberClick(item);
-                            }}
-                            whileHover={
-                              reduceMotion
-                                ? undefined
-                                : {
-                                    y: -2.5,
-                                    scale: 1.015,
-                                    boxShadow:
-                                      "0 16px 32px -8px color-mix(in srgb, var(--primary) 30%, transparent), 0 6px 14px -6px rgba(15, 23, 42, 0.15)",
-                                  }
-                            }
-                            whileTap={
-                              reduceMotion ? undefined : { scale: 0.985 }
-                            }
-                            transition={{
-                              type: "spring",
-                              stiffness: 460,
-                              damping: 36,
-                            }}
-                            className={`
-                              group flex w-full items-center gap-3 rounded-xl border px-3 py-3 text-left shadow-sm
-                              transition-colors duration-200
-                              focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)]/40
-                              focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--card)]
-                              md:gap-4 md:rounded-2xl md:px-4 md:py-4
-                              ${
-                                isSelected
-                                  ? "border-[color:color-mix(in_srgb,var(--primary)_48%,var(--border))] bg-[color:color-mix(in_srgb,var(--primary)_8%,var(--card))] shadow-[0_0_0_1px_color-mix(in_srgb,var(--primary)_12%,transparent),0_8px_20px_-10px_color-mix(in_srgb,var(--primary)_18%,transparent)]"
-                                  : "border-[var(--border)] bg-[color:color-mix(in_srgb,var(--card)_98%,var(--primary)_2%)] hover:border-[color:color-mix(in_srgb,var(--primary)_28%,var(--border))] hover:bg-[color:color-mix(in_srgb,var(--card)_94%,var(--primary)_6%)]"
-                              }
-                              ${inactive ? "cursor-default" : ""}
-                            `}
-                          >
-                            <motion.span
-                              className="
-                                inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full
-                                bg-gradient-to-br from-emerald-50 to-teal-50 text-emerald-600 ring-1 ring-emerald-100/80
-                                transition-all duration-300
-                                group-hover:from-emerald-100 group-hover:to-teal-100 group-hover:text-emerald-700 group-hover:ring-emerald-200/90 group-hover:shadow-md
-                                dark:from-emerald-400/10 dark:to-teal-400/10 dark:text-emerald-400 dark:ring-emerald-500/20
-                                dark:group-hover:from-emerald-400/20 dark:group-hover:to-teal-400/20 dark:group-hover:text-emerald-300 dark:group-hover:ring-emerald-500/40 dark:group-hover:shadow-[0_4px_12px_rgba(16,185,129,0.15)]
-                                md:h-13 md:w-13 md:rounded-2xl
-                              "
-                              aria-hidden
-                              whileHover={reduceMotion ? undefined : { scale: 1.1, rotate: 3 }}
-                              transition={{
-                                type: "spring",
-                                stiffness: 350,
-                                damping: 20,
-                              }}
-                            >
-                              <Icon size={18} strokeWidth={1.6} className="md:h-5 md:w-5" />
-                            </motion.span>
-                            <span className="min-w-0 flex-1">
-                              <span className="flex items-center gap-2">
-                                <span className="text-sm font-semibold text-[var(--foreground)] transition-colors duration-200 group-hover:text-[color:color-mix(in_srgb,var(--foreground)_90%,var(--primary)_10%)] md:text-base">
-                                  {item.label}
-                                </span>
-                                <span className="inline-flex rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-slate-600 ring-1 ring-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:ring-slate-700">
-                                  {item.accessLabel}
-                                </span>
-                              </span>
-                              {item.description ? (
-                                <span className="mt-0.5 block text-[11px] leading-snug text-[var(--muted)] md:mt-1 md:text-xs">
-                                  {item.description}
-                                </span>
-                              ) : null}
-                            </span>
-                            <motion.span
-                              className="
-                                inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full
-                                border border-emerald-100/90 bg-gradient-to-br from-emerald-50/90 to-teal-50/90 text-emerald-500
-                                transition-all duration-300
-                                group-hover:border-emerald-200 group-hover:from-emerald-100/95 group-hover:to-teal-100/95 group-hover:text-emerald-600
-                                dark:border-emerald-500/20 dark:from-emerald-400/10 dark:to-teal-400/10 dark:text-emerald-400
-                                dark:group-hover:border-emerald-500/30 dark:group-hover:from-emerald-400/20 dark:group-hover:to-teal-400/20 dark:group-hover:text-emerald-300
-                                md:h-10 md:w-10 md:rounded-xl
-                              "
-                              aria-hidden
-                              whileHover={reduceMotion ? undefined : { x: 5, scale: 1.08 }}
-                              transition={{
-                                type: "spring",
-                                stiffness: 350,
-                                damping: 20,
-                              }}
-                            >
-                              <ArrowRight
-                                size={16}
-                                strokeWidth={2}
-                                className="transition-colors duration-200"
+                          <div className="flex w-full items-center h-full">
+                            {index > 0 && (
+                              <div
+                                className="hidden lg:block w-px self-stretch bg-[color:color-mix(in_srgb,var(--foreground)_8%,transparent)] mx-1 shrink-0 rounded-full"
+                                aria-hidden
                               />
-                            </motion.span>
-                          </motion.button>
+                            )}
+                            <motion.button
+                              ref={(el) => {
+                                menuItemsRef.current[index] = el;
+                              }}
+                              type="button"
+                              role="menuitem"
+                              aria-disabled={inactive}
+                              tabIndex={isOpen && isSelected ? 0 : -1}
+                              aria-label={item.label}
+                              onClick={() => {
+                                if (inactive) handleComingSoonClick();
+                                else handleMemberClick(item);
+                              }}
+                              whileHover={
+                                reduceMotion
+                                  ? undefined
+                                  : {
+                                      y: -2.5,
+                                      scale: 1.015,
+                                      boxShadow:
+                                        "0 16px 32px -8px color-mix(in srgb, var(--primary) 30%, transparent), 0 6px 14px -6px rgba(15, 23, 42, 0.15)",
+                                    }
+                              }
+                              whileTap={
+                                reduceMotion ? undefined : { scale: 0.985 }
+                              }
+                              transition={{
+                                type: "spring",
+                                stiffness: 460,
+                                damping: 36,
+                              }}
+                              className={`
+                                group flex w-full items-center gap-3 rounded-xl border px-3 py-3 text-left shadow-sm
+                                transition-all duration-200
+                                focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)]/40
+                                focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--card)]
+                                lg:w-full lg:flex-col lg:items-center lg:justify-center lg:border-none lg:px-5 lg:py-4 lg:shadow-none lg:gap-2 lg:rounded-xl lg:text-center
+                                ${
+                                  isSelected
+                                    ? "border-[color:color-mix(in_srgb,var(--primary)_48%,var(--border))] bg-[color:color-mix(in_srgb,var(--primary)_8%,var(--card))] shadow-[0_0_0_1px_color-mix(in_srgb,var(--primary)_12%,transparent),0_8px_20px_-10px_color-mix(in_srgb,var(--primary)_18%,transparent)] lg:bg-blue-50/60 dark:lg:bg-[color:color-mix(in_srgb,var(--foreground)_7%,transparent)] lg:shadow-none"
+                                    : "border-[var(--border)] bg-[color:color-mix(in_srgb,var(--card)_98%,var(--primary)_2%)] hover:border-[color:color-mix(in_srgb,var(--primary)_28%,var(--border))] hover:bg-[color:color-mix(in_srgb,var(--card)_94%,var(--primary)_6%)] lg:bg-transparent lg:hover:bg-blue-50/60 dark:lg:hover:bg-[color:color-mix(in_srgb,var(--foreground)_5%,transparent)]"
+                                }
+                                ${inactive ? "cursor-default" : ""}
+                              `}
+                            >
+                              {/* Mobile Leading Icon */}
+                              <motion.span
+                                className="
+                                  inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full
+                                  bg-gradient-to-br from-emerald-50 to-teal-50 text-emerald-600 ring-1 ring-emerald-100/80
+                                  transition-all duration-300
+                                  group-hover:from-emerald-100 group-hover:to-teal-100 group-hover:text-emerald-700 group-hover:ring-emerald-200/90 group-hover:shadow-md
+                                  dark:from-emerald-400/10 dark:to-teal-400/10 dark:text-emerald-400 dark:ring-emerald-500/20
+                                  dark:group-hover:from-emerald-400/20 dark:group-hover:to-teal-400/20 dark:group-hover:text-emerald-300 dark:group-hover:ring-emerald-500/40 dark:group-hover:shadow-[0_4px_12px_rgba(16,185,129,0.15)]
+                                  lg:hidden
+                                "
+                                aria-hidden
+                                whileHover={reduceMotion ? undefined : { scale: 1.1, rotate: 3 }}
+                                transition={{
+                                  type: "spring",
+                                  stiffness: 350,
+                                  damping: 20,
+                                }}
+                              >
+                                <Icon size={18} strokeWidth={1.6} />
+                              </motion.span>
+
+                              {/* Desktop Icon */}
+                              <span
+                                className={`hidden lg:inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition-all duration-200 ${
+                                  isSelected
+                                    ? "bg-blue-100 text-blue-600 dark:bg-[color:color-mix(in_srgb,var(--foreground)_12%,transparent)] dark:text-[var(--foreground)]"
+                                    : "bg-slate-100 text-slate-500 group-hover:bg-blue-50 group-hover:text-blue-600 dark:bg-[color:color-mix(in_srgb,var(--foreground)_6%,transparent)] dark:text-[var(--muted)] dark:group-hover:bg-[color:color-mix(in_srgb,var(--foreground)_10%,transparent)] dark:group-hover:text-[var(--foreground)]"
+                                }`}
+                              >
+                                <Icon size={20} strokeWidth={1.8} />
+                              </span>
+
+                              <span className="min-w-0 flex-1 lg:flex-initial lg:text-center lg:mt-0.5">
+                                <span className="flex items-center gap-2 lg:flex-col lg:gap-1.5 lg:justify-center">
+                                  <span
+                                    className={`text-sm transition-colors duration-200 lg:text-[12px] lg:font-medium lg:tracking-wide ${
+                                      isSelected
+                                        ? "font-semibold text-[var(--foreground)] lg:text-blue-700 dark:lg:text-[var(--foreground)]"
+                                        : "font-semibold text-[var(--foreground)] group-hover:text-[color:color-mix(in_srgb,var(--foreground)_90%,var(--primary)_10%)] lg:text-[var(--muted)] lg:group-hover:text-blue-600 dark:lg:group-hover:text-[var(--foreground)]"
+                                    }`}
+                                  >
+                                    {item.label}
+                                  </span>
+                                  <span className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.08em] ring-1 transition-colors duration-200 ${
+                                    isSelected 
+                                      ? "bg-blue-100 text-blue-700 ring-blue-200 dark:bg-slate-800 dark:text-slate-300 dark:ring-slate-700" 
+                                      : "bg-slate-100 text-slate-600 ring-slate-200 group-hover:bg-blue-50 group-hover:text-blue-600 group-hover:ring-blue-100 dark:bg-slate-800 dark:text-slate-300 dark:ring-slate-700 dark:group-hover:bg-slate-700 dark:group-hover:text-slate-200 dark:group-hover:ring-slate-600"
+                                  }`}>
+                                    {item.accessLabel}
+                                  </span>
+                                </span>
+                                {item.description ? (
+                                  <span className="mt-0.5 block text-[11px] leading-snug text-[var(--muted)] lg:hidden">
+                                    {item.description}
+                                  </span>
+                                ) : null}
+                              </span>
+
+                              {/* Mobile Trailing Arrow */}
+                              <motion.span
+                                className="
+                                  inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full
+                                  border border-emerald-100/90 bg-gradient-to-br from-emerald-50/90 to-teal-50/90 text-emerald-500
+                                  transition-all duration-300
+                                  group-hover:border-emerald-200 group-hover:from-emerald-100/95 group-hover:to-teal-100/95 group-hover:text-emerald-600
+                                  dark:border-emerald-500/20 dark:from-emerald-400/10 dark:to-teal-400/10 dark:text-emerald-400
+                                  dark:group-hover:border-emerald-500/30 dark:group-hover:from-emerald-400/20 dark:group-hover:to-teal-400/20 dark:group-hover:text-emerald-300
+                                  lg:hidden
+                                "
+                                aria-hidden
+                                whileHover={reduceMotion ? undefined : { x: 5, scale: 1.08 }}
+                                transition={{
+                                  type: "spring",
+                                  stiffness: 350,
+                                  damping: 20,
+                                }}
+                              >
+                                <ArrowRight
+                                  size={16}
+                                  strokeWidth={2}
+                                  className="transition-colors duration-200"
+                                />
+                              </motion.span>
+                            </motion.button>
+                          </div>
                         </motion.li>
                       );
                     })}
                   </motion.ul>
 
+                  {/* Mobile-only footer */}
                   <motion.div
-                    className="shrink-0 border-t border-[var(--border)] bg-[color:color-mix(in_srgb,var(--card)_96%,var(--primary)_4%)] px-4 py-3 dark:bg-[color:color-mix(in_srgb,var(--card)_92%,var(--primary)_5%)] md:px-5 md:py-4"
+                    className="shrink-0 border-t border-[var(--border)] bg-[color:color-mix(in_srgb,var(--card)_96%,var(--primary)_4%)] px-4 py-3 dark:bg-[color:color-mix(in_srgb,var(--card)_92%,var(--primary)_5%)] lg:hidden"
                     initial={reduceMotion ? {} : { opacity: 0 }}
                     animate={{ opacity: 1 }}
                     transition={{
@@ -573,18 +610,34 @@ export default function MemberDropdownMenu({
                       delay: reduceMotion ? 0 : 0.28,
                     }}
                   >
-                    <p className="text-center text-[11px] leading-relaxed text-[var(--muted)] md:text-xs">
+                    <p className="text-center text-[11px] leading-relaxed text-[var(--muted)]">
                       Most areas are available only to{" "}
-                      <span className="font-semibold text-[var(--foreground)]">
-                        Pro
-                      </span>{" "}
+                      <span className="font-semibold text-[var(--foreground)]">Pro</span>{" "}
                       and{" "}
-                      <span className="font-semibold text-[var(--foreground)]">
-                        Pro+
-                      </span>{" "}
-                      members. Be part of our family and unlock the whole world
-                      of NextNews.
+                      <span className="font-semibold text-[var(--foreground)]">Pro+</span>{" "}
+                      members. Be part of our family and unlock the whole world of NextNews.
                     </p>
+                  </motion.div>
+
+                  {/* Desktop-only pro access strip */}
+                  <motion.div
+                    className="hidden lg:flex shrink-0 items-center justify-between gap-4 border-t border-[color:color-mix(in_srgb,var(--foreground)_8%,transparent)] px-5 py-3"
+                    initial={reduceMotion ? {} : { opacity: 0, y: 4 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{
+                      duration: reduceMotion ? 0 : 0.3,
+                      delay: reduceMotion ? 0 : 0.22,
+                      ease: [0.22, 1, 0.36, 1],
+                    }}
+                  >
+                    <p className="text-[11px] leading-relaxed text-[var(--muted)]">
+                      <span className="font-semibold text-[var(--foreground)]">Pro</span> &amp;{" "}
+                      <span className="font-semibold text-[var(--foreground)]">Pro+</span> areas are coming soon — be part of the NextNews family.
+                    </p>
+                    <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-[color:color-mix(in_srgb,var(--foreground)_8%,transparent)] px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.1em] text-[var(--muted)]">
+                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_6px_1px_rgba(52,211,153,0.5)]"/>
+                      Live
+                    </span>
                   </motion.div>
                 </div>
               </motion.div>
