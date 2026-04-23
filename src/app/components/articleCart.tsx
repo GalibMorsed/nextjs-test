@@ -15,6 +15,7 @@ interface Article {
   urlToImage: string | null;
   publishedAt: string;
   content: string | null;
+  status?: string | null;
 }
 
 interface ArticleCardProps {
@@ -22,6 +23,102 @@ interface ArticleCardProps {
   formattedDate: string;
   category?: string;
   showAiSummaryPromo?: boolean;
+}
+
+type PriorityLevel = "high" | "medium" | "low";
+
+const PRIORITY_BADGE_STYLES: Record<PriorityLevel, { className: string }> = {
+  high: { className: "text-red-600" },
+  medium: { className: "text-blue-600" },
+  low: { className: "text-slate-400" },
+};
+
+function getPriorityLevel(
+  status?: string | null,
+  publishedAt?: string | null,
+  title?: string,
+): PriorityLevel {
+  const normalized = status?.toLowerCase().trim();
+
+  if (normalized) {
+    if (["high", "urgent", "critical", "breaking"].includes(normalized)) {
+      return "high";
+    }
+
+    if (["medium", "normal", "moderate"].includes(normalized)) {
+      return "medium";
+    }
+
+    if (["low", "minor"].includes(normalized)) {
+      return "low";
+    }
+  }
+
+  if (publishedAt) {
+    const parsed = new Date(publishedAt);
+    if (!Number.isNaN(parsed.getTime())) {
+      const hoursSince = (Date.now() - parsed.getTime()) / 36e5;
+      if (hoursSince <= 32) return "high";
+      if (hoursSince <= 64) return "medium";
+    }
+  }
+
+  if (title) {
+    let hash = 0;
+    for (let i = 0; i < title.length; i++) {
+      hash = title.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    const mod = Math.abs(hash) % 100;
+    if (mod < 20) return "high";
+    if (mod < 50) return "medium";
+  }
+
+  return "low";
+}
+
+function PriorityBadge({
+  status,
+  publishedAt,
+  title,
+}: {
+  status?: string | null;
+  publishedAt?: string | null;
+  title?: string;
+}) {
+  const level = getPriorityLevel(status, publishedAt, title);
+  const { className } = PRIORITY_BADGE_STYLES[level];
+
+  return (
+    <div className="absolute right-3 top-3 z-10">
+      <svg
+        viewBox="0 0 24 28"
+        role="img"
+        aria-label={`${level} priority`}
+        className={`h-7 w-7 drop-shadow-[0_2px_4px_rgba(0,0,0,0.12)] ${className}`}
+      >
+        <g transform="translate(0 -2)">
+          <path
+            d="M12 3.2L13.9 5.6L16.9 5.2L17.8 8.1L20.6 9.1L20.2 12.1L22.6 13.9L20.2 15.7L20.6 18.7L17.8 19.7L16.9 22.6L13.9 22.2L12 24.8L10.1 22.2L7.1 22.6L6.2 19.7L3.4 18.7L3.8 15.7L1.4 13.9L3.8 12.1L3.4 9.1L6.2 8.1L7.1 5.2L10.1 5.6Z"
+            fill="currentColor"
+          />
+          <circle
+            cx="12"
+            cy="12"
+            r="4.6"
+            fill="white"
+          />
+        </g>
+        <path
+          d="M7 16.2L4.4 23.8L8 22.9L9.6 26.2L12 19.9"
+          fill="currentColor"
+        />
+        <path
+          d="M17 16.2L19.6 23.8L16 22.9L14.4 26.2L12 19.9"
+          fill="currentColor"
+        />
+      </svg>
+    </div>
+  );
 }
 
 export default function ArticleCard({
@@ -41,6 +138,11 @@ export default function ArticleCard({
             e.currentTarget.src = "/news1.jpg";
           }}
           className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+        />
+        <PriorityBadge
+          status={article.status}
+          publishedAt={article.publishedAt}
+          title={article.title}
         />
         <div className="absolute top-3 left-3">
           <span className="inline-block bg-black/70 backdrop-blur-md text-white text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wide">

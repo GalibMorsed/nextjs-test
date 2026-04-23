@@ -483,7 +483,7 @@ export default function PlansPage() {
           </div>
           <div className="flex flex-col items-center justify-between gap-4 border-t border-slate-800 pt-8 md:flex-row md:items-center">
             <p className="order-2 text-center text-sm text-slate-300 md:order-1 md:text-left">
-              © 2026 NextNews. All rights reserved.
+              © 2026 NextNews.co.in All rights reserved.
             </p>
             <div className="order-1 w-full max-w-md md:order-2">
               {subscribed ? (

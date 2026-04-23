@@ -20,6 +20,7 @@ import {
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isDesktopCollapsed, setIsDesktopCollapsed] = useState(false);
   const [appearance, setAppearance] = useState<AppearanceSettings>(() =>
     readAppearanceSettings(),
   );
@@ -72,8 +73,10 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         <Sidebar
           isMobileOpen={isSidebarOpen}
           onCloseMobile={() => setIsSidebarOpen(false)}
+          isDesktopCollapsed={isDesktopCollapsed}
+          onToggleDesktop={() => setIsDesktopCollapsed((prev) => !prev)}
         />
-        <main className="min-w-0 flex-1 overflow-x-hidden md:ml-72">
+        <main className={`min-w-0 flex-1 overflow-x-hidden transition-[margin] duration-300 ${isDesktopCollapsed ? "md:ml-20" : "md:ml-72"}`}>
           <Template>{children}</Template>
         </main>
       </div>

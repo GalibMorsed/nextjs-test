@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useRef } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import {
@@ -14,6 +14,8 @@ import {
   StickyNote,
   UserPlus,
   X,
+  PanelLeftClose,
+  PanelLeftOpen,
 } from "lucide-react";
 import { DynamicIcon, type IconName } from "lucide-react/dynamic";
 import { supabase } from "../../../lib/superbaseClient";
@@ -30,6 +32,8 @@ import {
 interface SidebarProps {
   isMobileOpen: boolean;
   onCloseMobile: () => void;
+  isDesktopCollapsed?: boolean;
+  onToggleDesktop?: () => void;
 }
 
 type CategoryNavItem = {
@@ -202,7 +206,7 @@ const DEFAULT_TOPIC_SELECTION = [
 
 const SIDEBAR_SEARCH_EVENT = "sidebar-search";
 
-export default function Sidebar({ isMobileOpen, onCloseMobile }: SidebarProps) {
+export default function Sidebar({ isMobileOpen, onCloseMobile, isDesktopCollapsed, onToggleDesktop }: SidebarProps) {
   const [query, setQuery] = useState("");
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [userEmail, setUserEmail] = useState("");
@@ -334,33 +338,43 @@ export default function Sidebar({ isMobileOpen, onCloseMobile }: SidebarProps) {
     };
   }, [runSearch]);
 
-  const navItemClass = (active: boolean) =>
-    `group flex items-center gap-3 px-4 py-2 rounded-xl transition text-sm font-medium ${
-      active
-        ? "bg-[var(--card)] text-[var(--primary)] border border-[var(--primary)]"
-        : "text-gray-700 hover:bg-gray-100 hover:text-[var(--primary)]"
-    }`;
-
-  const content = (
+  const desktopContent = (
     <SidebarContent
       query={query}
       setQuery={setQuery}
       handleSearch={handleSearch}
       pathname={pathname}
-      navItemClass={navItemClass}
       onCloseMobile={onCloseMobile}
       isAuthenticated={isAuthenticated}
       userEmail={userEmail}
       selectedTopics={selectedTopics}
       isPersonalizationLoaded={isPersonalizationLoaded}
       router={router}
+      isDesktopCollapsed={isDesktopCollapsed}
+      onToggleDesktop={onToggleDesktop}
+    />
+  );
+
+  const mobileContent = (
+    <SidebarContent
+      query={query}
+      setQuery={setQuery}
+      handleSearch={handleSearch}
+      pathname={pathname}
+      onCloseMobile={onCloseMobile}
+      isAuthenticated={isAuthenticated}
+      userEmail={userEmail}
+      selectedTopics={selectedTopics}
+      isPersonalizationLoaded={isPersonalizationLoaded}
+      router={router}
+      isDesktopCollapsed={false}
     />
   );
 
   return (
     <>
-      <aside className="hidden md:flex fixed left-0 top-[65px] h-[calc(100vh-65px)] w-72 bg-white/95 backdrop-blur border-r border-slate-200/80 shadow-sm flex-col dark:bg-slate-900/95 dark:border-slate-700/80">
-        {content}
+      <aside className={`hidden md:flex fixed left-0 top-[65px] h-[calc(100vh-65px)] ${isDesktopCollapsed ? "w-20" : "w-72"} transition-[width] duration-300 bg-white/95 backdrop-blur border-r border-slate-200/80 shadow-sm flex-col dark:bg-slate-900/95 dark:border-slate-700/80`}>
+        {desktopContent}
       </aside>
 
       <AnimatePresence>
@@ -382,7 +396,7 @@ export default function Sidebar({ isMobileOpen, onCloseMobile }: SidebarProps) {
               className="fixed inset-y-0 left-0 z-50 w-72 bg-white shadow-xl md:hidden flex flex-col"
               style={{ backgroundColor: "var(--card)" }}
             >
-              {content}
+              {mobileContent}
             </motion.aside>
           </>
         )}
@@ -396,28 +410,47 @@ function SidebarContent({
   setQuery,
   handleSearch,
   pathname,
-  navItemClass,
   onCloseMobile,
   isAuthenticated,
   userEmail,
   selectedTopics,
   isPersonalizationLoaded,
   router,
+  isDesktopCollapsed,
+  onToggleDesktop,
 }: {
   query: string;
   setQuery: React.Dispatch<React.SetStateAction<string>>;
   handleSearch: (e: React.FormEvent) => void;
   pathname: string;
-  navItemClass: (active: boolean) => string;
   onCloseMobile: () => void;
   isAuthenticated: boolean;
   userEmail: string;
   selectedTopics: string[];
   isPersonalizationLoaded: boolean;
   router: ReturnType<typeof useRouter>;
+  isDesktopCollapsed?: boolean;
+  onToggleDesktop?: () => void;
 }) {
   const closeAndNavigate = () => onCloseMobile();
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
+  const handleSearchClick = () => {
+    if (isDesktopCollapsed && onToggleDesktop) {
+      onToggleDesktop();
+    }
+    setTimeout(() => {
+      searchInputRef.current?.focus();
+    }, 150);
+  };
+  const navItemClass = (active: boolean) =>
+    `group flex items-center ${isDesktopCollapsed ? "justify-center px-0 w-12 h-12 mx-auto" : "gap-3 px-4 py-2"} rounded-xl transition text-sm font-medium ${
+      active
+        ? "bg-[var(--card)] text-[var(--primary)] border border-[var(--primary)]"
+        : "text-gray-700 hover:bg-gray-100 hover:text-[var(--primary)] dark:text-slate-300 dark:hover:bg-slate-800"
+    }`;
+
   const selectedTopicLabels = selectedTopics
     .map((topic) => sanitizePersonalizationTopic(topic))
     .filter(Boolean);
@@ -477,52 +510,79 @@ function SidebarContent({
 
   return (
     <>
-      <div className="p-6 flex-1 overflow-y-auto">
-        <motion.h2
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          whileHover={{ scale: 1.05 }}
-          transition={{ type: "spring", stiffness: 300 }}
-          className="text-3xl font-black mb-6 bg-gradient-to-r from-blue-600 via-purple-500 to-indigo-600 bg-clip-text text-transparent cursor-default"
-        >
-          DailyScoop
-        </motion.h2>
+      <div className={`flex-1 overflow-y-auto ${isDesktopCollapsed ? "p-3 overflow-x-hidden" : "p-6"}`}>
+        <div className={`flex items-center ${isDesktopCollapsed ? "justify-center" : "justify-between"} mb-6`}>
+          <motion.h2
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            whileHover={{ scale: 1.05 }}
+            transition={{ type: "spring", stiffness: 300 }}
+            className={`text-3xl font-black bg-gradient-to-r from-blue-600 via-purple-500 to-indigo-600 bg-clip-text text-transparent cursor-default overflow-hidden whitespace-nowrap transition-all duration-300 ${isDesktopCollapsed ? "max-w-0 opacity-0" : "max-w-[200px] opacity-100"}`}
+          >
+            DailyScoop
+          </motion.h2>
+          <button 
+            onClick={onToggleDesktop} 
+            className="hidden md:flex p-2 rounded-xl text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+            title={isDesktopCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
+          >
+            {isDesktopCollapsed ? <PanelLeftOpen size={20} /> : <PanelLeftClose size={20} />}
+          </button>
+        </div>
 
-        <form onSubmit={handleSearch} className="mb-6 relative">
-          <Search
-            className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-slate-300"
-            size={18}
-          />
-          <input
-            type="text"
-            placeholder="Search news..."
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            className="w-full rounded-xl border border-gray-200 bg-gray-100 py-2 pl-10 pr-10 text-sm text-gray-800 placeholder:text-gray-500 transition-all focus:outline-none focus:ring-2 focus:ring-[var(--primary)] dark:border-slate-500 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-300 dark:focus:border-[var(--primary)] dark:focus:bg-slate-700"
-          />
-          {query && (
+        <div className="relative mb-6">
+          <div className={`flex justify-center transition-all duration-300 ${isDesktopCollapsed ? "max-h-12 opacity-100" : "max-h-0 opacity-0 overflow-hidden"}`}>
             <button
-              type="button"
-              onClick={() => setQuery("")}
-              className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-1 text-gray-400 transition-colors hover:bg-slate-200 hover:text-slate-600 dark:text-slate-300 dark:hover:bg-slate-700 dark:hover:text-white"
+              onClick={handleSearchClick}
+              className="flex items-center justify-center w-12 h-12 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500"
+              title="Search"
             >
-              <X size={14} />
+              <Search size={18} />
             </button>
-          )}
-        </form>
+          </div>
+
+          <div className={`overflow-hidden transition-all duration-300 ${isDesktopCollapsed ? "max-h-0 opacity-0" : "max-h-20 opacity-100"}`}>
+            <form onSubmit={handleSearch} className="relative">
+              <Search
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-slate-300"
+                size={18}
+              />
+              <input
+                ref={searchInputRef}
+                type="text"
+                placeholder="Search news..."
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                className="w-full rounded-xl border border-gray-200 bg-gray-100 py-2 pl-10 pr-10 text-sm text-gray-800 placeholder:text-gray-500 transition-all duration-300 focus:outline-none focus:border-[var(--primary)] focus:ring-[3px] focus:ring-[var(--primary)]/20 focus:shadow-[0_0_12px_var(--primary)] dark:border-slate-500 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-300 dark:focus:border-[var(--primary)] dark:focus:ring-[var(--primary)]/20 dark:focus:bg-slate-700"
+              />
+              {query && (
+                <button
+                  type="button"
+                  onClick={() => setQuery("")}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-1 text-gray-400 transition-colors hover:bg-slate-200 hover:text-slate-600 dark:text-slate-300 dark:hover:bg-slate-700 dark:hover:text-white"
+                >
+                  <X size={14} />
+                </button>
+              )}
+            </form>
+          </div>
+        </div>
 
         <nav className="space-y-2">
           <Link
             href="/live-news"
             className={navItemClass(pathname.startsWith("/live-news"))}
             onClick={closeAndNavigate}
+            title={isDesktopCollapsed ? "Live News Streaming" : undefined}
           >
             <SidebarIcon
               name="radio"
               size={18}
-              className="transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6"
+              className="transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6 shrink-0"
             />
-            Live News Streaming
+            <span className={`overflow-hidden whitespace-nowrap transition-all duration-300 ${isDesktopCollapsed ? "max-w-0 opacity-0" : "max-w-[200px] opacity-100"}`}>
+              Live News Streaming
+            </span>
           </Link>
           {visibleNavigationItems.map((item) => {
             const isActive =
@@ -536,23 +596,28 @@ function SidebarContent({
                 href={item.href}
                 className={navItemClass(isActive)}
                 onClick={closeAndNavigate}
+                title={isDesktopCollapsed ? item.topic : undefined}
               >
                 <SidebarIcon
                   name={item.iconName}
                   size={18}
-                  className="transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6"
+                  className="transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6 shrink-0"
                 />
-                {item.topic}
+                <span className={`overflow-hidden whitespace-nowrap transition-all duration-300 ${isDesktopCollapsed ? "max-w-0 opacity-0" : "max-w-[200px] opacity-100"}`}>
+                  {item.topic}
+                </span>
               </Link>
             );
           })}
-          {isAuthenticated &&
-            isPersonalizationLoaded &&
-            visibleNavigationItems.length === 0 && (
-              <p className="px-4 py-2 text-xs text-slate-500">
-                No topics selected. Add topics in Personalization.
-              </p>
-            )}
+          <div className={`overflow-hidden transition-all duration-300 ${isDesktopCollapsed ? "max-h-0 opacity-0" : "max-h-20 opacity-100"}`}>
+            {isAuthenticated &&
+              isPersonalizationLoaded &&
+              visibleNavigationItems.length === 0 && (
+                <p className="px-4 py-2 text-xs text-slate-500">
+                  No topics selected. Add topics in Personalization.
+                </p>
+              )}
+          </div>
           {isAuthenticated && (
             <div className="relative md:hidden my-2">
               {/* Animated border */}
@@ -588,69 +653,97 @@ function SidebarContent({
         </nav>
 
         {/* Collapsible Sections */}
-        {isAuthenticated && (
-          <CollapsibleSection title="Extra Options">
+        <div className={`overflow-hidden transition-all duration-300 ${isDesktopCollapsed ? "max-h-0 opacity-0" : "max-h-[500px] opacity-100"}`}>
+          {isAuthenticated && (
+          <CollapsibleSection title="Extra Options" isDesktopCollapsed={isDesktopCollapsed}>
             <Link
               href="/personalization"
-              className="inline-flex items-center gap-2 px-4 py-1 text-sm text-slate-600 hover:text-[var(--primary)] cursor-pointer transition-colors"
+              className={`inline-flex items-center ${isDesktopCollapsed ? "justify-center w-12 h-12 mx-auto" : "gap-2 px-4 py-1"} text-sm text-slate-600 hover:text-[var(--primary)] cursor-pointer transition-colors rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800`}
               onClick={closeAndNavigate}
+              title={isDesktopCollapsed ? "Personalization" : undefined}
             >
-              <SlidersHorizontal size={14} />
-              Personalization
+              <SlidersHorizontal className="shrink-0" size={isDesktopCollapsed ? 18 : 14} />
+              <span className={`overflow-hidden whitespace-nowrap transition-all duration-300 ${isDesktopCollapsed ? "max-w-0 opacity-0" : "max-w-[200px] opacity-100"}`}>
+                Personalization
+              </span>
             </Link>
             <Link
               href="/appearance"
-              className="inline-flex items-center gap-2 px-4 py-1 text-sm text-slate-600 hover:text-[var(--primary)] cursor-pointer transition-colors"
+              className={`inline-flex items-center ${isDesktopCollapsed ? "justify-center w-12 h-12 mx-auto" : "gap-2 px-4 py-1"} text-sm text-slate-600 hover:text-[var(--primary)] cursor-pointer transition-colors rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800`}
               onClick={closeAndNavigate}
+              title={isDesktopCollapsed ? "Appearance" : undefined}
             >
-              <SidebarIcon name="palette" size={14} />
-              Appearance
+              <SidebarIcon className="shrink-0" name="palette" size={isDesktopCollapsed ? 18 : 14} />
+              <span className={`overflow-hidden whitespace-nowrap transition-all duration-300 ${isDesktopCollapsed ? "max-w-0 opacity-0" : "max-w-[200px] opacity-100"}`}>
+                Appearance
+              </span>
             </Link>
             <Link
               href="/plans"
-              className="inline-flex items-center gap-2 px-4 py-1 text-sm text-slate-600 hover:text-indigo-600 cursor-pointer transition-colors dark:text-slate-400 dark:hover:text-indigo-400"
+              className={`inline-flex items-center ${isDesktopCollapsed ? "justify-center w-12 h-12 mx-auto" : "gap-2 px-4 py-1"} text-sm text-slate-600 hover:text-indigo-600 cursor-pointer transition-colors rounded-xl hover:bg-slate-100 dark:text-slate-400 dark:hover:text-indigo-400 dark:hover:bg-slate-800`}
               onClick={closeAndNavigate}
+              title={isDesktopCollapsed ? "Subscriptions" : undefined}
             >
-              <SidebarIcon name="gem" size={14} />
-              Subscriptions
+              <SidebarIcon className="shrink-0" name="gem" size={isDesktopCollapsed ? 18 : 14} />
+              <span className={`overflow-hidden whitespace-nowrap transition-all duration-300 ${isDesktopCollapsed ? "max-w-0 opacity-0" : "max-w-[200px] opacity-100"}`}>
+                Subscriptions
+              </span>
             </Link>
           </CollapsibleSection>
         )}
 
-        <CollapsibleSection title="More Info">
+        <CollapsibleSection title="More Info" isDesktopCollapsed={isDesktopCollapsed}>
           <Link
             href="/about"
-            className="inline-flex items-center gap-2 px-4 py-1 text-sm text-slate-600 transition-colors hover:text-[var(--primary)]"
+            className={`inline-flex items-center ${isDesktopCollapsed ? "justify-center w-12 h-12 mx-auto" : "gap-2 px-4 py-1"} text-sm text-slate-600 transition-colors hover:text-[var(--primary)] rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800`}
             onClick={closeAndNavigate}
+            title={isDesktopCollapsed ? "About NextNews" : undefined}
           >
-            <SidebarIcon name="info" size={14} />
-            About NextNews
+            <SidebarIcon className="shrink-0" name="info" size={isDesktopCollapsed ? 18 : 14} />
+            <span className={`overflow-hidden whitespace-nowrap transition-all duration-300 ${isDesktopCollapsed ? "max-w-0 opacity-0" : "max-w-[200px] opacity-100"}`}>
+              About NextNews
+            </span>
           </Link>
           <Link
             href="/support"
-            className="inline-flex items-center gap-2 px-4 py-1 text-sm text-slate-600 hover:text-[var(--primary)] cursor-pointer transition-colors"
+            className={`inline-flex items-center ${isDesktopCollapsed ? "justify-center w-12 h-12 mx-auto" : "gap-2 px-4 py-1"} text-sm text-slate-600 hover:text-[var(--primary)] cursor-pointer transition-colors rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800`}
             onClick={closeAndNavigate}
+            title={isDesktopCollapsed ? "Contact Support" : undefined}
           >
-            <LifeBuoy size={14} />
-            Contact Support
+            <LifeBuoy className="shrink-0" size={isDesktopCollapsed ? 18 : 14} />
+            <span className={`overflow-hidden whitespace-nowrap transition-all duration-300 ${isDesktopCollapsed ? "max-w-0 opacity-0" : "max-w-[200px] opacity-100"}`}>
+              Contact Support
+            </span>
           </Link>
           <Link
             href="/privacy-policy"
-            className="inline-flex items-center gap-2 px-4 py-1 text-sm text-slate-600 hover:text-[var(--primary)] cursor-pointer transition-colors"
+            className={`inline-flex items-center ${isDesktopCollapsed ? "justify-center w-12 h-12 mx-auto" : "gap-2 px-4 py-1"} text-sm text-slate-600 hover:text-[var(--primary)] cursor-pointer transition-colors rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800`}
             onClick={closeAndNavigate}
+            title={isDesktopCollapsed ? "Privacy Policy" : undefined}
           >
-            <SidebarIcon name="shield" size={14} />
-            Privacy Policy
+            <SidebarIcon className="shrink-0" name="shield" size={isDesktopCollapsed ? 18 : 14} />
+            <span className={`overflow-hidden whitespace-nowrap transition-all duration-300 ${isDesktopCollapsed ? "max-w-0 opacity-0" : "max-w-[200px] opacity-100"}`}>
+              Privacy Policy
+            </span>
           </Link>
         </CollapsibleSection>
+        </div>
       </div>
 
-      <div className="p-4 border-t border-[var(--border)]">
+      <div className={`p-4 border-t border-[var(--border)] ${isDesktopCollapsed ? "flex justify-center p-3" : ""}`}>
         {isAuthenticated ? (
-          <div className="relative">
+          <div className={`relative ${isDesktopCollapsed ? "" : "w-full"}`}>
             <button
-              onClick={() => setUserMenuOpen(!userMenuOpen)}
-              className="flex items-center gap-3 w-full px-2 py-2 rounded-xl hover:bg-slate-50 transition-colors text-left focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--primary)]"
+              onClick={() => {
+                if (isDesktopCollapsed) {
+                  onToggleDesktop?.();
+                  setUserMenuOpen(true);
+                } else {
+                  setUserMenuOpen(!userMenuOpen);
+                }
+              }}
+              className={`flex items-center ${isDesktopCollapsed ? "justify-center" : "gap-3 px-2 w-full"} py-2 rounded-xl hover:bg-slate-50 transition-colors text-left focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--primary)] dark:hover:bg-slate-800`}
+              title={isDesktopCollapsed ? `Signed in as ${userEmail}` : undefined}
             >
               <img
                 src={
@@ -661,22 +754,24 @@ function SidebarContent({
                 alt="User Avatar"
                 width={36}
                 height={36}
-                className="w-9 h-9 rounded-full border-2 border-slate-200"
+                className="w-9 h-9 rounded-full border-2 border-slate-200 shrink-0"
               />
-              <div className="flex-1 min-w-0">
-                <span className="font-medium text-sm text-slate-700 block truncate">
-                  {userEmail}
-                </span>
+              <div className={`flex items-center overflow-hidden transition-all duration-300 ${isDesktopCollapsed ? "max-w-0 opacity-0" : "max-w-[200px] opacity-100 flex-1 min-w-0"}`}>
+                <div className="flex-1 min-w-0">
+                  <span className="font-medium text-sm text-slate-700 block truncate dark:text-slate-200">
+                    {userEmail}
+                  </span>
+                </div>
+                <ChevronDown
+                  size={16}
+                  className={`text-slate-500 transition-transform duration-200 ${
+                    userMenuOpen ? "rotate-180" : ""
+                  }`}
+                />
               </div>
-              <ChevronDown
-                size={16}
-                className={`text-slate-500 transition-transform duration-200 ${
-                  userMenuOpen ? "rotate-180" : ""
-                }`}
-              />
             </button>
 
-            {userMenuOpen && (
+            {userMenuOpen && !isDesktopCollapsed && (
               <div className="absolute bottom-full left-0 mb-2 w-full rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 py-1 z-50">
                 <div className="px-4 py-2 text-sm text-slate-500 border-b">
                   Signed in as <br />
@@ -706,10 +801,11 @@ function SidebarContent({
           <Link
             href="/auth/register"
             onClick={closeAndNavigate}
-            className="flex w-full items-center justify-center gap-2 rounded-xl border border-[var(--primary)] bg-transparent px-4 py-2 text-sm font-medium text-[var(--primary)] transition-colors hover:bg-[var(--primary)]/10"
+            className={`flex w-full items-center justify-center ${isDesktopCollapsed ? "px-0" : "gap-2 px-4"} rounded-xl border border-[var(--primary)] bg-transparent py-2 text-sm font-medium text-[var(--primary)] transition-colors hover:bg-[var(--primary)]/10`}
+            title={isDesktopCollapsed ? "Create Account" : undefined}
           >
-            <UserPlus size={16} />
-            <span>Create Account</span>
+            <UserPlus size={isDesktopCollapsed ? 20 : 16} />
+            {!isDesktopCollapsed && <span>Create Account</span>}
           </Link>
         )}
       </div>
@@ -720,33 +816,37 @@ function SidebarContent({
 function CollapsibleSection({
   title,
   children,
+  isDesktopCollapsed,
 }: {
   title: string;
   children: React.ReactNode;
+  isDesktopCollapsed?: boolean;
 }) {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
     <div className="mt-2">
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center justify-between w-full px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 rounded-xl transition"
-      >
-        {title}
-        <ChevronDown
-          size={16}
-          className={`transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
-        />
-      </button>
+      <div className={`overflow-hidden transition-all duration-300 ${isDesktopCollapsed ? "max-h-0 opacity-0" : "max-h-12 opacity-100"}`}>
+        <button
+          onClick={() => setIsOpen(!isOpen)}
+          className="flex items-center justify-between w-full px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 rounded-xl transition"
+        >
+          <span className="whitespace-nowrap">{title}</span>
+          <ChevronDown
+            size={16}
+            className={`transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
+          />
+        </button>
+      </div>
       <AnimatePresence>
-        {isOpen && (
+        {(isOpen || isDesktopCollapsed) && (
           <motion.div
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
             className="overflow-hidden"
           >
-            <div className="py-1 space-y-1">{children}</div>
+            <div className={`space-y-1 ${isDesktopCollapsed ? "py-1" : "py-1"}`}>{children}</div>
           </motion.div>
         )}
       </AnimatePresence>
