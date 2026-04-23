@@ -374,14 +374,6 @@ export default function PersonalizationPage() {
                 reading experience.💪🏼
               </p>
             </div>
-            <div className="rounded-2xl border border-slate-200/80 bg-slate-50/80 px-4 py-3 dark:border-slate-700/80 dark:bg-slate-800/70 lg:shrink-0 lg:text-right">
-              <p className="text-xs text-slate-500 dark:text-slate-400">
-                Logged in as
-              </p>
-              <p className="font-medium text-slate-700 dark:text-slate-200">
-                {userEmail || "Guest"}
-              </p>
-            </div>
           </div>
         </motion.section>
 

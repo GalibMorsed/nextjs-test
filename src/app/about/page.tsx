@@ -24,7 +24,11 @@ import {
   Mail,
   X,
   ExternalLink,
+  ShieldCheck,
+  Scale,
 } from "lucide-react";
+import { FAQSection } from "./components/QandA";
+import LottiePlayer from "../components/LottiePlayer";
 import { AnimatePresence, motion } from "framer-motion";
 
 const desktopVariants = {
@@ -449,7 +453,7 @@ export default function AboutPage() {
                 {[
                   {
                     name: "Galib Morsed",
-                    role: "Lead Developer",
+                    role: "Lead Engineer, Founder",
                     img: "/about/galib.jpg",
                     socials: [
                       {
@@ -476,7 +480,7 @@ export default function AboutPage() {
                   },
                   {
                     name: "Jitesh Roy",
-                    role: "Product Manager",
+                    role: "DevOps Engineer, Co-Founder",
                     img: "/about/jitesh.jpg",
                     socials: [
                       {
@@ -584,105 +588,155 @@ export default function AboutPage() {
         </div>
       </section>
 
-      {/* 7. BLOG */}
-      <section className="py-24 bg-slate-50 border-t border-slate-100 dark:bg-slate-900/50 dark:border-slate-800">
+      {/* 7. WHAT SETS US APART */}
+      <section className="py-24 bg-slate-50 border-y border-slate-200/80 dark:bg-slate-900/50 dark:border-slate-700/60">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col md:flex-row justify-between items-end mb-16 gap-6">
-            <div>
-              <div className="inline-flex items-center gap-2 px-3 py-1 text-sm font-medium text-blue-600 bg-blue-100 rounded-full mb-6 dark:bg-blue-900/30 dark:text-blue-400">
-                <Globe size={16} />
-                <span>Blog</span>
-              </div>
-              <h2 className="text-3xl md:text-5xl font-bold text-slate-900 dark:text-white max-w-lg mb-4">
-                From Pixels to Personality: Our AI Blog
-              </h2>
-              <p className="text-slate-500 dark:text-slate-400">
-                Tips, tricks & latest updates from the world of avatars & AI
-                art.
-              </p>
+          <div className="flex flex-col items-center text-center mb-16 sm:mb-20">
+            <div className="inline-flex items-center gap-2 px-3 py-1 text-sm font-medium text-blue-700 bg-blue-100 rounded-full mb-6 dark:bg-blue-900/30 dark:text-blue-400">
+              <Star size={16} />
+              <span>Features</span>
             </div>
-            <button className="px-6 py-3 font-semibold text-white bg-blue-600 rounded-full hover:bg-blue-700 transition-colors mx-auto md:mx-0">
-              Read Blog
-            </button>
+            <h2 className="text-[36px] leading-tight font-bold text-slate-900 dark:text-white mb-4 sm:mb-6 max-w-2xl mx-auto">
+              What sets us apart
+            </h2>
+            <p className="text-[16px] text-slate-500 dark:text-slate-400 max-w-2xl mx-auto leading-relaxed">
+              Explore the core strengths that make NextNews a faster, smarter,
+              and more balanced way to stay informed every day.
+            </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {[
-              {
-                title: "Top 10 Avatar Styles to Unlock in 2025",
-                date: "Oct 12, 2025",
-                img: "/news1.jpg",
-              },
-              {
-                title: "How to Make Your Profile Stand Out Online",
-                date: "Oct 28, 2025",
-                img: "/payment.jpeg",
-              },
-              {
-                title: "The Future of Digital Identity & AI Tools",
-                date: "Nov 02, 2025",
-                img: "/news1.jpg",
-              },
-            ].map((blog, i) => (
-              <div key={i} className="group cursor-pointer">
-                <div className="relative aspect-video w-full rounded-2xl overflow-hidden mb-6 shadow-sm border border-slate-200 dark:border-slate-700 group-hover:shadow-md transition-shadow">
-                  <Image
-                    src={blog.img}
-                    alt={blog.title}
-                    fill
-                    className="object-cover transition-transform duration-700 group-hover:scale-105"
-                  />
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Left Column */}
+            <div className="flex flex-col gap-6">
+              <div className="flex-1 group relative rounded-3xl bg-gradient-to-br from-blue-50 to-white dark:from-blue-950/20 dark:to-slate-900/50 p-8 flex flex-col items-start text-left hover:from-blue-100/50 dark:hover:from-blue-900/30 transition-all duration-300 border-2 border-blue-200/60 dark:border-blue-900/40 hover:border-blue-300/80 dark:hover:border-blue-700/60">
+                <div className="mb-5 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-full p-2.5 shadow-lg shadow-blue-500/30 border border-white/30 transition-transform group-hover:scale-110 w-fit">
+                  <ShieldCheck size={20} className="text-white" />
                 </div>
-                <div className="flex items-center gap-3 text-xs text-slate-500 dark:text-slate-400 mb-3 font-medium">
-                  <span className="uppercase text-blue-600 dark:text-blue-400">
-                    NextPro Team
-                  </span>
-                  <span>•</span>
-                  <span>{blog.date}</span>
-                </div>
-                <h4 className="text-xl font-bold text-slate-900 dark:text-white leading-snug group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
-                  {blog.title}
+                <h4 className="text-xl font-bold mb-2 text-slate-900 dark:text-white">
+                  Curated Sources
                 </h4>
+                <p className="text-slate-600 dark:text-slate-400 text-sm leading-relaxed">
+                  We aggregate news from thousands of verified global
+                  publishers, ensuring you only read content you can trust.
+                </p>
               </div>
-            ))}
+              <div className="flex-1 group relative rounded-3xl bg-gradient-to-br from-purple-50 to-white dark:from-purple-950/20 dark:to-slate-900/50 p-8 flex flex-col items-start text-left hover:from-purple-100/50 dark:hover:from-purple-900/30 transition-all duration-300 border-2 border-purple-200/60 dark:border-purple-900/40 hover:border-purple-300/80 dark:hover:border-purple-700/60">
+                <div className="mb-5 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full p-2.5 shadow-lg shadow-purple-500/30 border border-white/30 transition-transform group-hover:scale-110 w-fit">
+                  <Scale size={20} className="text-white" />
+                </div>
+                <h4 className="text-xl font-bold mb-2 text-slate-900 dark:text-white">
+                  Balanced Perspectives
+                </h4>
+                <p className="text-slate-600 dark:text-slate-400 text-sm leading-relaxed">
+                  Avoid echo chambers. Our platform groups related stories to
+                  provide multiple viewpoints on every major issue.
+                </p>
+              </div>
+            </div>
+
+            {/* Center Column */}
+            <div className="flex flex-col">
+              <div className="flex-1 bg-gradient-to-br from-blue-950 to-[#0B0F19] dark:from-slate-900 dark:to-blue-950/60 rounded-[2rem] p-8 sm:p-10 flex flex-col items-center text-center shadow-xl border border-blue-900/50 relative overflow-hidden group">
+                <div className="absolute inset-0 bg-gradient-to-b from-transparent to-[#0B0F19]/80 z-0"></div>
+                <div className="absolute -top-10 left-1/2 h-48 w-48 -translate-x-1/2 rounded-full bg-cyan-500/25 blur-3xl z-0"></div>
+                <div className="absolute -bottom-16 right-8 h-56 w-56 rounded-full bg-blue-500/20 blur-[120px] z-0"></div>
+                <div className="absolute inset-0 bg-white/5 backdrop-blur-2xl z-0"></div>
+
+                <div className="relative w-full flex-1 flex items-center justify-center min-h-[250px] mb-8 z-10">
+                  <div className="absolute inset-0 flex justify-center items-center">
+                    <div className="relative w-48 h-60 rounded-2xl overflow-hidden shadow-2xl ring-1 ring-white/20 z-10 transition-transform duration-700 group-hover:scale-105 group-hover:-rotate-2">
+                      <Image
+                        src="/about/feature.jpg"
+                        alt="Feature preview"
+                        fill
+                        className="object-cover"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="relative z-10 mt-auto">
+                  <h3 className="text-xl font-semibold text-white mb-3">
+                    AI-Powered Insights
+                  </h3>
+                  <p className="text-[15px] text-slate-400 leading-relaxed">
+                    Short on time? Our advanced AI distills complex articles
+                    into quick, digestible insights so you can stay informed
+                    faster.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Right Column */}
+            <div className="flex flex-col gap-6">
+              <div className="flex-1 group relative rounded-3xl bg-gradient-to-br from-indigo-50 to-white dark:from-indigo-950/20 dark:to-slate-900/50 p-8 flex flex-col items-start text-left hover:from-indigo-100/50 dark:hover:from-indigo-900/30 transition-all duration-300 border-2 border-indigo-200/60 dark:border-indigo-900/40 hover:border-indigo-300/80 dark:hover:border-indigo-700/60">
+                <div className="mb-5 bg-gradient-to-br from-indigo-500 to-blue-500 rounded-full p-2.5 shadow-lg shadow-indigo-500/30 border border-white/30 transition-transform group-hover:scale-110 w-fit">
+                  <Wand2 size={20} className="text-white" />
+                </div>
+                <h4 className="text-xl font-bold mb-2 text-slate-900 dark:text-white">
+                  Tailored Experience
+                </h4>
+                <p className="text-slate-600 dark:text-slate-400 text-sm leading-relaxed">
+                  Follow specific topics and regions. Your feed adapts
+                  dynamically to your reading habits over time.
+                </p>
+              </div>
+              <div className="flex-1 group relative rounded-3xl bg-gradient-to-br from-cyan-50 to-white dark:from-cyan-950/20 dark:to-slate-900/50 p-8 flex flex-col items-start text-left hover:from-cyan-100/50 dark:hover:from-cyan-900/30 transition-all duration-300 border-2 border-cyan-200/60 dark:border-cyan-900/40 hover:border-cyan-300/80 dark:hover:border-cyan-700/60">
+                <div className="mb-5 bg-gradient-to-br from-cyan-500 to-teal-500 rounded-full p-2.5 shadow-lg shadow-cyan-500/30 border border-white/30 transition-transform group-hover:scale-110 w-fit">
+                  <Zap size={20} className="text-white" />
+                </div>
+                <h4 className="text-xl font-bold mb-2 text-slate-900 dark:text-white">
+                  Real-time Alerts
+                </h4>
+                <p className="text-slate-600 dark:text-slate-400 text-sm leading-relaxed">
+                  Never miss a beat with instant breaking news alerts and
+                  continuous live coverage of developing events.
+                </p>
+              </div>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* 8. BOTTOM CTA */}
-      <section className="py-24 bg-white dark:bg-[#0B0F19]">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative">
-          <div className="bg-gradient-to-br from-blue-100 via-blue-50 to-cyan-100 dark:from-blue-900/20 dark:via-blue-900/10 dark:to-cyan-900/20 rounded-[40px] px-8 py-20 relative overflow-hidden shadow-inner ring-1 ring-blue-100 dark:ring-white/10">
-            <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-white/40 dark:bg-blue-900/10 blur-[80px] rounded-full mix-blend-overlay pointer-events-none"></div>
+      <FAQSection />
 
-            {/* Floating avatar badges */}
-            <div className="flex justify-center gap-[-10px] mb-12 -space-x-4">
-              {[1, 2, 3, 4, 5].map((idx) => (
-                <div
-                  key={idx}
-                  className={`relative w-16 h-16 rounded-2xl overflow-hidden border-2 border-white dark:border-slate-800 shadow-lg z-10 filter hover:scale-110 transition-transform ${idx % 2 === 0 ? "-translate-y-4" : "translate-y-2"}`}
-                >
-                  <Image
-                    src="/logo1.png"
-                    alt={`Avatar ${idx}`}
-                    fill
-                    className="object-cover"
-                  />
-                </div>
-              ))}
+      {/* 9. BOTTOM CTA */}
+      <section className="py-16 bg-slate-50 dark:bg-[#0d1225] border-t border-slate-100 dark:border-slate-800">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <div className="bg-gradient-to-br from-blue-50 via-white to-cyan-50 dark:from-blue-900/20 dark:via-slate-900/60 dark:to-cyan-900/20 rounded-3xl px-8 py-14 relative overflow-hidden ring-1 ring-blue-100 dark:ring-white/10">
+            {/* Subtle glow */}
+            <div className="absolute inset-0 bg-gradient-to-br from-blue-400/5 to-cyan-400/5 dark:from-blue-500/10 dark:to-cyan-500/10 pointer-events-none rounded-3xl" />
+
+            {/* Logo */}
+            <div className="relative inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-white dark:bg-slate-800 shadow-md ring-1 ring-blue-100 dark:ring-slate-700 mb-6 mx-auto">
+              <Image src="/logo1.png" alt="NextNews" fill className="object-contain p-2" />
             </div>
 
-            <h2 className="text-4xl md:text-5xl font-bold text-slate-900 dark:text-white mb-6">
-              Ready to Create Your AI Avatar?
+            <h2 className="relative text-2xl md:text-3xl font-bold text-slate-900 dark:text-white mb-3 tracking-tight">
+              Stay Informed. Stay Ahead.
             </h2>
-            <p className="text-slate-600 dark:text-slate-400 max-w-xl mx-auto mb-10 text-lg">
-              Join us today to discover a whole new digital identity. Just 1
-              click, free trial included.
+            <p className="relative text-slate-500 dark:text-slate-400 max-w-md mx-auto mb-2 text-[15px] leading-relaxed">
+              NextNews delivers real-time headlines, AI-powered insights, and a personalized feed — all in one place, completely free.
             </p>
 
-            <button className="px-10 py-4 font-bold text-white bg-blue-600 rounded-full hover:bg-blue-700 hover:shadow-lg hover:-translate-y-1 transition-all shadow-blue-600/30 shadow-xl text-lg">
-              Create My Avatar
-            </button>
+            {/* Cool emoji Lottie */}
+            <div className="flex justify-center mb-6">
+              <LottiePlayer
+                src="/about/Cool emoji.json"
+                className="w-20 h-20"
+                loop
+                autoplay
+              />
+            </div>
+
+            <Link
+              href={authState === "logged-in" ? "/" : "/auth/register"}
+              className="relative inline-flex items-center gap-2 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white font-semibold px-8 py-3 rounded-xl transition-all shadow-[0_4px_14px_rgba(37,99,235,0.25)] hover:shadow-[0_6px_20px_rgba(37,99,235,0.35)] hover:-translate-y-0.5 text-sm"
+            >
+              {authState === "logged-in" ? "Start Exploring" : "Be a Member"}
+              <ChevronRight className="w-4 h-4" />
+            </Link>
           </div>
         </div>
       </section>

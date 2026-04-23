@@ -58,8 +58,8 @@ function getPriorityLevel(
     const parsed = new Date(publishedAt);
     if (!Number.isNaN(parsed.getTime())) {
       const hoursSince = (Date.now() - parsed.getTime()) / 36e5;
-      if (hoursSince <= 25) return "high";
-      if (hoursSince <= 52) return "medium";
+      if (hoursSince <= 32) return "high";
+      if (hoursSince <= 64) return "medium";
     }
   }
 
