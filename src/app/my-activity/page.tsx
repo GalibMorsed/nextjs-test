@@ -19,10 +19,7 @@ import {
   type ActivityAnalytics,
 } from "@/lib/activityAnalytics";
 import { getUserNotes, type UserNote } from "../services/notesService";
-import {
-  getUserPersonalization,
-  type UserPersonalization,
-} from "../services/personalizationService";
+import { getUserPersonalization } from "../services/personalizationService";
 import MyActivityAiAnalysts from "./components/MyActivityAiAnalysts";
 import MyActivityCategoryBreakdown from "./components/MyActivityCategoryBreakdown";
 import MyActivityDailyActivity from "./components/MyActivityDailyActivity";
@@ -67,6 +64,7 @@ const startOfLocalDay = (value: string | number | Date) => {
 };
 
 const GOAL_TRACKER_KEY = "GoalTracker";
+const GOAL_TRACKER_EVENT = "goal-tracker-update";
 const LEGACY_GOAL_KEYS = [
   "weekly_goal",
   "weekly_streak",
@@ -77,12 +75,16 @@ type GoalTrackerState = {
   weeklyGoal: number;
   weeklyStreak: number;
   lastStreakUpdate: string;
+  lastGoalCompletedAt: number;
+  lastGoalUpdatedAt: number;
 };
 
 const DEFAULT_GOAL_TRACKER_STATE: GoalTrackerState = {
   weeklyGoal: 5,
   weeklyStreak: 0,
   lastStreakUpdate: "",
+  lastGoalCompletedAt: 0,
+  lastGoalUpdatedAt: 0,
 };
 
 const coerceNumber = (value: unknown, fallback: number) => {
@@ -108,6 +110,14 @@ const normalizeGoalTrackerState = (value: unknown): GoalTrackerState | null => {
     lastStreakUpdate: coerceString(
       record.lastStreakUpdate,
       DEFAULT_GOAL_TRACKER_STATE.lastStreakUpdate,
+    ),
+    lastGoalCompletedAt: coerceNumber(
+      record.lastGoalCompletedAt,
+      DEFAULT_GOAL_TRACKER_STATE.lastGoalCompletedAt,
+    ),
+    lastGoalUpdatedAt: coerceNumber(
+      record.lastGoalUpdatedAt,
+      DEFAULT_GOAL_TRACKER_STATE.lastGoalUpdatedAt,
     ),
   };
 };
@@ -140,11 +150,14 @@ const readLegacyGoalTrackerState = (): GoalTrackerState | null => {
       legacyUpdate,
       DEFAULT_GOAL_TRACKER_STATE.lastStreakUpdate,
     ),
+    lastGoalCompletedAt: DEFAULT_GOAL_TRACKER_STATE.lastGoalCompletedAt,
+    lastGoalUpdatedAt: DEFAULT_GOAL_TRACKER_STATE.lastGoalUpdatedAt,
   };
 };
 
 const writeGoalTrackerState = (state: GoalTrackerState) => {
   localStorage.setItem(GOAL_TRACKER_KEY, JSON.stringify(state));
+  window.dispatchEvent(new Event(GOAL_TRACKER_EVENT));
 };
 
 const readGoalTrackerState = (): GoalTrackerState => {
@@ -169,8 +182,6 @@ export default function MyActivityPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [selectedRange, setSelectedRange] = useState<RangeLabel>("7 days");
   const [notes, setNotes] = useState<UserNote[]>([]);
-  const [personalization, setPersonalization] =
-    useState<UserPersonalization | null>(null);
   const [pageError, setPageError] = useState<string | null>(null);
   const [activityAnalytics, setActivityAnalytics] = useState<ActivityAnalytics>(
     {
@@ -211,7 +222,6 @@ export default function MyActivityPage() {
   useEffect(() => {
     if (!isAuthenticated) {
       setNotes([]);
-      setPersonalization(null);
       setPageError(null);
       setActivityAnalytics({
         aiSummaryCount: 0,
@@ -242,7 +252,6 @@ export default function MyActivityPage() {
             .slice()
             .sort((a, b) => timeOf(b) - timeOf(a)),
         );
-        setPersonalization(personalizationResult.data);
         setActivityAnalytics(readActivityAnalytics());
       } catch (error) {
         if (!mounted) return;
@@ -436,6 +445,8 @@ export default function MyActivityPage() {
   const [weeklyGoal, setWeeklyGoal] = useState<number>(5);
   const [weeklyStreak, setWeeklyStreak] = useState<number>(0);
   const [lastStreakUpdate, setLastStreakUpdate] = useState<string>("");
+  const [lastGoalCompletedAt, setLastGoalCompletedAt] = useState<number>(0);
+  const [lastGoalUpdatedAt, setLastGoalUpdatedAt] = useState<number>(0);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -443,17 +454,25 @@ export default function MyActivityPage() {
     setWeeklyGoal(stored.weeklyGoal);
     setWeeklyStreak(stored.weeklyStreak);
     setLastStreakUpdate(stored.lastStreakUpdate);
+    setLastGoalCompletedAt(stored.lastGoalCompletedAt);
+    setLastGoalUpdatedAt(stored.lastGoalUpdatedAt);
   }, []);
 
   const saveWeeklyGoal = (val: number) => {
     setWeeklyGoal(val);
     if (typeof window === "undefined") return;
+    const updatedAt = Date.now();
+    setLastGoalUpdatedAt(updatedAt);
     writeGoalTrackerState({
       weeklyGoal: val,
       weeklyStreak,
       lastStreakUpdate,
+      lastGoalCompletedAt,
+      lastGoalUpdatedAt: updatedAt,
     });
   };
+
+  const currentReadingStreak = streak.current;
 
   const weeklyProgress = useMemo(() => {
     const now = new Date();
@@ -477,7 +496,7 @@ export default function MyActivityPage() {
     ).length;
     const articles = weekEvents.filter((e) => e.type === "article_open").length;
     const noteCount = weekNotes.length;
-    const readingStreak = streak.current;
+    const readingStreak = currentReadingStreak;
 
     return {
       currentWeekProgress: aiUsage + articles + noteCount + readingStreak,
@@ -486,7 +505,7 @@ export default function MyActivityPage() {
       weekAi: aiUsage,
       readingStreak,
     };
-  }, [activityAnalytics.events, notes, streak.current]);
+  }, [activityAnalytics.events, notes, currentReadingStreak]);
 
   const {
     currentWeekProgress,
@@ -512,19 +531,47 @@ export default function MyActivityPage() {
     );
     const weekKey = `${d.getUTCFullYear()}-W${weekNo}`;
 
-    if (lastStreakUpdate !== weekKey) {
+    const shouldCountNewWeeklyStreak = lastStreakUpdate !== weekKey;
+    const shouldNotifyNewGoalCompletion =
+      lastGoalCompletedAt === 0 || lastGoalUpdatedAt > lastGoalCompletedAt;
+
+    if (shouldCountNewWeeklyStreak || shouldNotifyNewGoalCompletion) {
+      const completedAt = Date.now();
       setWeeklyStreak((prev) => {
-        const next = prev + 1;
-        writeGoalTrackerState({
-          weeklyGoal,
-          weeklyStreak: next,
-          lastStreakUpdate: weekKey,
-        });
-        return next;
+        return shouldCountNewWeeklyStreak ? prev + 1 : prev;
       });
+      setLastGoalCompletedAt(completedAt);
       setLastStreakUpdate(weekKey);
     }
-  }, [currentWeekProgress, weeklyGoal, lastStreakUpdate, isAuthenticated]);
+  }, [
+    currentWeekProgress,
+    weeklyGoal,
+    lastStreakUpdate,
+    isAuthenticated,
+    lastGoalCompletedAt,
+    lastGoalUpdatedAt,
+  ]);
+
+  useEffect(() => {
+    if (!isAuthenticated || !lastStreakUpdate || lastGoalCompletedAt <= 0) {
+      return;
+    }
+
+    writeGoalTrackerState({
+      weeklyGoal,
+      weeklyStreak,
+      lastStreakUpdate,
+      lastGoalCompletedAt,
+      lastGoalUpdatedAt,
+    });
+  }, [
+    isAuthenticated,
+    weeklyGoal,
+    weeklyStreak,
+    lastStreakUpdate,
+    lastGoalCompletedAt,
+    lastGoalUpdatedAt,
+  ]);
 
   const heatmap = useMemo(() => {
     return Array.from({ length: 35 }).map((_, index) => {
