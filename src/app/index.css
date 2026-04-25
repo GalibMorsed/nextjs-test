@@ -54,6 +54,148 @@
   }
 }
 
+@keyframes auth-boot-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes auth-boot-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.55;
+  }
+}
+
+#auth-boot-loader {
+  align-items: center;
+  background: rgba(15, 23, 42, 0.72);
+  backdrop-filter: blur(12px);
+  display: none;
+  inset: 0;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 1.5rem;
+  position: fixed;
+  z-index: 90;
+}
+
+.auth-boot-loading #auth-boot-loader {
+  display: flex;
+}
+
+.auth-boot-card {
+  background: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: 1rem;
+  box-shadow: 0 25px 80px rgba(15, 23, 42, 0.32);
+  max-width: 32rem;
+  overflow: hidden;
+  padding: 2rem;
+  position: relative;
+  text-align: left;
+  width: 100%;
+}
+
+.auth-boot-card::before,
+.auth-boot-card::after {
+  border-radius: 9999px;
+  content: "";
+  filter: blur(36px);
+  height: 9rem;
+  pointer-events: none;
+  position: absolute;
+  width: 9rem;
+}
+
+.auth-boot-card::before {
+  background: rgba(251, 191, 36, 0.42);
+  left: -3rem;
+  top: -3rem;
+}
+
+.auth-boot-card::after {
+  background: rgba(125, 211, 252, 0.52);
+  bottom: -3.5rem;
+  right: -3rem;
+}
+
+.auth-boot-plane,
+.auth-boot-kicker,
+.auth-boot-card h1,
+.auth-boot-card p,
+.auth-boot-progress {
+  position: relative;
+  z-index: 1;
+}
+
+.auth-boot-plane {
+  align-items: center;
+  background: #f0f9ff;
+  border-radius: 1rem;
+  box-shadow: 0 12px 28px rgba(14, 165, 233, 0.18);
+  display: flex;
+  height: 4rem;
+  justify-content: center;
+  margin-bottom: 1rem;
+  width: 4rem;
+}
+
+.auth-boot-plane span {
+  animation: auth-boot-spin 0.9s linear infinite;
+  border: 3px solid #bae6fd;
+  border-top-color: #0284c7;
+  border-radius: 9999px;
+  display: block;
+  height: 2.25rem;
+  width: 2.25rem;
+}
+
+.auth-boot-kicker {
+  color: #0369a1;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  margin: 0 0 0.5rem;
+  text-transform: uppercase;
+}
+
+.auth-boot-card h1 {
+  color: #0f172a;
+  font-size: 1.5rem;
+  font-weight: 800;
+  line-height: 1.2;
+  margin: 0;
+}
+
+.auth-boot-card p:not(.auth-boot-kicker) {
+  color: #475569;
+  font-size: 0.95rem;
+  line-height: 1.6;
+  margin: 0.75rem 0 1.25rem;
+}
+
+.auth-boot-progress {
+  display: grid;
+  gap: 0.6rem;
+}
+
+.auth-boot-progress span {
+  animation: auth-boot-pulse 1.8s ease-in-out infinite;
+  background: #e2e8f0;
+  border-radius: 9999px;
+  display: block;
+  height: 0.75rem;
+}
+
+.auth-boot-progress span:last-child {
+  animation-delay: 160ms;
+  width: 70%;
+}
+
 .animate-fade-up {
   animation: fade-up 0.55s ease-out both;
 }

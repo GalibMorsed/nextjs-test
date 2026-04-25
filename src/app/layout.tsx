@@ -2,12 +2,42 @@ import type { Metadata } from "next";
 import { Plus_Jakarta_Sans } from "next/font/google";
 import "./index.css";
 import AppShell from "./components/appShell";
+import AuthBootLoader from "./auth/register/components/authBootLoader";
 
 const jakartaSans = Plus_Jakarta_Sans({
   subsets: ["latin"],
   variable: "--font-jakarta",
   display: "swap",
 });
+
+const authBootScript = `
+  (function () {
+    try {
+      var url = new URL(window.location.href);
+      var hasAuthQuery =
+        url.searchParams.has("code") ||
+        url.searchParams.has("error") ||
+        url.searchParams.has("error_code") ||
+        url.searchParams.has("error_description");
+      var hash = window.location.hash ? new URLSearchParams(window.location.hash.slice(1)) : null;
+      var hasAuthHash = hash && (
+        hash.has("access_token") ||
+        hash.has("expires_at") ||
+        hash.has("expires_in") ||
+        hash.has("provider_token") ||
+        hash.has("refresh_token") ||
+        hash.has("token_type")
+      );
+      var hasPendingTerms = Boolean(window.localStorage && window.localStorage.getItem("pending_terms_acceptance"));
+
+      if (hasAuthQuery || hasAuthHash || hasPendingTerms) {
+        document.documentElement.classList.add("auth-boot-loading");
+      }
+    } catch (error) {
+      document.documentElement.classList.remove("auth-boot-loading");
+    }
+  })();
+`;
 
 export const metadata: Metadata = {
   title: "NextNews App",
@@ -29,6 +59,8 @@ export default function RootLayout({
         className="min-h-screen font-sans antialiased"
         suppressHydrationWarning
       >
+        <script dangerouslySetInnerHTML={{ __html: authBootScript }} />
+        <AuthBootLoader />
         <AppShell>{children}</AppShell>
       </body>
     </html>

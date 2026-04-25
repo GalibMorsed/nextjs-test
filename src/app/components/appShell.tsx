@@ -6,6 +6,7 @@ import Navbar from "./navbar";
 import Sidebar from "./sidebar";
 import Template from "../template";
 import GoalCompletionBanner from "./GoalCompletionBanner";
+import AuthSessionSync from "../auth/register/components/authSessionSync";
 import {
   APPEARANCE_EVENT,
   applyAppearanceSettings,
@@ -70,6 +71,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <MotionConfig reducedMotion={appearance.reducedMotion ? "always" : "never"}>
+      <AuthSessionSync />
       <GoalCompletionBanner />
       <Navbar
         onMenuToggle={() => setIsSidebarOpen((prev) => !prev)}

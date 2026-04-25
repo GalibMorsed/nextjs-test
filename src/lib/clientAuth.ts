@@ -40,7 +40,8 @@ export function generateClientUuid() {
 export function persistClientSession(emailValue: string, tokenValue: string) {
   localStorage.setItem("auth_email", emailValue);
   localStorage.setItem("auth_token", tokenValue);
-  document.cookie = `auth_token=${encodeURIComponent(tokenValue)}; path=/; max-age=604800; samesite=lax`;
+  const secureFlag = window.location.protocol === "https:" ? "; secure" : "";
+  document.cookie = `auth_token=${encodeURIComponent(tokenValue)}; path=/; max-age=604800; samesite=lax${secureFlag}`;
 }
 
 export function clearClientSession(email?: string | null) {
@@ -92,8 +93,15 @@ export async function getVerifiedAuthUser() {
     }
 
     return { user: data.user, error: null };
-  } catch (err: any) {
-    if (err?.name === "AbortError") {
+  } catch (err: unknown) {
+    const errorName =
+      err instanceof Error
+        ? err.name
+        : typeof err === "object" && err !== null && "name" in err
+          ? String((err as { name?: unknown }).name)
+          : "";
+
+    if (errorName === "AbortError") {
       console.warn("Supabase auth operation timed out (expected behavior).");
     } else {
       console.error("An unexpected error occurred during auth:", err);

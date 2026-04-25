@@ -9,12 +9,10 @@ import {
   upsertTermsPolicyAcceptance,
 } from "@/lib/termsPolicy";
 import { AnimatePresence, motion } from "framer-motion";
-import Image from "next/image";
 import Link from "next/link";
-import {
-  Sparkles,
-  X,
-} from "lucide-react";
+import { Sparkles, X } from "lucide-react";
+import AuthOnboardingStage from "@/app/auth/register/components/authOnboardingStage";
+import LottiePlayer from "@/app/components/LottiePlayer";
 
 type TermsIntent = "email-signup" | "google-signup" | null;
 type PendingTermsAcceptance = {
@@ -34,6 +32,7 @@ export default function RegisterPage() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+  const [authFinalizing, setAuthFinalizing] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [signupCooldownUntil, setSignupCooldownUntil] = useState<number | null>(
     null,
@@ -49,7 +48,8 @@ export default function RegisterPage() {
   const persistSession = (emailValue: string, tokenValue: string) => {
     localStorage.setItem("auth_email", emailValue);
     localStorage.setItem("auth_token", tokenValue);
-    document.cookie = `auth_token=${encodeURIComponent(tokenValue)}; path=/; max-age=604800; samesite=lax`;
+    const secureFlag = window.location.protocol === "https:" ? "; secure" : "";
+    document.cookie = `auth_token=${encodeURIComponent(tokenValue)}; path=/; max-age=604800; samesite=lax${secureFlag}`;
   };
 
   const clearSession = () => {
@@ -62,7 +62,9 @@ export default function RegisterPage() {
     localStorage.removeItem(PENDING_TERMS_KEY);
   };
 
-  const storePendingTermsAcceptance = (mode: PendingTermsAcceptance["mode"]) => {
+  const storePendingTermsAcceptance = (
+    mode: PendingTermsAcceptance["mode"],
+  ) => {
     const trimmedEmail = email.trim().toLowerCase();
     const payload: PendingTermsAcceptance = {
       mode,
@@ -98,14 +100,23 @@ export default function RegisterPage() {
   const isCooldownActive =
     signupCooldownUntil !== null && currentTime < signupCooldownUntil;
 
+  const showFormError = (message: string) => {
+    setIsTermsModalOpen(false);
+    setTermsIntent(null);
+    setTermsAccepted(false);
+    setTermsError("");
+    setGoogleLoading(false);
+    setLoading(false);
+    setAuthFinalizing(false);
+    setTermsSubmitting(false);
+    setErrorMessage(message);
+  };
+
   const denyLoginForMissingTerms = async (message: string) => {
     await supabase.auth.signOut().catch(() => {});
     clearPendingTermsAcceptance();
     clearSession();
-    setGoogleLoading(false);
-    setLoading(false);
-    setTermsSubmitting(false);
-    setErrorMessage(message);
+    showFormError(message);
   };
 
   const finalizeAuthenticatedUser = async (
@@ -113,7 +124,11 @@ export default function RegisterPage() {
     accessToken: string,
     fallbackEmail: string,
   ) => {
-    const normalizedUserEmail = (user.email ?? fallbackEmail).trim().toLowerCase();
+    setAuthFinalizing(true);
+
+    const normalizedUserEmail = (user.email ?? fallbackEmail)
+      .trim()
+      .toLowerCase();
     const pendingTerms = getPendingTermsAcceptance();
     const canCreateTermsRecord =
       pendingTerms?.mode === "google-signup" ||
@@ -142,6 +157,7 @@ export default function RegisterPage() {
       persistSession(user.email ?? fallbackEmail, accessToken);
       setGoogleLoading(false);
       setLoading(false);
+      setAuthFinalizing(false);
       setTermsSubmitting(false);
       router.replace("/");
       return true;
@@ -152,10 +168,7 @@ export default function RegisterPage() {
           : "We could not verify your Terms & Conditions status. Please try again.";
 
       clearSession();
-      setGoogleLoading(false);
-      setLoading(false);
-      setTermsSubmitting(false);
-      setErrorMessage(message);
+      showFormError(message);
       return false;
     }
   };
@@ -165,6 +178,7 @@ export default function RegisterPage() {
       async (_event, session) => {
         if (!session?.user) {
           clearSession();
+          setAuthFinalizing(false);
           return;
         }
 
@@ -201,7 +215,7 @@ export default function RegisterPage() {
     const now = Date.now();
     if (signupCooldownUntil && now < signupCooldownUntil) {
       const remaining = Math.ceil((signupCooldownUntil - now) / 1000);
-      setErrorMessage(
+      showFormError(
         `Too many signup attempts. Please wait ${remaining}s and try again.`,
       );
       return;
@@ -210,7 +224,7 @@ export default function RegisterPage() {
     const trimmedEmail = email.trim();
 
     if (!trimmedEmail || !password.trim()) {
-      setErrorMessage("Email and password are required.");
+      showFormError("Email and password are required.");
       return;
     }
 
@@ -238,7 +252,7 @@ export default function RegisterPage() {
       loginError &&
       !loginError.message.toLowerCase().includes("invalid login credentials")
     ) {
-      setErrorMessage(loginError.message);
+      showFormError(loginError.message);
       return;
     }
 
@@ -284,17 +298,18 @@ export default function RegisterPage() {
     const trimmedEmail = email.trim();
 
     if (!trimmedEmail || !password.trim()) {
-      setTermsSubmitting(false);
-      setTermsError("Email and password are required.");
+      showFormError("Email and password are required.");
       return;
     }
 
     storePendingTermsAcceptance("email-signup");
 
-    const { data: signupData, error: signupError } = await supabase.auth.signUp({
-      email: trimmedEmail,
-      password,
-    });
+    const { data: signupData, error: signupError } = await supabase.auth.signUp(
+      {
+        email: trimmedEmail,
+        password,
+      },
+    );
 
     if (signupError) {
       const isRateLimited =
@@ -305,9 +320,7 @@ export default function RegisterPage() {
       if (isRateLimited) {
         setSignupCooldownUntil(Date.now() + 60_000);
         clearPendingTermsAcceptance();
-        setTermsSubmitting(false);
-        setIsTermsModalOpen(false);
-        setErrorMessage("Too many signup attempts. Please wait and try again.");
+        showFormError("Too many signup attempts. Please wait and try again.");
         return;
       }
 
@@ -333,16 +346,14 @@ export default function RegisterPage() {
         }
 
         clearPendingTermsAcceptance();
-        setTermsSubmitting(false);
-        setErrorMessage(
+        showFormError(
           existingLoginError?.message ?? "Invalid login credentials.",
         );
         return;
       }
 
       clearPendingTermsAcceptance();
-      setTermsSubmitting(false);
-      setErrorMessage(signupError.message);
+      showFormError(signupError.message);
       return;
     }
 
@@ -373,8 +384,7 @@ export default function RegisterPage() {
     }
 
     clearPendingTermsAcceptance();
-    setTermsSubmitting(false);
-    setErrorMessage(
+    showFormError(
       postSignupLoginError?.message ??
         "Account created. Please verify your email, then login again to complete Terms acceptance.",
     );
@@ -403,8 +413,21 @@ export default function RegisterPage() {
     }
   };
 
+  const showAuthOnboardingStage =
+    loading || googleLoading || termsSubmitting || authFinalizing;
+
   return (
     <>
+      <AuthOnboardingStage
+        isVisible={showAuthOnboardingStage}
+        title={
+          googleLoading
+            ? "Connecting your Google account"
+            : "Checking your NextNews account"
+        }
+        description="We are verifying your details, accepting your preferences, and preparing a smoother first view."
+      />
+
       <div className="relative min-h-screen overflow-hidden bg-gradient-to-b from-amber-50 via-white to-sky-50 px-4 py-8 sm:px-6 md:py-10">
         <div className="pointer-events-none absolute -left-14 top-8 h-40 w-40 rounded-full bg-amber-200/40 blur-3xl animate-float-soft motion-reduce:animate-none" />
         <div className="pointer-events-none absolute -right-16 bottom-8 h-44 w-44 rounded-full bg-sky-200/50 blur-3xl animate-float-soft-delayed motion-reduce:animate-none" />
@@ -414,7 +437,7 @@ export default function RegisterPage() {
           <section className="animate-fade-up order-2 xl:order-1 flex flex-col justify-center rounded-2xl border border-amber-100 bg-white/90 p-6 shadow-lg shadow-amber-100/50 backdrop-blur transition-transform duration-500 motion-reduce:animate-none motion-reduce:transition-none sm:p-8 xl:hover:-translate-y-0.5">
             <div className="mb-5 inline-flex w-fit items-center gap-2 rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-semibold tracking-wide text-amber-700">
               <Sparkles className="h-4 w-4" />
-              Join NextNews Family 
+              Join NextNews Family
             </div>
 
             <h1 className="text-2xl font-bold leading-tight text-slate-900 sm:text-3xl">
@@ -449,8 +472,8 @@ export default function RegisterPage() {
                   className="font-semibold text-slate-700 underline hover:text-slate-900"
                 >
                   Terms &amp; Conditions
-                </Link>
-                {" "}and{" "}
+                </Link>{" "}
+                and{" "}
                 <Link
                   href="/privacy-policy"
                   target="_blank"
@@ -524,11 +547,9 @@ export default function RegisterPage() {
               disabled={googleLoading || termsSubmitting}
               className="flex w-full items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white py-3 text-sm font-medium text-slate-700 transition-all duration-300 hover:-translate-y-0.5 hover:bg-slate-50 hover:shadow-md hover:shadow-slate-200/60 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              <Image
-                src="https://www.svgrepo.com/show/475656/google-color.svg"
-                alt="Google"
-                width={18}
-                height={18}
+              <LottiePlayer
+                src="/auth/Google Logo.json"
+                className="w-5 h-5 scale-[2.2]"
               />
               {googleLoading ? "Connecting..." : "Continue with Google"}
             </button>
@@ -544,7 +565,8 @@ export default function RegisterPage() {
                 Already have an account?
               </p>
               <p className="mt-0.5 text-xs leading-relaxed text-sky-600">
-                Enter your existing email &amp; password above and it will sign you straight in.
+                Enter your existing email &amp; password above and it will sign
+                you straight in.
               </p>
             </div>
           </section>

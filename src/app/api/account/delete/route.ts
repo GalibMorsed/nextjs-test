@@ -1,5 +1,9 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { enforceRateLimit, getClientIp } from "@/lib/apiSecurity";
+
+const RATE_LIMIT_WINDOW_MS = 60_000;
+const RATE_LIMIT_REQUESTS = 3;
 
 function getBearerToken(request: Request): string | null {
   const authHeader = request.headers.get("authorization") ?? "";
@@ -28,6 +32,21 @@ function getValidatedSupabaseUrl(): string | null {
 }
 
 export async function POST(request: Request) {
+  const rateLimit = enforceRateLimit(
+    `${getClientIp(request)}:account-delete`,
+    RATE_LIMIT_REQUESTS,
+    RATE_LIMIT_WINDOW_MS,
+  );
+
+  if (!rateLimit.allowed) {
+    return NextResponse.json(
+      {
+        error: `Too many account deletion attempts. Try again in ${rateLimit.retryAfterSeconds}s.`,
+      },
+      { status: 429 },
+    );
+  }
+
   const token = getBearerToken(request);
   if (!token) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -77,7 +96,12 @@ export async function POST(request: Request) {
     );
   }
 
-  const adminClient = createClient(url, serviceRoleKey);
+  const adminClient = createClient(url, serviceRoleKey, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false,
+    },
+  });
 
   const { data: userData, error: userError } = await adminClient.auth.getUser(token);
   const user = userData?.user ?? null;
@@ -95,10 +119,9 @@ export async function POST(request: Request) {
     .eq("user_id", user.id);
 
   if (notesDeleteError && !isMissingRelationError(notesDeleteError)) {
+    console.error("Account delete failed for user_notes:", notesDeleteError);
     return NextResponse.json(
-      {
-        error: `DB delete failed for user data (user_notes): ${notesDeleteError.message}`,
-      },
+      { error: "Unable to delete account data at this time." },
       { status: 500 },
     );
   }
@@ -109,10 +132,9 @@ export async function POST(request: Request) {
     .eq("user_id", user.id);
 
   if (termsDeleteError && !isMissingRelationError(termsDeleteError)) {
+    console.error("Account delete failed for user_terms_policy:", termsDeleteError);
     return NextResponse.json(
-      {
-        error: `DB delete failed for user data (user_terms_policy): ${termsDeleteError.message}`,
-      },
+      { error: "Unable to delete account data at this time." },
       { status: 500 },
     );
   }
@@ -122,8 +144,9 @@ export async function POST(request: Request) {
   );
 
   if (authDeleteError) {
+    console.error("Account auth delete failed:", authDeleteError);
     return NextResponse.json(
-      { error: `Auth delete failed: ${authDeleteError.message}` },
+      { error: "Unable to delete account at this time." },
       { status: 500 },
     );
   }
