@@ -176,6 +176,9 @@ export default function ArticleCard({
                 trackActivityEvent("article_open", {
                   source: article.source?.name ?? "",
                   category: category ?? "",
+                  articleTitle: article.title,
+                  articleUrl: article.url,
+                  articlePublishedAt: article.publishedAt,
                 });
               }}
               className={`inline-flex items-center text-sm font-semibold transition-colors shrink-0 ${

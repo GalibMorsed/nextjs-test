@@ -1,7 +1,10 @@
 "use client";
 
-import { motion } from "framer-motion";
-import { Flame, Target } from "lucide-react";
+import { AnimatePresence, motion } from "framer-motion";
+import { AlertTriangle, Flame, Target, X } from "lucide-react";
+import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
+import { FaPlus } from "react-icons/fa";
 import { Panel, softSpring } from "./MyActivityUi";
 import LottiePlayer from "../../components/LottiePlayer";
 
@@ -26,8 +29,50 @@ export default function MyActivityGoalTracker({
   weekAi,
   readingStreak,
 }: MyActivityGoalTrackerProps) {
-  const targetOptions = [3, 5, 8, 10];
+  const targetOptions = [8, 15];
   const isGoalComplete = currentWeekProgress >= weeklyGoal;
+  const [customGoalInput, setCustomGoalInput] = useState("");
+  const [goalPopupMessage, setGoalPopupMessage] = useState("");
+  const [isMobilePopup, setIsMobilePopup] = useState(false);
+  const hasCustomGoal = !targetOptions.includes(weeklyGoal);
+
+  useEffect(() => {
+    const checkMobile = () => setIsMobilePopup(window.innerWidth < 640);
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
+
+  const showGoalPopup = (message: string) => {
+    setGoalPopupMessage(message);
+  };
+
+  const handleAddCustomGoal = () => {
+    const rawValue = customGoalInput.trim();
+    if (!rawValue) {
+      showGoalPopup("Enter a custom goal to add.");
+      return;
+    }
+
+    const parsed = Number(rawValue);
+    if (!Number.isFinite(parsed)) {
+      showGoalPopup("Enter a valid number.");
+      return;
+    }
+
+    const nextValue = Math.floor(parsed);
+    if (nextValue < 1) {
+      showGoalPopup("Minimum goal is 1.");
+      return;
+    }
+    if (nextValue > 100) {
+      showGoalPopup("Maximum goal cannot exceed 100.");
+      return;
+    }
+
+    onSetWeeklyGoal(nextValue);
+    setCustomGoalInput("");
+  };
 
   return (
     <Panel
@@ -162,28 +207,52 @@ export default function MyActivityGoalTracker({
               {val}
             </button>
           ))}
+          {hasCustomGoal ? (
+            <button
+              key={`custom-${weeklyGoal}`}
+              onClick={() => onSetWeeklyGoal(weeklyGoal)}
+              className="rounded-2xl border border-slate-900 bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white shadow-md transition-all dark:border-emerald-500 dark:bg-emerald-500/20 dark:text-emerald-300"
+            >
+              {weeklyGoal}
+            </button>
+          ) : null}
           <div className="flex items-center gap-2">
             <input
               type="number"
               max="100"
-              value={!targetOptions.includes(weeklyGoal) ? weeklyGoal : ""}
+              value={customGoalInput}
               placeholder="Custom"
-              onChange={(e) =>
-                {
-                  const val = parseInt(e.target.value, 10) || 1;
-                  if (val > 100) {
-                    window.alert("Maximum goal cannot exceed 100");
-                    return;
-                  }
-                  onSetWeeklyGoal(val);
+              onChange={(e) => {
+                const nextValue = e.target.value;
+                if (nextValue === "") {
+                  setCustomGoalInput("");
+                  return;
                 }
-              }
-              className={`h-10 w-24 rounded-2xl border px-3 text-sm font-semibold transition-all focus:outline-none focus:ring-2 focus:ring-emerald-500/50 dark:bg-slate-800/60 dark:text-slate-300 ${
-                !targetOptions.includes(weeklyGoal)
-                  ? "border-slate-900 bg-slate-900 text-white placeholder-white/60 dark:border-emerald-500 dark:bg-emerald-500/20 dark:text-emerald-300"
-                  : "border-slate-200 bg-white text-slate-700 dark:border-slate-700"
-              }`}
+
+                const parsedValue = Number(nextValue);
+                if (Number.isFinite(parsedValue) && parsedValue > 100) {
+                  showGoalPopup("Maximum goal cannot exceed 100.");
+                  setCustomGoalInput("100");
+                  return;
+                }
+
+                setCustomGoalInput(nextValue);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  handleAddCustomGoal();
+                }
+              }}
+              className="h-10 w-24 rounded-2xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 transition-all focus:outline-none focus:ring-2 focus:ring-emerald-500/50 dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-300"
             />
+            <button
+              type="button"
+              onClick={handleAddCustomGoal}
+              className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-slate-200 bg-white text-lg font-semibold text-slate-700 transition-all hover:border-slate-400 dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-200 dark:hover:border-slate-500"
+              aria-label="Add custom weekly goal"
+            >
+              <FaPlus className="h-3.5 w-3.5" aria-hidden="true" />
+            </button>
           </div>
         </div>
       </div>
@@ -197,6 +266,81 @@ export default function MyActivityGoalTracker({
           week streak — keep it going!
         </span>
       </div>
+      {typeof document !== "undefined"
+        ? createPortal(
+            <AnimatePresence>
+        {goalPopupMessage ? (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[9999] flex h-[100dvh] w-screen items-end justify-center bg-black/30 p-0 backdrop-blur-sm sm:items-center sm:p-6"
+            onClick={() => setGoalPopupMessage("")}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="goal-popup-title"
+          >
+            <motion.div
+              variants={{
+                initial: isMobilePopup
+                  ? { opacity: 0, y: "100%" }
+                  : { opacity: 0, y: 20, scale: 0.95 },
+                animate: { opacity: 1, y: 0, scale: 1 },
+                exit: isMobilePopup
+                  ? { opacity: 0, y: "100%" }
+                  : { opacity: 0, y: 20, scale: 0.95 },
+              }}
+              initial="initial"
+              animate="animate"
+              exit="exit"
+              transition={{ ease: [0.16, 1, 0.3, 1], duration: 0.25 }}
+              className="relative w-full overflow-hidden rounded-t-2xl border border-emerald-100 bg-white p-5 shadow-2xl dark:border-emerald-900/40 dark:bg-slate-900 sm:max-w-md sm:rounded-2xl sm:p-6"
+              onClick={(event) => event.stopPropagation()}
+            >
+              <div className="absolute inset-x-0 top-0 h-20 bg-gradient-to-r from-emerald-400/15 via-teal-300/15 to-blue-300/15 dark:from-emerald-400/10 dark:via-teal-400/10 dark:to-blue-400/10" />
+              <div className="absolute -right-12 top-8 h-28 w-28 rounded-full bg-emerald-300/20 blur-3xl dark:bg-emerald-400/10" />
+
+              <div className="relative flex items-start gap-4">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-500 text-white shadow-lg shadow-emerald-500/20">
+                  <AlertTriangle className="h-5 w-5" aria-hidden="true" />
+                </div>
+
+                <div className="min-w-0 flex-1">
+                  <p
+                    id="goal-popup-title"
+                    className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-600 dark:text-emerald-300"
+                  >
+                    Goal target
+                  </p>
+                  <p className="mt-1 text-sm font-semibold leading-6 text-slate-800 dark:text-slate-100">
+                    {goalPopupMessage}
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setGoalPopupMessage("")}
+                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800 dark:hover:text-slate-200"
+                  aria-label="Close goal message"
+                >
+                  <X className="h-4 w-4" aria-hidden="true" />
+                </button>
+              </div>
+
+                  <button
+                    type="button"
+                    onClick={() => setGoalPopupMessage("")}
+                    className="relative ml-auto mt-5 block min-w-24 rounded-2xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800 dark:bg-emerald-500/20 dark:text-emerald-200 dark:ring-1 dark:ring-emerald-500/40 dark:hover:bg-emerald-500/30"
+                  >
+                    Got it
+                  </button>
+            </motion.div>
+          </motion.div>
+        ) : null}
+            </AnimatePresence>,
+            document.body,
+          )
+        : null}
     </Panel>
   );
 }

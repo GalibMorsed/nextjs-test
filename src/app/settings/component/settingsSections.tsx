@@ -592,17 +592,22 @@ export function BillingSettingsCard({
   });
 
   useEffect(() => {
-    const savedPlan = localStorage.getItem("nextnews-plan");
-    if (savedPlan) {
+    let isMounted = true;
+
+    const loadUsage = async () => {
+      const savedPlan = localStorage.getItem("nextnews-plan");
+      if (!savedPlan) return;
+
       let savedDate = localStorage.getItem("nextnews-plan-date");
       if (!savedDate) {
         const now = new Date();
         savedDate = now.toISOString();
         localStorage.setItem("nextnews-plan-date", savedDate);
       }
+      if (!isMounted) return;
       setPlanDetails({ name: savedPlan, purchaseDate: new Date(savedDate) });
 
-      const analytics = readActivityAnalytics();
+      const analytics = await readActivityAnalytics();
       const usedCalls =
         analytics.aiSummaryCount +
         analytics.personalizationSuggestionCount +
@@ -611,12 +616,18 @@ export function BillingSettingsCard({
       if (savedPlan === "Pro") planTotal = 8000;
       if (savedPlan === "Pro+") planTotal = 45000;
 
+      if (!isMounted) return;
       setApiUsage({
         used: usedCalls,
         total: planTotal,
         percentage: Math.min(100, Math.round((usedCalls / planTotal) * 100)),
       });
-    }
+    };
+
+    void loadUsage();
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   if (!planDetails) {

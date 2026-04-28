@@ -4,17 +4,12 @@ import Link from "next/link";
 import { motion, type PanInfo } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
 import LottiePlayer from "./LottiePlayer";
+import {
+  GOAL_TRACKER_EVENT,
+  readGoalTrackerState,
+  syncGoalTrackerProgress,
+} from "@/lib/activityAnalytics";
 
-type GoalTrackerState = {
-  weeklyGoal: number;
-  weeklyStreak: number;
-  lastStreakUpdate: string;
-  lastGoalCompletedAt: number;
-  lastGoalUpdatedAt: number;
-};
-
-const GOAL_TRACKER_KEY = "GoalTracker";
-const GOAL_TRACKER_EVENT = "goal-tracker-update";
 const BANNER_DISMISSED_AT_KEY = "goal-tracker-banner-dismissed-at";
 const BANNER_DISMISSED_COMPLETED_AT_KEY =
   "goal-tracker-banner-dismissed-completed-at";
@@ -39,27 +34,6 @@ const getIsoWeekKey = (date: Date) => {
   return `${d.getUTCFullYear()}-W${weekNo}`;
 };
 
-const readGoalTrackerState = (): GoalTrackerState | null => {
-  if (typeof window === "undefined") return null;
-  const raw = localStorage.getItem(GOAL_TRACKER_KEY);
-  if (!raw) return null;
-  try {
-    const parsed = JSON.parse(raw) as Partial<GoalTrackerState>;
-    return {
-      weeklyGoal: Number(parsed.weeklyGoal ?? 0),
-      weeklyStreak: Number(parsed.weeklyStreak ?? 0),
-      lastStreakUpdate:
-        typeof parsed.lastStreakUpdate === "string"
-          ? parsed.lastStreakUpdate
-          : "",
-      lastGoalCompletedAt: Number(parsed.lastGoalCompletedAt ?? 0),
-      lastGoalUpdatedAt: Number(parsed.lastGoalUpdatedAt ?? 0),
-    };
-  } catch {
-    return null;
-  }
-};
-
 const readNumber = (value: string | null) => {
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : 0;
@@ -78,11 +52,14 @@ export default function GoalCompletionBanner() {
     function scheduleRefresh(delayMs: number) {
       if (timeoutRef.current) window.clearTimeout(timeoutRef.current);
       if (delayMs <= 0) return;
-      timeoutRef.current = window.setTimeout(() => refresh(), delayMs);
+      timeoutRef.current = window.setTimeout(() => {
+        void refresh();
+      }, delayMs);
     }
 
-    function refresh() {
-      const state = readGoalTrackerState();
+    async function refresh() {
+      await syncGoalTrackerProgress();
+      const state = await readGoalTrackerState();
       if (!state?.lastStreakUpdate) {
         setIsVisible(false);
         return;
@@ -139,20 +116,24 @@ export default function GoalCompletionBanner() {
       }
     }
 
-    refresh();
-    window.addEventListener("focus", refresh);
-    window.addEventListener("storage", refresh);
-    window.addEventListener(GOAL_TRACKER_EVENT, refresh);
+    const handleRefresh = () => {
+      void refresh();
+    };
+
+    void refresh();
+    window.addEventListener("focus", handleRefresh);
+    window.addEventListener("storage", handleRefresh);
+    window.addEventListener(GOAL_TRACKER_EVENT, handleRefresh);
     return () => {
       if (timeoutRef.current) window.clearTimeout(timeoutRef.current);
-      window.removeEventListener("focus", refresh);
-      window.removeEventListener("storage", refresh);
-      window.removeEventListener(GOAL_TRACKER_EVENT, refresh);
+      window.removeEventListener("focus", handleRefresh);
+      window.removeEventListener("storage", handleRefresh);
+      window.removeEventListener(GOAL_TRACKER_EVENT, handleRefresh);
     };
   }, []);
 
-  const handleDismiss = () => {
-    const state = readGoalTrackerState();
+  const handleDismiss = async () => {
+    const state = await readGoalTrackerState();
     const completedAt = state?.lastGoalCompletedAt ?? 0;
     localStorage.setItem(BANNER_DISMISSED_AT_KEY, String(Date.now()));
     localStorage.setItem(
@@ -196,7 +177,9 @@ export default function GoalCompletionBanner() {
             />
           </span>
           <div className="min-w-0 flex-1">
-            <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">Weekly goal complete!</p>
+            <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+              Weekly goal complete!
+            </p>
             <p className="text-xs text-slate-500 dark:text-slate-300">
               Start again - set a new weekly goal.
             </p>

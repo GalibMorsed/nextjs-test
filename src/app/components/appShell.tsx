@@ -7,6 +7,7 @@ import Sidebar from "./sidebar";
 import Template from "../template";
 import GoalCompletionBanner from "./GoalCompletionBanner";
 import AuthSessionSync from "../auth/register/components/authSessionSync";
+import { syncGoalTrackerProgress } from "@/lib/activityAnalytics";
 import {
   APPEARANCE_EVENT,
   applyAppearanceSettings,
@@ -31,6 +32,10 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     const nextAppearance = readAppearanceSettings();
     applyAppearanceSettings(nextAppearance);
     applyDarkMode(readDarkModeSetting());
+  }, []);
+
+  useEffect(() => {
+    void syncGoalTrackerProgress();
   }, []);
 
   useEffect(() => {

@@ -1,5 +1,6 @@
 import { supabase } from "../../../lib/superbaseClient";
 import { generateClientUuid, getVerifiedAuthUser } from "@/lib/clientAuth";
+import { adjustTotalEngagement } from "@/lib/activityAnalytics";
 
 export interface NoteInput {
   article_title: string;
@@ -79,22 +80,26 @@ export async function saveNote(note: NoteInput) {
     : [];
   const nextNotes = [entry, ...existingNotes];
 
-  if (existingRow?.id) {
-    return supabase
+  const result = existingRow?.id
+    ? await supabase
       .from("user_notes")
       .update({
         notes: nextNotes,
         updated_at: new Date().toISOString(),
       })
-      .eq("user_id", user.id);
+      .eq("user_id", user.id)
+    : await supabase.from("user_notes").insert({
+      user_id: user.id,
+      user_email: userEmail,
+      notes: nextNotes,
+      updated_at: new Date().toISOString(),
+    });
+
+  if (!result.error) {
+    void adjustTotalEngagement(1);
   }
 
-  return supabase.from("user_notes").insert({
-    user_id: user.id,
-    user_email: userEmail,
-    notes: nextNotes,
-    updated_at: new Date().toISOString(),
-  });
+  return result;
 }
 
 export async function getUserNotes() {
@@ -154,13 +159,20 @@ export async function deleteNote(id: string) {
   if (error) return { data: null, error };
 
   const notes = Array.isArray(data?.notes) ? (data.notes as UserNote[]) : [];
+  const hadNote = notes.some((note) => note.id === id);
   const nextNotes = notes.filter((note) => note.id !== id);
 
-  return supabase
+  const result = await supabase
     .from("user_notes")
     .update({
       notes: nextNotes,
       updated_at: new Date().toISOString(),
     })
     .eq("user_id", user.id);
+
+  if (!result.error && hadNote) {
+    void adjustTotalEngagement(-1);
+  }
+
+  return result;
 }
