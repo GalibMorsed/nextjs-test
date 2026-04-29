@@ -516,7 +516,7 @@ function SidebarContent({
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             whileHover={{ scale: 1.05 }}
-            transition={{ type: "spring", stiffness: 300 }}
+            transition={{ type: "spring", stiffness: 600, damping: 12, bounce: 0.4, duration: 0.4 }}
             className={`text-3xl font-black bg-gradient-to-r from-blue-600 via-purple-500 to-indigo-600 bg-clip-text text-transparent cursor-default overflow-hidden whitespace-nowrap transition-all duration-300 ${isDesktopCollapsed ? "max-w-0 opacity-0" : "max-w-[200px] opacity-100"}`}
           >
             DailyScoop

@@ -2,7 +2,7 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 @theme {
-  --font-sans: var(--font-jakarta), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Plus Jakarta Sans", var(--font-jakarta), ui-sans-serif, system-ui, sans-serif;
   --color-primary: var(--primary);
   --color-secondary: var(--secondary);
 }
@@ -325,6 +325,7 @@
 }
 
 body {
+  font-family: var(--font-jakarta), ui-sans-serif, system-ui, sans-serif;
   color: var(--foreground);
   background: var(--background);
 }

@@ -13,7 +13,7 @@ export const DEFAULT_APPEARANCE_SETTINGS: AppearanceSettings = {
   theme: "aquamarine",
   primaryColor: "#1e40af",
   fontSize: 16,
-  fontFamily: "system-ui, -apple-system, sans-serif",
+  fontFamily: "var(--font-jakarta), ui-sans-serif, system-ui, sans-serif",
   reducedMotion: false,
   highContrast: false,
 };
