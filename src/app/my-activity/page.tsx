@@ -287,13 +287,9 @@ export default function MyActivityPage() {
   const articleCount = filteredEvents.filter(
     (event) => event.type === "article_open",
   ).length;
-  const aiSummaryCount = aiSummaryEvents.length;
-  const aiSuggestionCount = filteredEvents.filter(
-    (event) => event.type === "personalization_suggestion",
-  ).length;
-  const aiRegionSuggestionCount = filteredEvents.filter(
-    (event) => event.type === "region_suggestion",
-  ).length;
+  const aiSummaryCount = activityAnalytics.aiSummaryCount;
+  const aiSuggestionCount = activityAnalytics.personalizationSuggestionCount;
+  const aiRegionSuggestionCount = activityAnalytics.regionSuggestionCount;
   const previousArticleCount = previousEvents.filter(
     (event) => event.type === "article_open",
   ).length;
@@ -513,12 +509,7 @@ export default function MyActivityPage() {
   useEffect(() => {
     if (!isAuthenticated || !isGoalTrackerReady) return;
     void syncGoalTrackerProgress();
-  }, [
-    currentWeekProgress,
-    isAuthenticated,
-    isGoalTrackerReady,
-    weeklyGoal,
-  ]);
+  }, [currentWeekProgress, isAuthenticated, isGoalTrackerReady, weeklyGoal]);
 
   const heatmap = useMemo(() => {
     return Array.from({ length: 35 }).map((_, index) => {

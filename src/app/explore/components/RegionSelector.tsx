@@ -6,6 +6,7 @@ import { Compass, Sparkles, Loader2, ArrowRight, Globe2 } from "lucide-react";
 import ReactCountryFlag from "react-country-flag";
 import { EXPLORE_REGIONS, type ExploreRegionId } from "@/lib/explore";
 import { incrementRegionSuggestionUsage } from "@/lib/activityAnalytics";
+import { useAILimit } from "@/hooks/useAILimit";
 
 export interface AIRegionSuggestion {
   label: string;
@@ -114,32 +115,13 @@ export default function RegionSelector({
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [suggestions, setSuggestions] = useState<AIRegionSuggestion[]>([]);
   const [errorMessage, setErrorMessage] = useState("");
-  const [hasActivePlan, setHasActivePlan] = useState(false);
-
-  useEffect(() => {
-    const syncPlanState = () => {
-      const planName = localStorage.getItem("nextnews-plan")?.trim();
-      setHasActivePlan(Boolean(planName));
-    };
-
-    syncPlanState();
-    window.addEventListener("storage", syncPlanState);
-    window.addEventListener("focus", syncPlanState);
-
-    return () => {
-      window.removeEventListener("storage", syncPlanState);
-      window.removeEventListener("focus", syncPlanState);
-    };
-  }, []);
+  const { isActive, loading: aiLimitLoading } = useAILimit();
 
   const handleAISuggest = async () => {
-    const savedPlan = localStorage.getItem("nextnews-plan")?.trim();
-
-    if (!savedPlan) {
-      setHasActivePlan(false);
+    if (!isActive) {
       setShowSuggestions(false);
       setSuggestions([]);
-      setErrorMessage("");
+      setErrorMessage("You must activate a plan to use AI region suggestions.");
       return;
     }
 
@@ -268,7 +250,7 @@ export default function RegionSelector({
             </div>
 
             <div className="flex flex-col items-center gap-6">
-              {hasActivePlan ? (
+              {isActive ? (
                 <button
                   type="button"
                   onClick={handleAISuggest}
@@ -296,8 +278,7 @@ export default function RegionSelector({
                     <Sparkles className="h-5 w-5" />
                   </div>
                   <p className="mt-4 text-sm font-semibold text-[var(--foreground)] sm:text-base">
-                    AI region suggestions are available after you activate any
-                    plan.
+                    AI region suggestions are available after you activate any plan.
                   </p>
                   <p className="mt-2 text-sm text-[var(--muted)]">
                     Go to the plans page or search for your preferred region.
