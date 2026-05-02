@@ -67,8 +67,9 @@ export default function AISummaryButton({
   const anchorRef = useRef<HTMLDivElement | null>(null);
   const promoRef = useRef<HTMLDivElement | null>(null);
   const summaryPoints = toBulletPoints(summary);
-
-  const { isLocked, limit, totalAIUsage } = useAILimit();
+  const { isLocked, limit } = useAILimit();
+  const shouldShowPlansCTA =
+    isLocked || error.toLowerCase().includes("free limit");
 
   useEffect(() => {
     let isMounted = true;
@@ -380,7 +381,7 @@ export default function AISummaryButton({
                     <p className="text-sm font-medium text-red-700 dark:text-red-300">
                       {error}
                     </p>
-                    {isLocked && (
+                    {shouldShowPlansCTA && (
                       <Link
                         href="/plans"
                         className="inline-flex w-fit items-center justify-center rounded-xl bg-blue-600 px-4 py-2 text-xs font-bold text-white shadow-md shadow-blue-500/20 transition-all hover:bg-blue-700"

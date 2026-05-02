@@ -22,6 +22,8 @@ import {
 import { readActivityAnalytics } from "@/lib/activityAnalytics";
 import LottiePlayer from "@/app/components/LottiePlayer";
 import { loadUserSubscriptionPlan } from "@/app/services/subscriptionPlanService";
+import { useAILimit } from "@/hooks/useAILimit";
+import CreditAlertBanner from "@/app/components/CreditAlertBanner";
 
 type FlashMessage = {
   tone: "success" | "error" | "info";
@@ -117,18 +119,23 @@ type DeleteAccountDialogProps = {
 };
 
 export function PlanSettingsCard() {
-  const [currentPlan, setCurrentPlan] = useState<string | null>(null);
+  const [planState, setPlanState] = useState<{ name: string | null; status: string | null }>({
+    name: null,
+    status: null,
+  });
 
   useEffect(() => {
     let isMounted = true;
     const fetchPlan = async () => {
       const { data } = await loadUserSubscriptionPlan();
       if (!isMounted) return;
-      if (data && data.status === "active") {
-        setCurrentPlan(data.plan_name);
+      if (data) {
+        setPlanState({ name: data.plan_name, status: data.status });
       } else {
         const savedPlan = localStorage.getItem("nextnews-plan");
-        if (savedPlan) setCurrentPlan(savedPlan);
+        if (savedPlan) {
+          setPlanState({ name: savedPlan, status: "active" });
+        }
       }
     };
     void fetchPlan();
@@ -137,7 +144,9 @@ export function PlanSettingsCard() {
     };
   }, []);
 
-  if (!currentPlan) return null;
+  const { isLocked, limit, isActive } = useAILimit();
+
+  if (!planState.name) return null;
 
   return (
     <motion.div
@@ -145,7 +154,7 @@ export function PlanSettingsCard() {
       animate={{ opacity: 1, y: 0 }}
       className={clsx(
         "relative overflow-hidden flex flex-col gap-4 rounded-2xl border p-4 shadow-sm backdrop-blur-xl transition-all duration-300 hover:shadow-md sm:flex-row sm:items-center sm:justify-between sm:p-5",
-        currentPlan === "Pro+"
+        planState.name === "Pro+"
           ? "border-orange-200/60 bg-orange-50/60 dark:border-orange-700/40 dark:bg-orange-950/30"
           : "border-slate-200/60 bg-white/60 dark:border-slate-700/60 dark:bg-slate-800/60",
       )}
@@ -154,14 +163,14 @@ export function PlanSettingsCard() {
         <div
           className={clsx(
             "flex h-12 w-12 shrink-0 items-center justify-center rounded-full",
-            currentPlan === "Pro+"
+            planState.name === "Pro+"
               ? "bg-orange-100 text-orange-600 dark:bg-orange-900/40 dark:text-orange-400"
               : "bg-teal-50 text-teal-600 dark:bg-teal-900/20 dark:text-teal-400",
           )}
         >
-          {currentPlan === "Pro+" ? (
+          {planState.name === "Pro+" ? (
             <Zap className="h-6 w-6" />
-          ) : currentPlan === "Pro" ? (
+          ) : planState.name === "Pro" ? (
             <ShieldCheck className="h-6 w-6" />
           ) : (
             <Sparkles className="h-6 w-6" />
@@ -173,8 +182,13 @@ export function PlanSettingsCard() {
           </h3>
           <p className="text-sm text-slate-500 dark:text-slate-400">
             Your selected subscription is{" "}
-            <span className="font-medium">{currentPlan} Plan</span> currently
-            active on this account.
+            <span className="font-medium">{planState.name} Plan</span>{" "}
+            {planState.status === "canceled" ? (
+              <span className="text-orange-600 dark:text-orange-400 font-semibold">(Canceled)</span>
+            ) : (
+              "currently active"
+            )}{" "}
+            on this account.
           </p>
         </div>
       </div>
@@ -184,6 +198,91 @@ export function PlanSettingsCard() {
       >
         Manage
       </Link>
+    </motion.div>
+  );
+}
+
+export function UsageLimitCard() {
+  const { totalAIUsage, limit, isActive, isLocked, loading } = useAILimit();
+  
+  const percentage = Math.min(100, Math.round((totalAIUsage / limit) * 100));
+
+  if (loading || percentage < 80) return null;
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.1 }}
+      className={clsx(
+        "relative overflow-hidden flex flex-col gap-5 rounded-2xl border p-5 shadow-sm backdrop-blur-xl transition-all duration-300 hover:shadow-md",
+        isLocked
+          ? "border-red-200/60 bg-red-50/60 dark:border-red-900/40 dark:bg-red-950/30"
+          : "border-slate-200/60 bg-white/60 dark:border-slate-700/60 dark:bg-slate-800/60"
+      )}
+    >
+      <div className="flex items-center justify-between gap-4">
+        <div className="flex items-center gap-3.5">
+          <div
+            className={clsx(
+              "flex h-10 w-10 shrink-0 items-center justify-center rounded-full",
+              isLocked
+                ? "bg-red-100 text-red-600 dark:bg-red-900/40 dark:text-red-400"
+                : "bg-indigo-50 text-indigo-600 dark:bg-indigo-900/20 dark:text-indigo-400"
+            )}
+          >
+            <CreditCard className="h-5 w-5" />
+          </div>
+          <div>
+            <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">
+              API Credit Usage
+            </h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              {isLocked ? "Limit reached" : "Monthly quota status"}
+            </p>
+          </div>
+        </div>
+        <div className="text-right">
+          <span className="text-lg font-bold text-slate-900 dark:text-slate-100">
+            {totalAIUsage.toLocaleString()}
+          </span>
+          <span className="text-sm text-slate-500 dark:text-slate-400">
+            {" "}/ {limit.toLocaleString()}
+          </span>
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <div className="h-2 w-full overflow-hidden rounded-full bg-slate-200 dark:bg-slate-700/50">
+          <motion.div
+            initial={{ width: 0 }}
+            animate={{ width: `${percentage}%` }}
+            transition={{ duration: 1, ease: "easeOut" }}
+            className={clsx(
+              "h-full rounded-full transition-all duration-500",
+              isLocked
+                ? "bg-red-500"
+                : percentage > 80
+                ? "bg-amber-500"
+                : "bg-indigo-500"
+            )}
+          />
+        </div>
+        <div className="flex justify-between text-[11px] font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400">
+          <span>{percentage}% Used</span>
+          <span>{isLocked ? `+${totalAIUsage - limit} credits Exceeded` : `${limit - totalAIUsage} credits remaining`}</span>
+        </div>
+      </div>
+
+      {isLocked && (
+        <div className="rounded-xl bg-white/50 p-3 dark:bg-slate-900/50">
+          <CreditAlertBanner 
+            limit={limit} 
+            isPlan={isActive} 
+            className="!bg-transparent !border-none !p-0 shadow-none" 
+          />
+        </div>
+      )}
     </motion.div>
   );
 }
@@ -204,11 +303,11 @@ export function SettingsCard({
       className={`relative overflow-hidden rounded-2xl border border-slate-200/60 dark:border-slate-700/60 bg-white/60 dark:bg-slate-800/60 p-5 shadow-sm backdrop-blur-xl transition-all duration-300 hover:border-slate-300/80 hover:shadow-md dark:hover:border-slate-600/80 sm:p-6 ${className ?? ""
         }`}
     >
-      <div className="mb-4 relative z-10 flex items-center gap-3">
-        <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-slate-100/80 shadow-inner dark:bg-slate-700/80">
+      <div className="mb-5 relative z-10 flex items-start gap-4">
+        <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-slate-50 to-slate-100/50 shadow-sm border border-slate-200/50 dark:from-slate-800 dark:to-slate-900/50 dark:border-slate-700/50 transition-transform duration-300 group-hover:scale-105">
           {icon}
         </span>
-        <div>
+        <div className="min-w-0 flex-1 pt-0.5">
           <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
             {title}
           </h2>
@@ -602,6 +701,7 @@ export function BillingSettingsCard({
     name: string;
     purchaseDate: Date;
     expiryDate: Date | null;
+    status: string;
   } | null>(null);
   const [apiUsage, setApiUsage] = useState({
     used: 0,
@@ -647,16 +747,24 @@ export function BillingSettingsCard({
       setPlanDetails({
         name: activePlanName,
         purchaseDate: new Date(activePlanDate),
-        expiryDate: activePlanExpiry
+        expiryDate: activePlanExpiry,
+        status: data?.status || "active"
       });
 
       const analytics = await readActivityAnalytics();
-      const usedCalls =
-        analytics.aiSummaryCount +
-        analytics.personalizationSuggestionCount +
-        analytics.regionSuggestionCount +
-        analytics.articleReadCount +
-        analytics.events.length;
+      // Weighting: Summaries = 1, Suggestions = 2, Others = 1
+      // Avoid double-counting events that are already covered by dedicated counters
+      const aiWeightedUsage =
+        analytics.aiSummaryCount * 1 +
+        analytics.personalizationSuggestionCount * 2 +
+        analytics.regionSuggestionCount * 2;
+      
+      const otherUsage = analytics.articleReadCount;
+      const otherEventsCount = analytics.events.filter(
+        e => !["ai_summary", "personalization_suggestion", "region_suggestion", "article_open"].includes(e.type)
+      ).length;
+
+      const usedCalls = aiWeightedUsage + otherUsage + otherEventsCount;
 
       if (!isMounted) return;
       setApiUsage({
@@ -755,25 +863,43 @@ export function BillingSettingsCard({
                 <span className="font-semibold text-slate-900 dark:text-slate-100">
                   {apiUsage.isUnlimited ? "Unlimited" : `${apiUsage.percentage}%`}
                 </span>
-              </div>
+               </div>
               <div className="h-2.5 w-full overflow-hidden rounded-full bg-slate-200 dark:bg-slate-700/80">
                 <div
                   className={clsx("h-full rounded-full transition-all duration-500", apiUsage.isUnlimited ? "bg-emerald-500" : "bg-gradient-to-r from-[var(--primary)] to-indigo-500")}
                   style={{ width: apiUsage.isUnlimited ? "100%" : `${apiUsage.percentage}%` }}
                 />
-              </div>
+               </div>
               <p className="text-xs text-slate-500 dark:text-slate-400 pt-1">
                 You have used {apiUsage.used.toLocaleString()} of your{" "}
                 {apiUsage.isUnlimited ? "unlimited" : apiUsage.total.toLocaleString()} included API calls.
               </p>
-            </div>
+             </div>
           </div>
         </div>
 
-        <div>
-          <h4 className="text-sm font-semibold text-slate-800 dark:text-slate-200 mb-4">
+        <div className="space-y-4">
+          <h4 className="text-sm font-semibold text-slate-800 dark:text-slate-200">
             Recent Activity Logs
           </h4>
+          {planDetails.status === "canceled" && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="rounded-xl border border-orange-200/60 bg-orange-50/40 p-4 text-[13px] leading-relaxed text-orange-800 backdrop-blur-sm dark:border-orange-800/40 dark:bg-orange-950/20 dark:text-orange-400"
+            >
+              <div className="flex items-start gap-3.5">
+                <div className="mt-0.5 flex shrink-0 items-center justify-center rounded-full bg-orange-100/80 p-1 dark:bg-orange-900/40">
+                  <AlertTriangle className="h-4 w-4 text-orange-600 dark:text-orange-400" />
+                </div>
+                <p className="flex-1">
+                  This plan is <span className="font-bold underline decoration-orange-500/30">canceled</span>, but you can still access your API credits until{" "}
+                  <span className="font-bold text-orange-900 dark:text-orange-200">{formattedExpiry}</span>. Once your credits are
+                  fully used, access will be restricted.
+                </p>
+              </div>
+            </motion.div>
+          )}
           <div className="space-y-2.5 rounded-xl border border-slate-200/60 bg-slate-50/50 p-2 dark:border-slate-700/60 dark:bg-slate-800/30">
             <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg p-2.5 transition-colors hover:bg-slate-100/80 dark:hover:bg-slate-800/80 shadow-sm bg-white/60 dark:bg-slate-800/60">
               <div className="flex min-w-0 flex-1 items-center gap-3">

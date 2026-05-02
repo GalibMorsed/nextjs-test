@@ -19,6 +19,7 @@ import {
   NotificationsSection,
   PersonalDetailsSection,
   PlanSettingsCard,
+  UsageLimitCard,
   SettingsCard,
   SettingsActionFooter,
   SettingsHeaderSection,
@@ -418,6 +419,7 @@ export default function AccountSettingsPage() {
         />
 
         <PlanSettingsCard />
+        <UsageLimitCard />
 
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
           <SettingsCard

@@ -7,7 +7,7 @@ import { incrementPersonalizationSuggestionUsage } from "@/lib/activityAnalytics
 import { getExploreRegion } from "@/lib/explore";
 import { PERSONALIZATION_PROMO_HIDE_EVENT } from "./personalizatioPopup";
 import { useAILimit } from "@/hooks/useAILimit";
-import Link from "next/link";
+import CreditAlertBanner from "@/app/components/CreditAlertBanner";
 
 type TopicSuggestion = {
   topic: string;
@@ -151,7 +151,7 @@ export default function PersonalizationAiSuggestions({
           Real-time recommendations based on trending global news
         </p>
 
-        {!isLocked && (
+        {!isLocked ? (
           <button
             id="ai-topic-suggestions-button"
             type="button"
@@ -177,28 +177,14 @@ export default function PersonalizationAiSuggestions({
               </>
             )}
           </button>
-        )}
+        ) : null}
       </div>
 
-      {isLocked && suggestions.length === 0 && !isSuggesting && (
-        <div className="mt-6 w-full rounded-2xl border border-amber-200/80 bg-gradient-to-br from-amber-50 via-white to-sky-50 p-5 text-center shadow-sm dark:border-amber-900/40 dark:from-amber-950/20 dark:via-slate-900 dark:to-slate-900">
-          <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-xl bg-amber-100 text-amber-700 dark:bg-amber-950/50 dark:text-amber-200">
-            <Sparkles className="h-5 w-5" />
-          </div>
-          <p className="mt-3 text-sm font-semibold text-[var(--foreground)] sm:text-base">
-            You've reached your free limit of {limit} AI usages.
-          </p>
-          <p className="mt-1 text-sm text-[var(--muted)]">
-            Activate any plan with API credits to unlock unlimited AI access.
-          </p>
-          <Link
-            href="/plans"
-            className="mt-4 inline-flex h-10 items-center justify-center rounded-xl bg-[var(--primary)] px-5 text-sm font-bold text-white shadow-md shadow-[var(--primary)]/20 transition-all hover:brightness-110"
-          >
-            Go to Plans
-          </Link>
+      {isLocked && suggestions.length === 0 && !isSuggesting ? (
+        <div className="mt-6">
+          <CreditAlertBanner limit={limit} />
         </div>
-      )}
+      ) : null}
 
       {isSuggesting && (
         <div className="mt-8">
