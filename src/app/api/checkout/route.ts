@@ -10,15 +10,17 @@ const PRODUCT_IDS: Record<PlanKey, string | undefined> = {
     proplus_yearly: process.env.DODO_PAYMENT_NEXTNEWS_PRO_PLUS_YEARLY_PRODUCT_ID,
 };
 
-const dodo = new DodoPayments({
-    bearerToken: process.env.DODO_PAYMENT_API_KEY,
-    environment:
-        process.env.DODO_PAYMENT_ENVIRONMENT === "test_mode"
-            ? "test_mode"
-            : process.env.DODO_PAYMENT_ENVIRONMENT === "live_mode"
-                ? "live_mode"
-                : undefined,
-});
+function getDodoClient() {
+    return new DodoPayments({
+        bearerToken: process.env.DODO_PAYMENT_API_KEY,
+        environment:
+            process.env.DODO_PAYMENT_ENVIRONMENT === "test_mode"
+                ? "test_mode"
+                : process.env.DODO_PAYMENT_ENVIRONMENT === "live_mode"
+                    ? "live_mode"
+                    : undefined,
+    });
+}
 
 function isPlanKey(plan: unknown): plan is PlanKey {
     return (
@@ -66,6 +68,7 @@ export async function POST(req: NextRequest) {
                 ? `${process.env.DODO_PAYMENT_FAILURE_URL.trim()}?plan=${encodeURIComponent(plan)}`
                 : new URL(`/checkout/failure?plan=${encodeURIComponent(plan)}`, req.url).toString();
 
+        const dodo = getDodoClient();
         const session = await dodo.checkoutSessions.create({
             product_cart: [{ product_id: productId, quantity: 1 }],
             customer: email
