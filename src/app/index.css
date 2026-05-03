@@ -325,7 +325,7 @@
 }
 
 body {
-  font-family: var(--font-jakarta), ui-sans-serif, system-ui, sans-serif;
+  font-family: var(--font-sans);
   color: var(--foreground);
   background: var(--background);
 }

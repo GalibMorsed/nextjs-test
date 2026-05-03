@@ -84,10 +84,10 @@ export default function PersonalizationRegionSelector({
               key={region.id}
               whileHover={{ scale: 1.01 }}
               whileTap={{ scale: 0.98 }}
-              className={`group relative flex cursor-pointer items-center gap-3 rounded-2xl border p-4 transition-all duration-200 ${
+              className={`group relative flex cursor-pointer items-center gap-3 rounded-2xl border p-4 transition-all duration-300 shadow-sm hover:shadow-md ${
                 isSelected
-                  ? "border-purple-500 bg-purple-50 shadow-sm dark:border-purple-500/50 dark:bg-purple-500/10"
-                  : "border-slate-200 bg-white hover:border-purple-300 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800/80 dark:hover:border-purple-700/50 dark:hover:bg-slate-800"
+                  ? "border-purple-500 bg-purple-500/[0.08] dark:bg-purple-500/[0.12] ring-1 ring-purple-500/20"
+                  : "border-slate-200 dark:border-slate-800 bg-white/70 dark:bg-slate-900/60 hover:border-purple-300 dark:hover:border-purple-700/50"
               }`}
             >
               <input
@@ -97,10 +97,10 @@ export default function PersonalizationRegionSelector({
                 onChange={() => onToggleRegion(region.id)}
               />
               <div
-                className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border transition-colors ${
+                className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border transition-all duration-300 ${
                   isSelected
-                    ? "border-purple-500 bg-purple-500 text-white"
-                    : "border-slate-300 bg-white group-hover:border-purple-400 dark:border-slate-600 dark:bg-slate-800"
+                    ? "border-purple-500 bg-purple-500"
+                    : "border-slate-300 bg-white dark:border-slate-600 dark:bg-slate-800 group-hover:border-purple-400"
                 }`}
               >
                 <AnimatePresence>
@@ -110,7 +110,7 @@ export default function PersonalizationRegionSelector({
                       animate={{ scale: 1, opacity: 1 }}
                       exit={{ scale: 0, opacity: 0 }}
                     >
-                      <Check className="h-3 w-3 stroke-[3]" />
+                      <Check className="h-3.5 w-3.5 stroke-[3.5] text-white" />
                     </motion.div>
                   )}
                 </AnimatePresence>
@@ -119,7 +119,7 @@ export default function PersonalizationRegionSelector({
               <div className="flex flex-1 items-center gap-3 overflow-hidden">
                 <RegionFlag id={region.id} label={region.label} />
                 <span
-                  className={`truncate text-sm font-medium transition-colors ${
+                  className={`truncate text-sm font-semibold transition-colors ${
                     isSelected
                       ? "text-purple-900 dark:text-purple-100"
                       : "text-slate-700 dark:text-slate-300"

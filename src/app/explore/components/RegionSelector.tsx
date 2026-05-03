@@ -1,11 +1,12 @@
 "use client";
 
-import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Compass, Sparkles, Loader2, ArrowRight, Globe2 } from "lucide-react";
 import ReactCountryFlag from "react-country-flag";
 import { EXPLORE_REGIONS, type ExploreRegionId } from "@/lib/explore";
 import { incrementRegionSuggestionUsage } from "@/lib/activityAnalytics";
+import { useAILimit } from "@/hooks/useAILimit";
+import CreditAlertBanner from "@/app/components/CreditAlertBanner";
 
 export interface AIRegionSuggestion {
   label: string;
@@ -107,39 +108,20 @@ function RegionFlag({
 export default function RegionSelector({
   selectedRegion,
   onRegionSelect,
-  onSearchPreferredRegion,
+  onSearchPreferredRegion: _onSearchPreferredRegion,
   onAISuggestionSelect,
 }: RegionSelectorProps) {
   const [isSuggesting, setIsSuggesting] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [suggestions, setSuggestions] = useState<AIRegionSuggestion[]>([]);
   const [errorMessage, setErrorMessage] = useState("");
-  const [hasActivePlan, setHasActivePlan] = useState(false);
-
-  useEffect(() => {
-    const syncPlanState = () => {
-      const planName = localStorage.getItem("nextnews-plan")?.trim();
-      setHasActivePlan(Boolean(planName));
-    };
-
-    syncPlanState();
-    window.addEventListener("storage", syncPlanState);
-    window.addEventListener("focus", syncPlanState);
-
-    return () => {
-      window.removeEventListener("storage", syncPlanState);
-      window.removeEventListener("focus", syncPlanState);
-    };
-  }, []);
+  const { isLocked, limit } = useAILimit();
 
   const handleAISuggest = async () => {
-    const savedPlan = localStorage.getItem("nextnews-plan")?.trim();
-
-    if (!savedPlan) {
-      setHasActivePlan(false);
-      setShowSuggestions(false);
-      setSuggestions([]);
-      setErrorMessage("");
+    if (isLocked) {
+      setErrorMessage(
+        `You've reached your free limit of ${limit} AI usages. Activate any plan to unlock.`,
+      );
       return;
     }
 
@@ -183,15 +165,15 @@ export default function RegionSelector({
       const nextSuggestions = Array.isArray(payload.suggestions)
         ? payload.suggestions
             .filter(
-              (suggestion): suggestion is AIRegionSuggestion =>
-                Boolean(
-                  suggestion &&
-                    suggestion.label?.trim() &&
-                    suggestion.reason?.trim() &&
-                    suggestion.query?.trim() &&
-                    /^[A-Z]{2}$/.test(suggestion.countryCode?.trim() || ""),
-                ),
-            )
+            (suggestion): suggestion is AIRegionSuggestion =>
+              Boolean(
+                suggestion &&
+                  suggestion.label?.trim() &&
+                  suggestion.reason?.trim() &&
+                  suggestion.query?.trim() &&
+                  /^[A-Z]{2}$/.test(suggestion.countryCode?.trim() || ""),
+              ),
+          )
         : [];
 
       setSuggestions(nextSuggestions);
@@ -268,14 +250,14 @@ export default function RegionSelector({
             </div>
 
             <div className="flex flex-col items-center gap-6">
-              {hasActivePlan ? (
+              {!isLocked ? (
                 <button
                   type="button"
                   onClick={handleAISuggest}
                   disabled={isSuggesting}
                   className="group relative inline-flex w-fit items-center gap-3 self-center overflow-hidden rounded-xl bg-gradient-to-r from-blue-600 via-indigo-500 to-sky-500 px-8 py-3.5 text-sm font-bold text-white shadow-md shadow-blue-500/30 transition-all duration-300 hover:scale-[1.02] hover:shadow-lg hover:shadow-blue-500/40 disabled:cursor-not-allowed disabled:opacity-70 lg:self-auto"
                 >
-                  {/* Shimmer sweep effect */}
+                    {/* Shimmer sweep effect */}
                   <span className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform duration-700 ease-in-out group-hover:translate-x-full" />
 
                   {isSuggesting ? (
@@ -290,35 +272,7 @@ export default function RegionSelector({
                     </>
                   )}
                 </button>
-              ) : (
-                <div className="w-full max-w-2xl rounded-3xl border border-amber-200/80 bg-gradient-to-br from-amber-50 via-white to-sky-50 p-5 text-center shadow-sm dark:border-amber-900/40 dark:from-amber-950/20 dark:via-slate-900 dark:to-slate-900">
-                  <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-100 text-amber-700 dark:bg-amber-950/50 dark:text-amber-200">
-                    <Sparkles className="h-5 w-5" />
-                  </div>
-                  <p className="mt-4 text-sm font-semibold text-[var(--foreground)] sm:text-base">
-                    AI region suggestions are available after you activate any
-                    plan.
-                  </p>
-                  <p className="mt-2 text-sm text-[var(--muted)]">
-                    Go to the plans page or search for your preferred region.
-                  </p>
-                  <div className="mt-5 flex flex-col items-center justify-center gap-3 sm:flex-row">
-                    <Link
-                      href="/plans"
-                      className="inline-flex h-11 items-center justify-center rounded-xl bg-[var(--primary)] px-5 text-sm font-bold text-white shadow-md shadow-[var(--primary)]/20 transition-all hover:brightness-110"
-                    >
-                      Go to Plans
-                    </Link>
-                    <button
-                      type="button"
-                      onClick={onSearchPreferredRegion}
-                      className="inline-flex h-11 items-center justify-center rounded-xl border border-slate-200 bg-white px-5 text-sm font-bold text-[var(--foreground)] transition-all hover:border-slate-300 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:hover:border-slate-600"
-                    >
-                      Search preferred region
-                    </button>
-                  </div>
-                </div>
-              )}
+              ) : null}
 
               {errorMessage ? (
                 <div className="flex items-center gap-2 rounded-xl bg-rose-50 px-4 py-2 text-xs font-semibold text-rose-600 dark:bg-rose-950/20 dark:text-rose-400">
@@ -326,6 +280,8 @@ export default function RegionSelector({
                   {errorMessage}
                 </div>
               ) : null}
+
+              {isLocked ? <CreditAlertBanner limit={limit} /> : null}
 
               {/* AI Suggestions List */}
               {showSuggestions && (

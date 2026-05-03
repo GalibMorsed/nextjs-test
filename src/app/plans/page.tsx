@@ -17,7 +17,22 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useRouter, useSearchParams } from "next/navigation";
 import SupportProject from "../components/supportProject";
+import LottiePlayer from "../components/LottiePlayer";
+import ChoosePlan, {
+  type PlanKey as CheckoutPlanKey,
+} from "./payments/choosePlan";
+import {
+  canUseFreePlan,
+  cancelPlanInDatabase,
+  type PlanKey as SubscriptionPlanKey,
+  isPlanKey,
+  loadUserSubscriptionPlan,
+  savePlanToDatabase,
+  syncSubscriptionPlanCache,
+  type SubscriptionPlanRecord,
+} from "../services/subscriptionPlanService";
 
 const planCatalog = [
   {
@@ -37,8 +52,8 @@ const planCatalog = [
   },
   {
     name: "Pro",
-    monthlyPrice: 79,
-    yearlyPrice: 790,
+    monthlyPrice: 99,
+    yearlyPrice: 899,
     desc: "Ideal for regular readers seeking enhanced customization, deeper content coverage, and priority access to premium features.",
     featured: true,
     credits: {
@@ -55,8 +70,8 @@ const planCatalog = [
   },
   {
     name: "Pro+",
-    monthlyPrice: 199,
-    yearlyPrice: 1990,
+    monthlyPrice: 299,
+    yearlyPrice: 2299,
     desc: "Designed for power users who want unlimited access to all NextNews features and priority support.",
     credits: {
       monthly: "45,000 API call credits per month",
@@ -121,73 +136,191 @@ const perkColors = [
 ];
 
 export default function PlansPage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [yearly, setYearly] = useState(false);
   const [subscribed, setSubscribed] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
   const [showChaiPopup, setShowChaiPopup] = useState(false);
   const [showCancelConfirmation, setShowCancelConfirmation] = useState(false);
   const [showCelebration, setShowCelebration] = useState(false);
-  const [freePlanExpiry, setFreePlanExpiry] = useState<number | null>(null);
+  const [planExpiry, setPlanExpiry] = useState<number | null>(null);
+  const [freePlanError, setFreePlanError] = useState<string | null>(null);
   const [currentPlan, setCurrentPlan] = useState<string | null>(null);
+  const checkoutPlanParam = searchParams.get("plan");
+  const checkoutPlanKey: SubscriptionPlanKey | null = isPlanKey(
+    checkoutPlanParam,
+  )
+    ? checkoutPlanParam
+    : null;
 
-  useEffect(() => {
-    if (typeof window === "undefined") return;
+  const applySubscriptionPlan = (plan: SubscriptionPlanRecord | null) => {
+    syncSubscriptionPlanCache(plan);
 
-    const storedPlan = localStorage.getItem("nextnews-plan");
-    if (storedPlan !== "Free") {
-      setCurrentPlan(storedPlan);
-      setFreePlanExpiry(null);
-      return;
-    }
-
-    const expiryRaw = localStorage.getItem(FREE_PLAN_EXPIRY_KEY);
-    let expiry = expiryRaw ? Number(expiryRaw) : Number.NaN;
-
-    if (!expiryRaw || Number.isNaN(expiry)) {
-      expiry = Date.now() + FREE_PLAN_DAYS * MS_IN_DAY;
-      localStorage.setItem(FREE_PLAN_EXPIRY_KEY, String(expiry));
-    }
-
-    if (Date.now() >= expiry) {
-      localStorage.removeItem("nextnews-plan");
-      localStorage.removeItem(FREE_PLAN_EXPIRY_KEY);
+    if (!plan || plan.status === "canceled" || plan.status === "expired") {
       setCurrentPlan(null);
-      setFreePlanExpiry(null);
+      setPlanExpiry(null);
       return;
     }
 
-    setCurrentPlan("Free");
-    setFreePlanExpiry(expiry);
-  }, []);
+    setCurrentPlan(plan.plan_name);
+
+    if (plan.plan_key === "free" && plan.trial_end) {
+      setPlanExpiry(new Date(plan.trial_end).getTime());
+      return;
+    } else if (plan.plan_key !== "free" && plan.current_period_end) {
+      setPlanExpiry(new Date(plan.current_period_end).getTime());
+      return;
+    }
+
+    setPlanExpiry(null);
+  };
 
   useEffect(() => {
-    if (!freePlanExpiry) return undefined;
+    let isMounted = true;
 
-    const timeLeft = freePlanExpiry - Date.now();
+    const loadPlanState = async () => {
+      if (checkoutPlanKey) {
+        const savedPlan = await savePlanToDatabase(checkoutPlanKey);
+        if (isMounted && savedPlan.data) {
+          applySubscriptionPlan(savedPlan.data);
+          router.replace("/plans");
+          return;
+        }
+      }
+
+      const { data } = await loadUserSubscriptionPlan();
+      if (isMounted && data) {
+        applySubscriptionPlan(data);
+        return;
+      }
+
+      if (typeof window === "undefined" || !isMounted) return;
+
+      const storedPlan = localStorage.getItem("nextnews-plan");
+      if (storedPlan !== "Free") {
+        setCurrentPlan(storedPlan);
+        const storedExpiry = localStorage.getItem("nextnews-plan-expiry");
+        if (
+          storedExpiry &&
+          storedExpiry !== "undefined" &&
+          storedExpiry !== "null"
+        ) {
+          const parsedExpiry = new Date(storedExpiry).getTime();
+          if (!Number.isNaN(parsedExpiry)) {
+            setPlanExpiry(parsedExpiry);
+          } else {
+            setPlanExpiry(null);
+          }
+        } else {
+          setPlanExpiry(null);
+        }
+        return;
+      }
+
+      const expiryRaw = localStorage.getItem(FREE_PLAN_EXPIRY_KEY);
+      let expiry = expiryRaw ? Number(expiryRaw) : Number.NaN;
+
+      if (!expiryRaw || Number.isNaN(expiry)) {
+        expiry = Date.now() + FREE_PLAN_DAYS * MS_IN_DAY;
+        localStorage.setItem(FREE_PLAN_EXPIRY_KEY, String(expiry));
+      }
+
+      if (Date.now() >= expiry) {
+        localStorage.removeItem("nextnews-plan");
+        localStorage.removeItem(FREE_PLAN_EXPIRY_KEY);
+        setCurrentPlan(null);
+        setPlanExpiry(null);
+        return;
+      }
+
+      setCurrentPlan("Free");
+      setPlanExpiry(expiry);
+    };
+
+    void loadPlanState();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [checkoutPlanKey, router]);
+
+  useEffect(() => {
+    if (!planExpiry || Number.isNaN(planExpiry)) return undefined;
+
+    // Only auto-clear Free plans based on timeout. Premium plans are managed by DB status.
+    if (currentPlan !== "Free") return undefined;
+
+    const timeLeft = planExpiry - Date.now();
     if (timeLeft <= 0) {
       localStorage.removeItem("nextnews-plan");
       localStorage.removeItem(FREE_PLAN_EXPIRY_KEY);
       setCurrentPlan(null);
-      setFreePlanExpiry(null);
+      setPlanExpiry(null);
       return undefined;
     }
+
+    // Cap the timeout to 24 days (max 32-bit int for setTimeout is ~24.8 days)
+    const MAX_TIMEOUT = 2147483647;
+    const safeTimeLeft = Math.min(timeLeft, MAX_TIMEOUT);
 
     const timeoutId = window.setTimeout(() => {
       localStorage.removeItem("nextnews-plan");
       localStorage.removeItem(FREE_PLAN_EXPIRY_KEY);
       setCurrentPlan(null);
-      setFreePlanExpiry(null);
-    }, timeLeft);
+      setPlanExpiry(null);
+    }, safeTimeLeft);
 
     return () => window.clearTimeout(timeoutId);
-  }, [freePlanExpiry]);
+  }, [planExpiry, currentPlan]);
 
-  const handleActivateFreePlan = () => {
-    const expiry = Date.now() + FREE_PLAN_DAYS * MS_IN_DAY;
-    localStorage.setItem("nextnews-plan", "Free");
-    localStorage.setItem(FREE_PLAN_EXPIRY_KEY, String(expiry));
-    setCurrentPlan("Free");
-    setFreePlanExpiry(expiry);
+  const handleActivateFreePlan = async () => {
+    const freePlanStatus = await canUseFreePlan();
+
+    if (freePlanStatus.error) {
+      const expiry = Date.now() + FREE_PLAN_DAYS * MS_IN_DAY;
+      localStorage.setItem("nextnews-plan", "Free");
+      localStorage.setItem(FREE_PLAN_EXPIRY_KEY, String(expiry));
+      setCurrentPlan("Free");
+      setPlanExpiry(expiry);
+      setSelectedPlan(null);
+      setShowCelebration(true);
+      setTimeout(() => setShowCelebration(false), 4200);
+      return;
+    }
+
+    if (!freePlanStatus.allowed) {
+      const nextAvailable = freePlanStatus.nextAvailableAt
+        ? new Date(freePlanStatus.nextAvailableAt).toLocaleDateString(
+            undefined,
+            {
+              year: "numeric",
+              month: "short",
+              day: "numeric",
+            },
+          )
+        : null;
+
+      setFreePlanError(
+        nextAvailable
+          ? `Free plan will be available again on ${nextAvailable}.`
+          : "Free plan is not available yet.",
+      );
+      setTimeout(() => setFreePlanError(null), 6000);
+      return;
+    }
+
+    const savedPlan = await savePlanToDatabase("free");
+    if (savedPlan.data) {
+      applySubscriptionPlan(savedPlan.data);
+    } else {
+      const expiry = Date.now() + FREE_PLAN_DAYS * MS_IN_DAY;
+      localStorage.setItem("nextnews-plan", "Free");
+      localStorage.setItem(FREE_PLAN_EXPIRY_KEY, String(expiry));
+      setCurrentPlan("Free");
+      setPlanExpiry(expiry);
+    }
+
     setSelectedPlan(null);
     setShowCelebration(true);
     setTimeout(() => setShowCelebration(false), 4200);
@@ -197,11 +330,18 @@ export default function PlansPage() {
     setShowCancelConfirmation(true);
   };
 
-  const handleConfirmCancel = () => {
-    localStorage.removeItem("nextnews-plan");
-    localStorage.removeItem(FREE_PLAN_EXPIRY_KEY);
-    setCurrentPlan(null);
-    setFreePlanExpiry(null);
+  const handleConfirmCancel = async () => {
+    const canceledPlan = await cancelPlanInDatabase();
+
+    if (canceledPlan.data) {
+      applySubscriptionPlan(canceledPlan.data);
+    } else {
+      localStorage.removeItem("nextnews-plan");
+      localStorage.removeItem(FREE_PLAN_EXPIRY_KEY);
+      setCurrentPlan(null);
+      setPlanExpiry(null);
+    }
+
     setShowCancelConfirmation(false);
   };
 
@@ -227,21 +367,31 @@ export default function PlansPage() {
     setTimeout(() => setSubscribed(false), 5000);
   };
 
-  const freePlanExpiryDate = freePlanExpiry
-    ? new Date(freePlanExpiry).toLocaleDateString(undefined, {
+  const planExpiryDate = planExpiry
+    ? new Date(planExpiry).toLocaleDateString(undefined, {
         year: "numeric",
         month: "short",
         day: "numeric",
       })
     : null;
 
+  const selectedPlanKey: CheckoutPlanKey | null =
+    selectedPlan === "Pro"
+      ? yearly
+        ? "pro_yearly"
+        : "pro_monthly"
+      : selectedPlan === "Pro+"
+        ? yearly
+          ? "proplus_yearly"
+          : "proplus_monthly"
+        : null;
+
   return (
     <div className="min-h-screen overflow-x-hidden bg-gradient-to-br from-indigo-50 via-blue-50 to-purple-50 text-slate-900 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 dark:text-slate-100">
       <section className="relative overflow-hidden px-4 py-14 sm:px-6 sm:py-16 lg:px-8">
         <div className="relative z-10 mx-auto max-w-5xl text-center">
           <h1 className="mb-4 text-4xl font-bold tracking-tight sm:text-5xl lg:text-6xl">
-            Choose Your Perfect{" "}
-            <br />
+            Choose Your Perfect <br />
             <span
               style={{ fontFamily: "cursive" }}
               className="text-transparent bg-clip-text bg-gradient-to-r from-teal-400 via-emerald-500 to-teal-600 font-medium italic drop-shadow-sm"
@@ -304,7 +454,7 @@ export default function PlansPage() {
         </div>
       </section>
 
-      {currentPlan === "Free" && (
+      {currentPlan && (
         <section className="px-4 pb-8 sm:px-6 lg:px-8">
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
@@ -315,19 +465,25 @@ export default function PlansPage() {
               <div>
                 <div className="mb-2 flex items-center gap-2">
                   <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100">
-                    Current Plan: Free
+                    Current Plan: {currentPlan}
                   </h2>
                   <span className="rounded-full bg-teal-100 px-3 py-0.5 text-xs font-medium text-teal-800 dark:bg-teal-900/40 dark:text-teal-300">
                     Active
                   </span>
                 </div>
                 <p className="text-slate-600 dark:text-slate-300">
-                  You have access to core news and daily reading features.
+                  {currentPlan === "Free"
+                    ? "You have access to core news and daily reading features."
+                    : `Your ${currentPlan} subscription is active and unlocking premium access.`}
                 </p>
                 <p className="mt-2 text-xs font-medium text-slate-500 dark:text-slate-400">
-                  {freePlanExpiryDate
-                    ? `Free plan expires on ${freePlanExpiryDate}.`
-                    : "Free plan expires 7 days after activation."}
+                  {currentPlan === "Free"
+                    ? planExpiryDate
+                      ? `Free plan expires on ${planExpiryDate}.`
+                      : "Free plan expires 7 days after activation."
+                    : planExpiryDate
+                      ? `Your premium plan remains active until ${planExpiryDate}.`
+                      : "Your premium plan remains active until it is canceled or its billing cycle ends."}
                 </p>
               </div>
               <button
@@ -354,7 +510,9 @@ export default function PlansPage() {
                 viewport={{ once: true }}
                 className={`group relative rounded-3xl bg-gradient-to-br ${colors.card} p-8 flex flex-col items-start text-left transition-all duration-300 border-2`}
               >
-                <div className={`mb-5 bg-gradient-to-br ${colors.icon} rounded-full p-2.5 shadow-lg border border-white/30 transition-transform group-hover:scale-110 w-fit`}>
+                <div
+                  className={`mb-5 bg-gradient-to-br ${colors.icon} rounded-full p-2.5 shadow-lg border border-white/30 transition-transform group-hover:scale-110 w-fit`}
+                >
                   <IconComponent size={20} className="text-white" />
                 </div>
                 <h2 className="text-xl font-bold mb-2 text-slate-900 dark:text-white">
@@ -377,6 +535,15 @@ export default function PlansPage() {
         <div className="mx-auto grid max-w-6xl items-center justify-items-center gap-8 xl:grid-cols-3">
           {planCatalog.map((plan, index) => {
             const price = yearly ? plan.yearlyPrice : plan.monthlyPrice;
+            const annualSavingsPercent =
+              yearly && plan.monthlyPrice > 0
+                ? Math.max(
+                    0,
+                    Math.round(
+                      (1 - plan.yearlyPrice / (plan.monthlyPrice * 12)) * 100,
+                    ),
+                  )
+                : null;
 
             return (
               <motion.div
@@ -420,7 +587,9 @@ export default function PlansPage() {
                   </p>
                   {yearly && (
                     <p className="mt-1 text-xs font-medium text-emerald-600">
-                      Save 20% on annual billing
+                      {annualSavingsPercent
+                        ? `Save ${annualSavingsPercent}% on annual billing`
+                        : "Save on annual billing"}
                     </p>
                   )}
                 </div>
@@ -573,6 +742,18 @@ export default function PlansPage() {
                       Get started with daily news, basic personalization, and
                       standard article browsing immediately.
                     </p>
+                    <AnimatePresence>
+                      {freePlanError && (
+                        <motion.div
+                          initial={{ opacity: 0, y: -10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -10 }}
+                          className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-600 shadow-sm dark:border-rose-900/50 dark:bg-rose-950/30 dark:text-rose-400"
+                        >
+                          {freePlanError}
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
                     <button
                       onClick={handleActivateFreePlan}
                       className="w-full rounded-xl bg-teal-600 px-4 py-3 text-sm font-semibold text-white shadow-md transition-colors hover:bg-teal-700 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 dark:focus:ring-offset-slate-900"
@@ -593,12 +774,13 @@ export default function PlansPage() {
                       displays our upcoming premium features and planned
                       offerings to help you explore available options.
                     </p>
-                    <button
-                      onClick={() => setSelectedPlan(null)}
-                      className="w-full rounded-xl bg-teal-600 px-4 py-3 text-sm font-semibold text-white shadow-md transition-colors hover:bg-teal-700 hover:shadow-lg"
-                    >
-                      Got it
-                    </button>
+                    {selectedPlanKey ? (
+                      <ChoosePlan
+                        planKey={selectedPlanKey}
+                        label={`Continue with ${selectedPlan}`}
+                        className="w-full"
+                      />
+                    ) : null}
                     <button
                       onClick={() => {
                         setSelectedPlan(null);
@@ -637,11 +819,16 @@ export default function PlansPage() {
               onClick={(e) => e.stopPropagation()}
             >
               <div className="flex flex-col items-center text-center">
-                <div className="mb-4 rounded-full bg-rose-100 p-3 dark:bg-rose-900/30">
-                  <AlertTriangle className="h-6 w-6 text-rose-600 dark:text-rose-400" />
+                <div className="mb-4 flex justify-center">
+                  <LottiePlayer
+                    src="/actiivity/error.json"
+                    className="h-20 w-20"
+                    loop
+                    autoplay
+                  />
                 </div>
                 <h3 className="mb-2 text-xl font-bold text-slate-900 dark:text-slate-100">
-                  Cancel Free Plan?
+                  Cancel {currentPlan} Plan?
                 </h3>
                 <p className="mb-6 text-sm text-slate-600 dark:text-slate-300">
                   Are you sure you want to cancel? You&apos;ll lose access to

@@ -29,6 +29,7 @@ import StatusPopup from "../components/statusPopup";
 import PersonalizationPromoAd, {
   PERSONALIZATION_PROMO_DISMISS_KEY,
 } from "./components/personalizatioPopup";
+import LottiePlayer from "@/app/components/LottiePlayer";
 
 type PopupMessage = {
   tone: "success" | "error" | "info";
@@ -907,8 +908,13 @@ export default function PersonalizationPage() {
               onClick={(e) => e.stopPropagation()}
             >
               <div className="mb-4 flex items-start gap-3">
-                <div className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-red-100 text-red-600">
-                  <AlertTriangle className="h-5 w-5" />
+                <div className="mt-0.5 flex shrink-0 items-center justify-center">
+                  <LottiePlayer
+                    src="/actiivity/error.json"
+                    className="h-10 w-10"
+                    loop
+                    autoplay
+                  />
                 </div>
                 <div className="flex-1">
                   <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100">

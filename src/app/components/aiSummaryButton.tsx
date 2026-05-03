@@ -5,6 +5,8 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Bot, Loader2, Sparkles, X } from "lucide-react";
 import { supabase } from "../../../lib/superbaseClient";
 import { incrementAiSummaryUsage } from "@/lib/activityAnalytics";
+import { useAILimit } from "@/hooks/useAILimit";
+import Link from "next/link";
 
 interface AISummaryButtonProps {
   title: string;
@@ -65,6 +67,9 @@ export default function AISummaryButton({
   const anchorRef = useRef<HTMLDivElement | null>(null);
   const promoRef = useRef<HTMLDivElement | null>(null);
   const summaryPoints = toBulletPoints(summary);
+  const { isLocked, limit } = useAILimit();
+  const shouldShowPlansCTA =
+    isLocked || error.toLowerCase().includes("free limit");
 
   useEffect(() => {
     let isMounted = true;
@@ -188,6 +193,11 @@ export default function AISummaryButton({
     dismissSummaryPromo();
     setIsOpen(true);
     setError("");
+
+    if (isLocked) {
+      setError(`You've reached your free limit of ${limit} AI usages. Activate any plan to unlock.`);
+      return;
+    }
 
     if (summary || isLoading) {
       return;
@@ -367,9 +377,20 @@ export default function AISummaryButton({
                     Generating summary...
                   </div>
                 ) : error ? (
-                  <p className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700 dark:border-red-900/70 dark:bg-red-950/40 dark:text-red-300">
-                    {error}
-                  </p>
+                  <div className="flex flex-col gap-3 rounded-lg border border-red-200 bg-red-50 p-4 dark:border-red-900/70 dark:bg-red-950/40">
+                    <p className="text-sm font-medium text-red-700 dark:text-red-300">
+                      {error}
+                    </p>
+                    {shouldShowPlansCTA && (
+                      <Link
+                        href="/plans"
+                        className="inline-flex w-fit items-center justify-center rounded-xl bg-blue-600 px-4 py-2 text-xs font-bold text-white shadow-md shadow-blue-500/20 transition-all hover:bg-blue-700"
+                        onClick={() => setIsOpen(false)}
+                      >
+                        Go to Plans
+                      </Link>
+                    )}
+                  </div>
                 ) : summaryPoints.length > 0 ? (
                   <ul className="space-y-3">
                     {summaryPoints.map((point, index) => (

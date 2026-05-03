@@ -5,6 +5,7 @@ import { updateNote, deleteNote } from "../services/notesService";
 import { AnimatePresence, motion } from "framer-motion";
 import { AlertTriangle, ArrowUpRight, X } from "lucide-react";
 import StatusPopup from "../components/statusPopup";
+import LottiePlayer from "../components/LottiePlayer";
 
 interface Note {
   id: string;
@@ -237,8 +238,13 @@ export default function NoteCard({
               onClick={(e) => e.stopPropagation()}
             >
               <div className="mb-4 flex items-start gap-3">
-                <div className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-red-100 text-red-600">
-                  <AlertTriangle className="h-5 w-5" />
+                <div className="mt-0.5 flex shrink-0 items-center justify-center">
+                  <LottiePlayer
+                    src="/actiivity/error.json"
+                    className="h-10 w-10"
+                    loop
+                    autoplay
+                  />
                 </div>
                 <div className="flex-1">
                   <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100">

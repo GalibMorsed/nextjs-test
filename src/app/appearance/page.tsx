@@ -30,8 +30,8 @@ const FONT_FAMILY_OPTIONS = [
       "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif",
   },
   {
-    label: "italic Sans Serif",
-    value: "italic system-ui, -apple-system, sans-serif",
+    label: "italic Serif (Playfair)",
+    value: "'Playfair Display', Georgia, serif",
   },
   {
     label: "Editorial Serif (Georgia)",
@@ -145,12 +145,27 @@ export default function AppearancePage() {
       <motion.div
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
-        className="w-full mx-auto bg-white dark:bg-slate-900 lg:rounded-none shadow-xl lg:shadow-none p-4 sm:p-6 md:p-8 lg:p-10 lg:min-h-[calc(100vh-65px)] space-y-6 sm:space-y-8"
+        className="relative w-full mx-auto bg-gradient-to-br from-indigo-50 via-blue-50 to-purple-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 lg:rounded-none p-4 sm:p-6 md:p-8 lg:p-10 lg:min-h-[calc(100vh-65px)] space-y-6 sm:space-y-8"
       >
-        <section className="mb-6 md:mb-8 rounded-2xl border border-slate-200 dark:border-slate-700 bg-gradient-to-r from-slate-50 via-white to-slate-50 dark:from-slate-800 dark:via-slate-900 dark:to-slate-800 p-4 sm:p-6">
+        <div className="pointer-events-none absolute inset-0 overflow-hidden">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.85 }}
+            animate={{ opacity: 0.7, scale: 1 }}
+            transition={{ duration: 0.7 }}
+            className="absolute -top-16 -left-16 h-56 w-56 rounded-full bg-[var(--primary)]/12 blur-3xl dark:bg-[var(--primary)]/10"
+          />
+          <motion.div
+            initial={{ opacity: 0, scale: 0.85 }}
+            animate={{ opacity: 0.5, scale: 1 }}
+            transition={{ duration: 0.9, delay: 0.1 }}
+            className="absolute right-0 top-40 h-64 w-64 rounded-full bg-sky-300/20 blur-3xl dark:bg-sky-500/10"
+          />
+        </div>
+
+        <section className="relative mb-6 md:mb-8 rounded-3xl border border-slate-200/80 dark:border-slate-700/80 bg-white/90 dark:bg-slate-900/85 p-6 shadow-sm backdrop-blur sm:p-8">
           <div className="flex justify-start mb-3">
             <span className="inline-flex rounded-full bg-slate-100 dark:bg-slate-700 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-300">
-              Theme & Style
+              Signature Style
             </span>
           </div>
           <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100 sm:text-3xl">
@@ -163,10 +178,10 @@ export default function AppearancePage() {
         </section>
 
         {/* Interface theme */}
-        <section className="bg-slate-50/50 dark:bg-slate-800/10 border border-slate-100 dark:border-slate-800 rounded-2xl p-5 sm:p-8 transition-all hover:bg-slate-50/80 dark:hover:bg-slate-800/20">
+        <section className="relative rounded-3xl border border-slate-200/80 dark:border-slate-700/80 bg-white/90 dark:bg-slate-900/85 p-6 shadow-sm backdrop-blur sm:p-8 transition-all hover:bg-white/95 dark:hover:bg-slate-900/90">
           <div className="mb-6">
             <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
-              Interface theme
+              Visual Atmosphere
             </h2>
             <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
               Choose the color scheme of your application
@@ -224,7 +239,7 @@ export default function AppearancePage() {
         </section>
 
         {/* Custom color */}
-        <section className="bg-slate-50/50 dark:bg-slate-800/10 border border-slate-100 dark:border-slate-800 rounded-2xl p-5 sm:p-8 transition-all hover:bg-slate-50/80 dark:hover:bg-slate-800/20">
+        <section className="relative rounded-3xl border border-slate-200/80 dark:border-slate-700/80 bg-white/90 dark:bg-slate-900/85 p-6 shadow-sm backdrop-blur sm:p-8 transition-all hover:bg-white/95 dark:hover:bg-slate-900/90">
           <div className="mb-6">
             <h2 className="text-base sm:text-lg font-semibold text-slate-900 dark:text-slate-100">
               Customize main color
@@ -268,7 +283,7 @@ export default function AppearancePage() {
         </section>
 
         {/* Font size */}
-        <section className="bg-slate-50/50 dark:bg-slate-800/10 border border-slate-100 dark:border-slate-800 rounded-2xl p-5 sm:p-8 transition-all hover:bg-slate-50/80 dark:hover:bg-slate-800/20">
+        <section className="relative rounded-3xl border border-slate-200/80 dark:border-slate-700/80 bg-white/90 dark:bg-slate-900/85 p-6 shadow-sm backdrop-blur sm:p-8 transition-all hover:bg-white/95 dark:hover:bg-slate-900/90">
           <div className="mb-6">
             <h2 className="text-base sm:text-lg font-semibold text-slate-900 dark:text-slate-100">
               Font size
@@ -311,7 +326,7 @@ export default function AppearancePage() {
         </section>
 
         {/* Font family */}
-        <section className="bg-slate-50/50 dark:bg-slate-800/10 border border-slate-100 dark:border-slate-800 rounded-2xl p-5 sm:p-8 transition-all hover:bg-slate-50/80 dark:hover:bg-slate-800/20">
+        <section className="relative rounded-3xl border border-slate-200/80 dark:border-slate-700/80 bg-white/90 dark:bg-slate-900/85 p-6 shadow-sm backdrop-blur sm:p-8 transition-all hover:bg-white/95 dark:hover:bg-slate-900/90">
           <div className="mb-6">
             <h2 className="text-base sm:text-lg font-semibold text-slate-900 dark:text-slate-100">
               Font family
@@ -357,7 +372,7 @@ export default function AppearancePage() {
         </section>
 
         {/* Accessibility & Motion */}
-        <section className="bg-slate-50/50 dark:bg-slate-800/10 border border-slate-100 dark:border-slate-800 rounded-2xl p-5 sm:p-8 transition-all hover:bg-slate-50/80 dark:hover:bg-slate-800/20">
+        <section className="relative rounded-3xl border border-slate-200/80 dark:border-slate-700/80 bg-white/90 dark:bg-slate-900/85 p-6 shadow-sm backdrop-blur sm:p-8 transition-all hover:bg-white/95 dark:hover:bg-slate-900/90">
           <div className="mb-6">
             <h2 className="text-base sm:text-lg font-semibold text-slate-900 dark:text-slate-100">
               Accessibility & Motion
@@ -412,7 +427,7 @@ export default function AppearancePage() {
         </section>
 
         {/* Actions */}
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4 pt-6 border-t border-slate-100 dark:border-slate-700">
+        <div className="relative flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4 pt-6 border-t border-slate-200 dark:border-slate-700">
           <div className="bg-red-50 dark:bg-red-950/40 px-4 py-2.5 sm:px-3 sm:py-1.5 rounded-xl sm:rounded-lg border border-red-100 dark:border-red-800">
             <button
               onClick={resetDefaults}

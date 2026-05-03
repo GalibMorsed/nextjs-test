@@ -5,6 +5,7 @@ import {
   getClientIp,
   verifySupabaseAccessToken,
 } from "@/lib/apiSecurity";
+import { AI_FREE_LIMIT, evaluateAiUsageAccess } from "@/lib/aiUsageLimit";
 import {
   AVAILABLE_PERSONALIZATION_TOPICS,
   sanitizePersonalizationTopic,
@@ -147,6 +148,16 @@ export async function POST(req: Request) {
       return NextResponse.json(
         { error: "Invalid or expired session. Please log in again." },
         { status: 401 },
+      );
+    }
+
+    const access = await evaluateAiUsageAccess(token);
+    if (access.isLocked) {
+      return NextResponse.json(
+        {
+          error: `You've reached your free limit of ${AI_FREE_LIMIT} AI usages. Upgrade to a plan to continue.`,
+        },
+        { status: 403 },
       );
     }
 

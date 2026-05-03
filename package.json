@@ -25,6 +25,7 @@
     "clsx": "^2.1.1",
     "cors": "^2.8.6",
     "culori": "^4.0.2",
+    "dodopayments": "^2.30.0",
     "dotenv": "^17.2.3",
     "express": "^5.2.1",
     "flag-icons": "^7.5.0",
@@ -46,6 +47,7 @@
     "react-toastify": "^11.0.5",
     "recharts": "^3.8.1",
     "scss": "^0.2.4",
+    "standardwebhooks": "^1.0.0",
     "tailwind": "^4.0.0",
     "tailwind-merge": "^3.4.0",
     "web-vitals": "^5.1.0"

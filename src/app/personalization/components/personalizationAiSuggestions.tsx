@@ -6,6 +6,8 @@ import { Loader2, Sparkles } from "lucide-react";
 import { incrementPersonalizationSuggestionUsage } from "@/lib/activityAnalytics";
 import { getExploreRegion } from "@/lib/explore";
 import { PERSONALIZATION_PROMO_HIDE_EVENT } from "./personalizatioPopup";
+import { useAILimit } from "@/hooks/useAILimit";
+import CreditAlertBanner from "@/app/components/CreditAlertBanner";
 
 type TopicSuggestion = {
   topic: string;
@@ -43,6 +45,7 @@ export default function PersonalizationAiSuggestions({
   const [suggestions, setSuggestions] = useState<TopicSuggestion[]>([]);
   const [isSuggesting, setIsSuggesting] = useState(false);
   const [aiElapsedSeconds, setAiElapsedSeconds] = useState(0);
+  const { isLocked, limit } = useAILimit();
 
   useEffect(() => {
     if (!isSuggesting) {
@@ -69,6 +72,14 @@ export default function PersonalizationAiSuggestions({
     window.dispatchEvent(new Event(PERSONALIZATION_PROMO_HIDE_EVENT));
     setIsSuggesting(true);
     setSuggestions([]);
+
+    if (isLocked) {
+      onErrorMessage(
+        `You've reached your free limit of ${limit} AI usages. Activate any plan to unlock.`,
+      );
+      setIsSuggesting(false);
+      return;
+    }
 
     try {
       // Use cached token — avoids another Supabase navigator-lock call
@@ -140,29 +151,40 @@ export default function PersonalizationAiSuggestions({
           Real-time recommendations based on trending global news
         </p>
 
-        <button
-          id="ai-topic-suggestions-button"
-          type="button"
-          onClick={handleGetAiSuggestions}
-          disabled={isSuggesting}
-          className="group relative inline-flex w-fit items-center gap-2 self-center overflow-hidden rounded-xl bg-gradient-to-r from-blue-600 via-indigo-500 to-sky-500 px-6 py-2.5 text-sm font-semibold text-white shadow-md shadow-blue-500/30 transition-all duration-300 hover:scale-[1.02] hover:shadow-lg hover:shadow-blue-500/40 disabled:cursor-not-allowed disabled:opacity-70 lg:self-auto"
-        >
-          {/* Shimmer sweep effect */}
-          <span className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform duration-700 ease-in-out group-hover:translate-x-full" />
+        {!isLocked ? (
+          <button
+            id="ai-topic-suggestions-button"
+            type="button"
+            onClick={handleGetAiSuggestions}
+            disabled={isSuggesting}
+            className="group relative inline-flex w-fit items-center gap-2 self-center overflow-hidden rounded-xl bg-gradient-to-r from-blue-600 via-indigo-500 to-sky-500 px-6 py-2.5 text-sm font-semibold text-white shadow-md shadow-blue-500/30 transition-all duration-300 hover:scale-[1.02] hover:shadow-lg hover:shadow-blue-500/40 disabled:cursor-not-allowed disabled:opacity-70 lg:self-auto"
+          >
+            {/* Shimmer sweep effect */}
+            <span className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform duration-700 ease-in-out group-hover:translate-x-full" />
 
-          {isSuggesting ? (
-            <>
-              <Loader2 className="animate-spin" size={17} />
-              Analyzing...
-            </>
-          ) : (
-            <>
-              <Sparkles size={17} className="transition-transform duration-300 group-hover:rotate-12 group-hover:scale-110" />
-              Get Suggestions
-            </>
-          )}
-        </button>
+            {isSuggesting ? (
+              <>
+                <Loader2 className="animate-spin" size={17} />
+                Analyzing...
+              </>
+            ) : (
+              <>
+                <Sparkles
+                  size={17}
+                  className="transition-transform duration-300 group-hover:rotate-12 group-hover:scale-110"
+                />
+                Get Suggestions
+              </>
+            )}
+          </button>
+        ) : null}
       </div>
+
+      {isLocked && suggestions.length === 0 && !isSuggesting ? (
+        <div className="mt-6">
+          <CreditAlertBanner limit={limit} />
+        </div>
+      ) : null}
 
       {isSuggesting && (
         <div className="mt-8">
@@ -230,36 +252,37 @@ export default function PersonalizationAiSuggestions({
                         </span>
                       )}
                       <span
-                        className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-widest ${item.confidence === "high"
+                        className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-widest ${
+                          item.confidence === "high"
                             ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300"
                             : item.confidence === "medium"
                               ? "bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300"
                               : "bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300"
-                          }`}
+                        }`}
                       >
                         {item.confidence}
                       </span>
                     </div>
                   </div>
 
-                <div className="mt-5 space-y-3 text-xs mb-6">
-                  <div>
-                    <span className="font-medium text-slate-500 dark:text-slate-400">
-                      Why now -
-                    </span>{" "}
-                    <span className="text-slate-700 dark:text-slate-300">
-                      {item.whyNow}
-                    </span>
+                  <div className="mt-5 space-y-3 text-xs mb-6">
+                    <div>
+                      <span className="font-medium text-slate-500 dark:text-slate-400">
+                        Why now -
+                      </span>{" "}
+                      <span className="text-slate-700 dark:text-slate-300">
+                        {item.whyNow}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="font-medium text-slate-500 dark:text-slate-400">
+                        Watch for -
+                      </span>{" "}
+                      <span className="text-slate-700 dark:text-slate-300">
+                        {item.whatToWatch}
+                      </span>
+                    </div>
                   </div>
-                  <div>
-                    <span className="font-medium text-slate-500 dark:text-slate-400">
-                      Watch for -
-                    </span>{" "}
-                    <span className="text-slate-700 dark:text-slate-300">
-                      {item.whatToWatch}
-                    </span>
-                  </div>
-                </div>
                 </div>
 
                 <button
