@@ -1,11 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { XCircle } from "lucide-react";
 
 export default function CheckoutFailurePage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const plan = searchParams.get("plan");
   const [countdown, setCountdown] = useState(5);
 
   useEffect(() => {
@@ -37,7 +39,7 @@ export default function CheckoutFailurePage() {
         </p>
         <div className="flex flex-col gap-3">
           <button
-            onClick={() => router.push("/plans")}
+            onClick={() => router.push(plan ? `/plans?plan=${plan}` : "/plans")}
             className="w-full rounded-xl bg-rose-600 text-white py-3 font-semibold hover:bg-rose-700 transition-colors"
           >
             Try Again

@@ -62,8 +62,9 @@ export async function POST(req: NextRequest) {
                 : new URL(`/checkout/success?plan=${encodeURIComponent(plan)}`, req.url).toString();
 
         const failureUrl =
-            process.env.DODO_PAYMENT_FAILURE_URL?.trim() ||
-            new URL("/checkout/failure", req.url).toString();
+            process.env.DODO_PAYMENT_FAILURE_URL?.trim()
+                ? `${process.env.DODO_PAYMENT_FAILURE_URL.trim()}?plan=${encodeURIComponent(plan)}`
+                : new URL(`/checkout/failure?plan=${encodeURIComponent(plan)}`, req.url).toString();
 
         const session = await dodo.checkoutSessions.create({
             product_cart: [{ product_id: productId, quantity: 1 }],
