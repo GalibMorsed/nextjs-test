@@ -1,5 +1,8 @@
 "use client";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 import { useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { CheckCircle2 } from "lucide-react";
@@ -23,7 +26,7 @@ export default function CheckoutSuccessPage() {
       setCountdown((prev) => prev - 1);
     }, 1000);
     return () => clearInterval(timer);
-  }, [countdown, router]);
+  }, [countdown, router, plan]);
 
   const planLabel =
     plan === "pro_monthly" ? "Pro (Monthly)"
