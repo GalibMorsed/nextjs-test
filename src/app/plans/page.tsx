@@ -1,6 +1,8 @@
 "use client";
 
-import { useEffect, useState, type FormEvent } from "react";
+export const dynamic = "force-dynamic";
+
+import { useEffect, useState, type FormEvent, Suspense } from "react";
 import clsx from "clsx";
 import {
   CheckCircle2,
@@ -135,7 +137,7 @@ const perkColors = [
   },
 ];
 
-export default function PlansPage() {
+function PlansContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [yearly, setYearly] = useState(false);
@@ -928,5 +930,19 @@ export default function PlansPage() {
         )}
       </AnimatePresence>
     </div>
+  );
+}
+
+export default function PlansPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center text-slate-500">
+          Loading...
+        </div>
+      }
+    >
+      <PlansContent />
+    </Suspense>
   );
 }
