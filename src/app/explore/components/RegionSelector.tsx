@@ -115,7 +115,8 @@ export default function RegionSelector({
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [suggestions, setSuggestions] = useState<AIRegionSuggestion[]>([]);
   const [errorMessage, setErrorMessage] = useState("");
-  const { isLocked, limit } = useAILimit();
+  const { isLocked, limit, isActive, nextAvailableAt, isFreePlanCooldown } =
+    useAILimit();
 
   const handleAISuggest = async () => {
     if (isLocked) {
@@ -163,15 +164,14 @@ export default function RegionSelector({
       }
 
       const nextSuggestions = Array.isArray(payload.suggestions)
-        ? payload.suggestions
-            .filter(
+        ? payload.suggestions.filter(
             (suggestion): suggestion is AIRegionSuggestion =>
               Boolean(
                 suggestion &&
-                  suggestion.label?.trim() &&
-                  suggestion.reason?.trim() &&
-                  suggestion.query?.trim() &&
-                  /^[A-Z]{2}$/.test(suggestion.countryCode?.trim() || ""),
+                suggestion.label?.trim() &&
+                suggestion.reason?.trim() &&
+                suggestion.query?.trim() &&
+                /^[A-Z]{2}$/.test(suggestion.countryCode?.trim() || ""),
               ),
           )
         : [];
@@ -221,7 +221,8 @@ export default function RegionSelector({
                     key={region.id}
                     type="button"
                     onClick={() => onRegionSelect(region.id)}
-                    className={`inline-flex shrink-0 items-center gap-2.5 rounded-full border px-5 py-3 text-sm font-bold tracking-tight transition-all duration-300 ${selectedRegion === region.id
+                    className={`inline-flex shrink-0 items-center gap-2.5 rounded-full border px-5 py-3 text-sm font-bold tracking-tight transition-all duration-300 ${
+                      selectedRegion === region.id
                         ? "border-[var(--foreground)] bg-[var(--foreground)] text-[var(--background)] shadow-lg shadow-black/5 scale-105"
                         : "border-slate-200 bg-white text-[var(--foreground)] hover:border-slate-300 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:hover:border-slate-600 shadow-sm"
                     }`}
@@ -257,7 +258,7 @@ export default function RegionSelector({
                   disabled={isSuggesting}
                   className="group relative inline-flex w-fit items-center gap-3 self-center overflow-hidden rounded-xl bg-gradient-to-r from-blue-600 via-indigo-500 to-sky-500 px-8 py-3.5 text-sm font-bold text-white shadow-md shadow-blue-500/30 transition-all duration-300 hover:scale-[1.02] hover:shadow-lg hover:shadow-blue-500/40 disabled:cursor-not-allowed disabled:opacity-70 lg:self-auto"
                 >
-                    {/* Shimmer sweep effect */}
+                  {/* Shimmer sweep effect */}
                   <span className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform duration-700 ease-in-out group-hover:translate-x-full" />
 
                   {isSuggesting ? (
@@ -267,7 +268,10 @@ export default function RegionSelector({
                     </>
                   ) : (
                     <>
-                      <Sparkles size={20} className="transition-transform duration-300 group-hover:rotate-12 group-hover:scale-110" />
+                      <Sparkles
+                        size={20}
+                        className="transition-transform duration-300 group-hover:rotate-12 group-hover:scale-110"
+                      />
                       AI Suggest Region
                     </>
                   )}
@@ -281,7 +285,14 @@ export default function RegionSelector({
                 </div>
               ) : null}
 
-              {isLocked ? <CreditAlertBanner limit={limit} /> : null}
+              {isLocked ? (
+                <CreditAlertBanner
+                  limit={limit}
+                  isPlan={isActive}
+                  nextAvailableAt={nextAvailableAt}
+                  isFreePlanCooldown={isFreePlanCooldown}
+                />
+              ) : null}
 
               {/* AI Suggestions List */}
               {showSuggestions && (

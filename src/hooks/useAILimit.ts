@@ -4,7 +4,7 @@ import {
   readActivityAnalytics,
 } from "@/lib/activityAnalytics";
 import { loadUserSubscriptionPlan } from "@/app/services/subscriptionPlanService";
-import { AI_FREE_LIMIT } from "@/lib/aiUsageLimit";
+import { AI_FREE_LIMIT, FREE_PLAN_COOLDOWN_DAYS } from "@/lib/aiUsageLimit";
 
 export function useAILimit() {
   const [hasPaidPlan, setHasPaidPlan] = useState(false);
@@ -12,6 +12,8 @@ export function useAILimit() {
   const [loading, setLoading] = useState(true);
   const [isUnlimited, setIsUnlimited] = useState(false);
   const [planLimit, setPlanLimit] = useState(0);
+  const [nextAvailableAt, setNextAvailableAt] = useState<string | null>(null);
+  const [isFreePlanCooldown, setIsFreePlanCooldown] = useState(false);
 
   const refreshUsageState = useCallback(async () => {
     const [activity, planResult] = await Promise.all([
@@ -20,23 +22,18 @@ export function useAILimit() {
     ]);
 
     const plan = planResult?.data;
-    const isExemptFromFreeLimit = Boolean(plan?.status === "active");
+    const isExemptFromFreeLimit = Boolean(plan?.status === "active" || plan?.status === "canceled");
     const isUnlimitedPlan =
       (Boolean(plan?.status === "active") && Boolean(plan?.plan_credit_is_unlimited)) ||
       (Boolean(plan?.status === "active") && plan?.plan_credit_amount === 0);
+    const isTrulyFreeUser = !plan;
 
-    // 1. Standard Count for Non-Plan users (Total AI uses)
-    const totalAIUsageCount =
-      (activity?.aiSummaryCount || 0) +
-      (activity?.personalizationSuggestionCount || 0) +
-      (activity?.regionSuggestionCount || 0);
-
-    // 2. Weighted Credit usage for Plan users
+    // Use weighted credit system for all users
     const aiWeightedUsage =
       (activity?.aiSummaryCount || 0) * 1 +
       (activity?.personalizationSuggestionCount || 0) * 2 +
       (activity?.regionSuggestionCount || 0) * 2;
-    
+
     const otherUsage = (activity?.articleReadCount || 0);
     const otherEventsCount = (activity?.events || [])
       .filter(e => !["ai_summary", "personalization_suggestion", "region_suggestion", "article_open"].includes(e.type))
@@ -45,21 +42,48 @@ export function useAILimit() {
     const weightedCreditUsage = aiWeightedUsage + otherUsage + otherEventsCount;
 
     let isLocked = false;
+    let nextAvail: string | null = null;
+    let isCooldown = false;
+
     if (isExemptFromFreeLimit) {
       if (!isUnlimitedPlan) {
         const planCredits = plan?.plan_credit_amount || 0;
         isLocked = weightedCreditUsage >= planCredits;
       }
-    } else {
-      isLocked = totalAIUsageCount >= AI_FREE_LIMIT;
+    } else if (isTrulyFreeUser) {
+      isLocked = weightedCreditUsage >= AI_FREE_LIMIT;
+
+      if (isLocked && typeof window !== "undefined") {
+        const cooldownKey = "free_plan_cooldown_end";
+        const savedCooldownEnd = localStorage.getItem(cooldownKey);
+
+        if (savedCooldownEnd) {
+          const cooldownEndTime = new Date(savedCooldownEnd).getTime();
+          const now = new Date().getTime();
+
+          if (now < cooldownEndTime) {
+            isCooldown = true;
+            nextAvail = savedCooldownEnd;
+          } else {
+            localStorage.removeItem(cooldownKey);
+          }
+        } else {
+          const cooldownEndTime = new Date(Date.now() + FREE_PLAN_COOLDOWN_DAYS * 24 * 60 * 60 * 1000);
+          localStorage.setItem(cooldownKey, cooldownEndTime.toISOString());
+          isCooldown = true;
+          nextAvail = cooldownEndTime.toISOString();
+        }
+      }
     }
 
-    return { 
-      total: isExemptFromFreeLimit ? weightedCreditUsage : totalAIUsageCount, 
+    return {
+      total: weightedCreditUsage,
       isExempt: isExemptFromFreeLimit,
       isLocked,
       planCredits: plan?.plan_credit_amount || 0,
-      isUnlimited: isUnlimitedPlan
+      isUnlimited: isUnlimitedPlan,
+      nextAvailableAt: nextAvail,
+      isFreePlanCooldown: isCooldown,
     };
   }, []);
 
@@ -74,6 +98,8 @@ export function useAILimit() {
         setHasPaidPlan(next.isExempt);
         setIsUnlimited(next.isUnlimited);
         setPlanLimit(next.planCredits);
+        setNextAvailableAt(next.nextAvailableAt);
+        setIsFreePlanCooldown(next.isFreePlanCooldown);
       } finally {
         if (mounted) {
           setLoading(false);
@@ -112,10 +138,7 @@ export function useAILimit() {
     };
   }, [refreshUsageState]);
 
-  // Unified locking logic:
-  // If user has plan: lock if weighted usage >= plan credits
-  // If user has no plan: lock if unweighted count >= AI_FREE_LIMIT
-  const isLocked = hasPaidPlan 
+  const isLocked = hasPaidPlan
     ? (!isUnlimited && planLimit > 0 && totalAIUsage >= planLimit)
     : (totalAIUsage >= AI_FREE_LIMIT);
 
@@ -126,5 +149,7 @@ export function useAILimit() {
     loading,
     isActive: hasPaidPlan,
     isUnlimited,
+    nextAvailableAt,
+    isFreePlanCooldown,
   };
 }

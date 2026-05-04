@@ -45,7 +45,8 @@ export default function PersonalizationAiSuggestions({
   const [suggestions, setSuggestions] = useState<TopicSuggestion[]>([]);
   const [isSuggesting, setIsSuggesting] = useState(false);
   const [aiElapsedSeconds, setAiElapsedSeconds] = useState(0);
-  const { isLocked, limit } = useAILimit();
+  const { isLocked, limit, isActive, nextAvailableAt, isFreePlanCooldown } =
+    useAILimit();
 
   useEffect(() => {
     if (!isSuggesting) {
@@ -182,7 +183,12 @@ export default function PersonalizationAiSuggestions({
 
       {isLocked && suggestions.length === 0 && !isSuggesting ? (
         <div className="mt-6">
-          <CreditAlertBanner limit={limit} />
+          <CreditAlertBanner
+            limit={limit}
+            isPlan={isActive}
+            nextAvailableAt={nextAvailableAt}
+            isFreePlanCooldown={isFreePlanCooldown}
+          />
         </div>
       ) : null}
 

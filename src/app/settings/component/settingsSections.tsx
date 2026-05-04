@@ -119,7 +119,10 @@ type DeleteAccountDialogProps = {
 };
 
 export function PlanSettingsCard() {
-  const [planState, setPlanState] = useState<{ name: string | null; status: string | null }>({
+  const [planState, setPlanState] = useState<{
+    name: string | null;
+    status: string | null;
+  }>({
     name: null,
     status: null,
   });
@@ -186,9 +189,13 @@ export function PlanSettingsCard() {
             {planState.status === "active" ? (
               "currently active"
             ) : planState.status === "canceled" ? (
-              <span className="text-orange-600 dark:text-orange-400 font-semibold">(Canceled)</span>
+              <span className="text-orange-600 dark:text-orange-400 font-semibold">
+                (Canceled)
+              </span>
             ) : (
-              <span className="text-slate-600 dark:text-slate-400 font-semibold">(Awaiting confirmation)</span>
+              <span className="text-slate-600 dark:text-slate-400 font-semibold">
+                (Awaiting confirmation)
+              </span>
             )}{" "}
             on this account.
           </p>
@@ -205,8 +212,17 @@ export function PlanSettingsCard() {
 }
 
 export function UsageLimitCard() {
-  const { totalAIUsage, limit, isActive, isLocked, loading, isUnlimited } = useAILimit();
-  
+  const {
+    totalAIUsage,
+    limit,
+    isActive,
+    isLocked,
+    loading,
+    isUnlimited,
+    nextAvailableAt,
+    isFreePlanCooldown,
+  } = useAILimit();
+
   const percentage = Math.min(100, Math.round((totalAIUsage / limit) * 100));
 
   if (loading || isUnlimited || percentage < 80) return null;
@@ -217,71 +233,133 @@ export function UsageLimitCard() {
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.1 }}
       className={clsx(
-        "relative overflow-hidden flex flex-col gap-5 rounded-2xl border p-5 shadow-sm backdrop-blur-xl transition-all duration-300 hover:shadow-md",
+        "relative overflow-hidden flex flex-col gap-6 rounded-2xl border p-5 shadow-sm backdrop-blur-xl transition-all duration-300 hover:shadow-md",
         isLocked
           ? "border-red-200/60 bg-red-50/60 dark:border-red-900/40 dark:bg-red-950/30"
-          : "border-slate-200/60 bg-white/60 dark:border-slate-700/60 dark:bg-slate-800/60"
+          : "border-slate-200/60 bg-white/60 dark:border-slate-700/60 dark:bg-slate-800/60",
       )}
     >
       <div className="flex items-center justify-between gap-4">
-        <div className="flex items-center gap-3.5">
+        <div className="flex items-center gap-4">
           <div
             className={clsx(
-              "flex h-10 w-10 shrink-0 items-center justify-center rounded-full",
+              "flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl shadow-sm",
               isLocked
-                ? "bg-red-100 text-red-600 dark:bg-red-900/40 dark:text-red-400"
-                : "bg-indigo-50 text-indigo-600 dark:bg-indigo-900/20 dark:text-indigo-400"
+                ? "bg-gradient-to-br from-red-500 to-rose-600 text-white"
+                : "bg-gradient-to-br from-indigo-500 to-violet-600 text-white",
             )}
           >
-            <CreditCard className="h-5 w-5" />
+            <CreditCard className="h-6 w-6" />
           </div>
           <div>
-            <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">
+            <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100 tracking-tight">
               API Credit Usage
             </h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400">
-              {isLocked ? "Limit reached" : "Monthly quota status"}
-            </p>
+            <div className="flex items-center gap-2 mt-0.5">
+              <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
+                {isLocked
+                  ? isFreePlanCooldown
+                    ? "Cooldown active"
+                    : "Limit exceeded"
+                  : "Monthly quota status"}
+              </p>
+              {isLocked && (
+                <span className="flex h-1.5 w-1.5 rounded-full bg-red-500 animate-pulse" />
+              )}
+            </div>
           </div>
         </div>
-        <div className="text-right">
-          <span className="text-lg font-bold text-slate-900 dark:text-slate-100">
-            {totalAIUsage.toLocaleString()}
-          </span>
-          <span className="text-sm text-slate-500 dark:text-slate-400">
-            {" "}/ {limit.toLocaleString()}
-          </span>
+        <div className="flex flex-col items-end gap-0.5">
+          <div className="flex items-baseline gap-1">
+            <span
+              className={clsx(
+                "text-2xl font-black tracking-tight",
+                isLocked
+                  ? "text-red-600 dark:text-red-400"
+                  : "text-slate-900 dark:text-slate-100",
+              )}
+            >
+              {totalAIUsage.toLocaleString()}
+            </span>
+            <span className="text-sm font-medium text-slate-500 dark:text-slate-400">
+              / {limit.toLocaleString()}
+            </span>
+          </div>
+          <div
+            className={clsx(
+              "rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider",
+              isLocked
+                ? "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300"
+                : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400",
+            )}
+          >
+            Credits
+          </div>
         </div>
       </div>
 
-      <div className="space-y-2">
-        <div className="h-2 w-full overflow-hidden rounded-full bg-slate-200 dark:bg-slate-700/50">
+      <div className="space-y-3">
+        <div className="relative h-3 w-full overflow-hidden rounded-full bg-slate-200 dark:bg-slate-700/50 shadow-inner">
           <motion.div
             initial={{ width: 0 }}
             animate={{ width: `${percentage}%` }}
-            transition={{ duration: 1, ease: "easeOut" }}
+            transition={{ duration: 1.2, ease: "circOut" }}
             className={clsx(
-              "h-full rounded-full transition-all duration-500",
+              "absolute inset-y-0 left-0 rounded-full transition-all duration-500 shadow-[0_0_12px_rgba(0,0,0,0.1)]",
               isLocked
-                ? "bg-red-500"
+                ? "bg-gradient-to-r from-red-500 to-rose-600 shadow-red-500/20"
                 : percentage > 80
-                ? "bg-amber-500"
-                : "bg-indigo-500"
+                  ? "bg-gradient-to-r from-amber-400 to-orange-500 shadow-amber-500/20"
+                  : "bg-gradient-to-r from-indigo-500 to-violet-600 shadow-indigo-500/20",
             )}
           />
+          <div className="absolute inset-0 bg-gradient-to-b from-white/10 to-transparent pointer-events-none" />
         </div>
-        <div className="flex justify-between text-[11px] font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400">
-          <span>{percentage}% Used</span>
-          <span>{isLocked ? `+${totalAIUsage - limit} credits Exceeded` : `${limit - totalAIUsage} credits remaining`}</span>
+
+        <div className="flex justify-between px-0.5">
+          <div className="flex flex-col">
+            <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500">
+              Usage
+            </span>
+            <span
+              className={clsx(
+                "text-sm font-bold",
+                isLocked
+                  ? "text-red-600 dark:text-red-400"
+                  : "text-slate-700 dark:text-slate-300",
+              )}
+            >
+              {percentage}%
+            </span>
+          </div>
+          <div className="flex flex-col items-end">
+            <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500">
+              {isLocked ? "Exceeded" : "Remaining"}
+            </span>
+            <span
+              className={clsx(
+                "text-sm font-bold",
+                isLocked
+                  ? "text-red-600 dark:text-red-400"
+                  : "text-indigo-600 dark:text-indigo-400",
+              )}
+            >
+              {isLocked
+                ? `+${(totalAIUsage - limit).toLocaleString()}`
+                : (limit - totalAIUsage).toLocaleString()}
+            </span>
+          </div>
         </div>
       </div>
 
       {isLocked && (
-        <div className="rounded-xl bg-white/50 p-3 dark:bg-slate-900/50">
-          <CreditAlertBanner 
-            limit={limit} 
-            isPlan={isActive} 
-            className="!bg-transparent !border-none !p-0 shadow-none" 
+        <div className="mt-2 rounded-2xl bg-white/40 p-1 dark:bg-slate-900/40 border border-white/20 dark:border-slate-800/20">
+          <CreditAlertBanner
+            limit={limit}
+            isPlan={isActive}
+            nextAvailableAt={nextAvailableAt}
+            isFreePlanCooldown={isFreePlanCooldown}
+            className="!bg-transparent !border-none !p-4 shadow-none"
           />
         </div>
       )}
@@ -302,8 +380,9 @@ export function SettingsCard({
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, amount: 0.2 }}
       whileHover={{ y: -2 }}
-      className={`relative overflow-hidden rounded-2xl border border-slate-200/60 dark:border-slate-700/60 bg-white/60 dark:bg-slate-800/60 p-5 shadow-sm backdrop-blur-xl transition-all duration-300 hover:border-slate-300/80 hover:shadow-md dark:hover:border-slate-600/80 sm:p-6 ${className ?? ""
-        }`}
+      className={`relative overflow-hidden rounded-2xl border border-slate-200/60 dark:border-slate-700/60 bg-white/60 dark:bg-slate-800/60 p-5 shadow-sm backdrop-blur-xl transition-all duration-300 hover:border-slate-300/80 hover:shadow-md dark:hover:border-slate-600/80 sm:p-6 ${
+        className ?? ""
+      }`}
     >
       <div className="mb-5 relative z-10 flex items-start gap-4">
         <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-slate-50 to-slate-100/50 shadow-sm border border-slate-200/50 dark:from-slate-800 dark:to-slate-900/50 dark:border-slate-700/50 transition-transform duration-300 group-hover:scale-105">
@@ -357,12 +436,14 @@ export function ToggleRow({ label, checked, onChange }: ToggleRowProps) {
       <button
         type="button"
         onClick={() => onChange(!checked)}
-        className={`relative h-7 w-12 rounded-full transition ${checked ? "bg-[var(--primary)]" : "bg-slate-300 dark:bg-slate-600"
-          }`}
+        className={`relative h-7 w-12 rounded-full transition ${
+          checked ? "bg-[var(--primary)]" : "bg-slate-300 dark:bg-slate-600"
+        }`}
       >
         <span
-          className={`absolute top-1 h-5 w-5 rounded-full bg-white transition ${checked ? "left-6" : "left-1"
-            }`}
+          className={`absolute top-1 h-5 w-5 rounded-full bg-white transition ${
+            checked ? "left-6" : "left-1"
+          }`}
         />
       </button>
     </div>
@@ -718,7 +799,8 @@ export function BillingSettingsCard({
     const loadUsage = async () => {
       let activePlanName = localStorage.getItem("nextnews-plan");
       let planTotal = 600;
-      let activePlanDate = localStorage.getItem("nextnews-plan-date") || new Date().toISOString();
+      let activePlanDate =
+        localStorage.getItem("nextnews-plan-date") || new Date().toISOString();
       let activePlanExpiry: Date | null = null;
       let isUnlimited = false;
 
@@ -730,7 +812,9 @@ export function BillingSettingsCard({
         if (data.plan_key === "free") {
           activePlanExpiry = data.trial_end ? new Date(data.trial_end) : null;
         } else {
-          activePlanExpiry = data.current_period_end ? new Date(data.current_period_end) : null;
+          activePlanExpiry = data.current_period_end
+            ? new Date(data.current_period_end)
+            : null;
         }
         isUnlimited = data.plan_credit_is_unlimited || false;
       } else if (activePlanName) {
@@ -750,7 +834,7 @@ export function BillingSettingsCard({
         name: activePlanName,
         purchaseDate: new Date(activePlanDate),
         expiryDate: activePlanExpiry,
-        status: data?.status || "active"
+        status: data?.status || "active",
       });
 
       const analytics = await readActivityAnalytics();
@@ -760,10 +844,16 @@ export function BillingSettingsCard({
         analytics.aiSummaryCount * 1 +
         analytics.personalizationSuggestionCount * 2 +
         analytics.regionSuggestionCount * 2;
-      
+
       const otherUsage = analytics.articleReadCount;
       const otherEventsCount = analytics.events.filter(
-        e => !["ai_summary", "personalization_suggestion", "region_suggestion", "article_open"].includes(e.type)
+        (e) =>
+          ![
+            "ai_summary",
+            "personalization_suggestion",
+            "region_suggestion",
+            "article_open",
+          ].includes(e.type),
       ).length;
 
       const usedCalls = aiWeightedUsage + otherUsage + otherEventsCount;
@@ -772,7 +862,9 @@ export function BillingSettingsCard({
       setApiUsage({
         used: usedCalls,
         total: planTotal,
-        percentage: isUnlimited ? 0 : Math.min(100, Math.round((usedCalls / planTotal) * 100)),
+        percentage: isUnlimited
+          ? 0
+          : Math.min(100, Math.round((usedCalls / planTotal) * 100)),
         isUnlimited,
       });
     };
@@ -808,10 +900,10 @@ export function BillingSettingsCard({
 
   const formattedExpiry = planDetails.expiryDate
     ? planDetails.expiryDate.toLocaleDateString(undefined, {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-    })
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      })
     : "Unknown";
   const formattedPurchase = planDetails.purchaseDate.toLocaleDateString(
     undefined,
@@ -863,20 +955,34 @@ export function BillingSettingsCard({
               <div className="flex justify-between text-sm text-slate-700 dark:text-slate-300">
                 <span className="font-medium">NewsAPI and AI API Calls</span>
                 <span className="font-semibold text-slate-900 dark:text-slate-100">
-                  {apiUsage.isUnlimited ? "Unlimited" : `${apiUsage.percentage}%`}
+                  {apiUsage.isUnlimited
+                    ? "Unlimited"
+                    : `${apiUsage.percentage}%`}
                 </span>
-               </div>
+              </div>
               <div className="h-2.5 w-full overflow-hidden rounded-full bg-slate-200 dark:bg-slate-700/80">
                 <div
-                  className={clsx("h-full rounded-full transition-all duration-500", apiUsage.isUnlimited ? "bg-emerald-500" : "bg-gradient-to-r from-[var(--primary)] to-indigo-500")}
-                  style={{ width: apiUsage.isUnlimited ? "100%" : `${apiUsage.percentage}%` }}
+                  className={clsx(
+                    "h-full rounded-full transition-all duration-500",
+                    apiUsage.isUnlimited
+                      ? "bg-emerald-500"
+                      : "bg-gradient-to-r from-[var(--primary)] to-indigo-500",
+                  )}
+                  style={{
+                    width: apiUsage.isUnlimited
+                      ? "100%"
+                      : `${apiUsage.percentage}%`,
+                  }}
                 />
-               </div>
+              </div>
               <p className="text-xs text-slate-500 dark:text-slate-400 pt-1">
                 You have used {apiUsage.used.toLocaleString()} of your{" "}
-                {apiUsage.isUnlimited ? "unlimited" : apiUsage.total.toLocaleString()} included API calls.
+                {apiUsage.isUnlimited
+                  ? "unlimited"
+                  : apiUsage.total.toLocaleString()}{" "}
+                included API calls.
               </p>
-             </div>
+            </div>
           </div>
         </div>
 
@@ -895,9 +1001,15 @@ export function BillingSettingsCard({
                   <AlertTriangle className="h-4 w-4 text-orange-600 dark:text-orange-400" />
                 </div>
                 <p className="flex-1">
-                  This plan is <span className="font-bold underline decoration-orange-500/30">canceled</span>, but you can still access your API credits until{" "}
-                  <span className="font-bold text-orange-900 dark:text-orange-200">{formattedExpiry}</span>. Once your credits are
-                  fully used, access will be restricted.
+                  This plan is{" "}
+                  <span className="font-bold underline decoration-orange-500/30">
+                    canceled
+                  </span>
+                  , but you can still access your API credits until{" "}
+                  <span className="font-bold text-orange-900 dark:text-orange-200">
+                    {formattedExpiry}
+                  </span>
+                  . Once your credits are fully used, access will be restricted.
                 </p>
               </div>
             </motion.div>
