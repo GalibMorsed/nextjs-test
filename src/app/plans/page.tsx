@@ -92,7 +92,7 @@ const planCatalog = [
 ];
 
 const FREE_PLAN_EXPIRY_KEY = "nextnews-plan-expiry";
-const FREE_PLAN_DAYS = 7;
+const FREE_PLAN_DAYS = 16;
 const MS_IN_DAY = 24 * 60 * 60 * 1000;
 
 const productPerks = [

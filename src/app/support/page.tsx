@@ -63,6 +63,26 @@ export default function SupportPage() {
       q: "How can I get faster help for any app error?",
       a: "Send the page name, feature name, and exact error message in the support form or Live Chat.",
     },
+    {
+      q: "What are AI credits and how do they work?",
+      a: "AI credits are weighted points for using AI features like summaries and suggestions. Summaries cost 1 credit, personalized suggestions cost 2 credits, and region suggestions cost 2 credits.",
+    },
+    {
+      q: "What's the free plan credit limit?",
+      a: "Free users get a 16-day trial with 20 weighted AI credits. After using 20 credits or 16 days pass, you'll need to upgrade to a paid plan.",
+    },
+    {
+      q: "What happens after my free 16 days end?",
+      a: "Your free access expires after 16 days. You can then choose a paid plan (Pro or Pro+) to continue using AI features and access premium content.",
+    },
+    {
+      q: "What is the 12-day cooldown after free credits run out?",
+      a: "After using all 20 free AI credits, you enter a 12-day waiting period before you can use AI features again (unless you upgrade to a paid plan for immediate access).",
+    },
+    {
+      q: "Can I use remaining credits after canceling my paid plan?",
+      a: "Yes! If you cancel a paid plan, you can continue using any remaining credits until they're fully consumed or your plan access expires.",
+    },
   ];
 
   const supportOptions = [
@@ -273,8 +293,8 @@ export default function SupportPage() {
                       className="text-transparent bg-clip-text bg-gradient-to-r from-teal-400 via-emerald-500 to-teal-600 font-medium italic drop-shadow-sm"
                     >
                       to help,
-                    </span>
-                    {" "}anytime.
+                    </span>{" "}
+                    anytime.
                   </h1>
 
                   <p className="max-w-3xl text-sm leading-relaxed text-slate-600 dark:text-slate-300 sm:text-base">

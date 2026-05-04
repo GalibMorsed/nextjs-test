@@ -45,11 +45,11 @@ const policySections: PolicySection[] = [
     icon: ShieldCheck,
     paragraphs: [
       "This Privacy Policy explains how NextNews collects, stores, uses, protects, and manages information when a person visits the app, creates an account, reads articles, uses personalization, generates AI features, saves notes, adjusts settings, interacts with support, or activates plan-related features.",
-      "This page is intended to be production-facing. It covers both currently active app behavior and clearly identified upcoming production features, including domain launch, payment integration, subscription plans, and API credit-based access for news and AI usage.",
+      "This page is intended to be production-facing. It covers active production features, including domain launch, payment integration, subscription plans, and API credit-based access for news and AI usage.",
     ],
     bullets: [
-      "This policy applies to public browsing, authenticated use, personalization, saved notes, AI tools, settings, support, and future paid plan services.",
-      "Where a feature is still in preparation, this page identifies it as upcoming or future-facing rather than presenting it as fully operational today.",
+      "This policy applies to public browsing, authenticated use, personalization, saved notes, AI tools, settings, support, and paid plan services.",
+      "Features described on this page are operational as part of the NextNews production environment.",
     ],
   },
   {
@@ -64,7 +64,7 @@ const policySections: PolicySection[] = [
       "Personalization data may include selected topics, preferred sources, and AI-assisted topic recommendations added by the user.",
       "Reader data may include saved notes, article context attached to notes, favorite sources, favorite topics, and feature interactions across the app.",
       "Usage and diagnostic data may include timestamps, activity events, approximate request context, rate-limit checks, and request metadata needed for abuse prevention and feature reliability.",
-      "Future billing data may include selected plan, payment status, invoice records, entitlement status, API credit balances, reset dates, and plan-linked service usage when monetization launches.",
+      "Billing data may include selected plan, payment status, invoice records, entitlement status, API credit balances, reset dates, and plan-linked service usage.",
     ],
   },
   {
@@ -169,16 +169,16 @@ const policySections: PolicySection[] = [
     title: "Plans, Billing, Payments, and Future API Credits",
     icon: CreditCard,
     paragraphs: [
-      "NextNews currently displays plan options such as Free, Pro, and Pro+ and already uses plan-related app state to gate or preview selected experiences. At the time of this policy update, paid monetization and formal payment integration are still in preparation. The current plan page previews pricing direction and premium access direction, but full billing processing is not yet active for paid plans.",
-      "Once domain launch and payment integration are activated, this policy will apply to the collection and processing of plan status, billing records, entitlement data, subscription lifecycle data, and API credit balances linked to news and AI usage. At that stage, paid plan operations may involve payment processors, invoice systems, transaction identifiers, renewal periods, refunds where applicable, and service-usage metering.",
-      "The app owner has stated that plan-based API call credits for both News and AI features are intended to be part of the production model. When launched, those credits will represent service entitlements rather than ownership rights in any underlying third-party API service.",
+      "NextNews offers plan options such as Free, Pro, and Pro+ and uses plan-related app state to gate or preview selected experiences. Paid monetization and formal payment integration are now active. This policy applies to the collection and processing of plan status, billing records, entitlement data, subscription lifecycle data, and API credit balances linked to news and AI usage.",
+      "Paid plan operations involve payment processors, invoice systems, transaction identifiers, renewal periods, refunds where applicable, and service-usage metering.",
+      "Plan-based API call credits for both News and AI features are part of the production model. These credits represent service entitlements rather than ownership rights in any underlying third-party API service.",
     ],
     bullets: [
-      "Free, Pro, and Pro+ plan descriptions may evolve as production monetization is finalized.",
-      "Future plans may include different limits for AI summaries, AI assistants, region suggestion tools, live-news access, premium reader tools, and deeper personalization features.",
-      "Future News API credits and AI API credits may be allocated per plan, per billing period, or per promotional entitlement, with exact quantities disclosed on the plan page, checkout flow, or account dashboard when billing goes live.",
-      "Unless explicitly stated otherwise at launch, credits should be treated as non-transferable, non-cash, non-refundable usage allowances tied to the relevant account and billing cycle.",
-      "If credit systems are introduced, NextNews may track usage counts, remaining balances, reset dates, overage prevention, abuse controls, and service restrictions after exhaustion of available credits.",
+      "Free, Pro, and Pro+ plan descriptions are part of the production monetization model.",
+      "Plans include different limits for AI summaries, AI assistants, region suggestion tools, live-news access, premium reader tools, and deeper personalization features.",
+      "News API credits and AI API credits are allocated per plan, per billing period, or per promotional entitlement, with exact quantities disclosed on the plan page, checkout flow, or account dashboard.",
+      "Unless explicitly stated otherwise, credits should be treated as non-transferable, non-cash, non-refundable usage allowances tied to the relevant account and billing cycle.",
+      "NextNews tracks usage counts, remaining balances, reset dates, overage prevention, abuse controls, and service restrictions after exhaustion of available credits.",
       "If payment providers are added, they may process payment credentials directly. NextNews may receive billing metadata such as payment status, partial card descriptors, plan identifiers, and transaction references rather than full raw card data.",
     ],
   },
@@ -203,9 +203,9 @@ const policySections: PolicySection[] = [
       "Information may also be disclosed where reasonably necessary to protect the service, enforce terms, investigate abuse, comply with valid legal processes, or complete a business or infrastructure transition if the app changes ownership structure in the future.",
     ],
     bullets: [
-      "Current service integrations may include Supabase for authentication and database functions, NewsAPI for news retrieval, OpenRouter for AI requests, and YouTube services for live-news discovery.",
-      "Future integrations may include payment processors, invoicing tools, anti-fraud tools, customer-support systems, and subscription-management platforms.",
-      "Any future partner-facing data-sharing features should be governed by explicit product disclosures and operational controls before they are treated as active sharing behavior.",
+      "Current service integrations include Supabase for authentication and database functions, NewsAPI for news retrieval, OpenRouter for AI requests, Dodo Payments for billing, and YouTube services for live-news discovery.",
+      "Integrations include payment processors, invoicing tools, anti-fraud tools, customer-support systems, and subscription-management platforms.",
+      "Partner-facing data-sharing features are governed by explicit product disclosures and operational controls.",
     ],
   },
   {
@@ -265,7 +265,7 @@ const policySections: PolicySection[] = [
     icon: Baby,
     paragraphs: [
       "NextNews is designed as a general news application and is not intended for children under 13 years of age. We do not knowingly collect personal data from children under 13, and account validation flows are built for users old enough to manage an account responsibly.",
-      "As the application moves toward domain launch, payment integration, and fuller production readiness, this policy may be updated to reflect newly active systems, billing providers, API credit mechanics, legal disclosures, and region-specific compliance requirements. Material updates should be reflected on this page with a revised effective date.",
+      "As the application has moved toward full production readiness, this policy reflects active systems, billing providers, API credit mechanics, legal disclosures, and region-specific compliance requirements. Material updates will be reflected on this page with a revised effective date.",
     ],
     bullets: [
       "If you believe a child under 13 has provided personal data, contact nextnews.co.in@gmail.com so we can delete it.",
@@ -297,17 +297,16 @@ export default function PrivacyPolicyPage() {
               </h1>
 
               <p className="mt-3 text-sm font-semibold uppercase tracking-[0.2em] text-emerald-700/80 dark:text-emerald-300/80">
-                Last updated: April, 2026
+                Last updated: May, 2026
               </p>
 
               <p className="mt-5 max-w-4xl text-sm leading-7 text-slate-600 dark:text-slate-300 sm:text-base">
                 NextNews is a news-reading and discovery platform that combines
                 headline browsing, category navigation, live-news discovery,
                 personalization, AI-powered assistance, notes, settings, support
-                tools, and upcoming subscription capabilities. This policy
+                tools, and active subscription capabilities. This policy
                 explains how those product areas interact with user information
-                and how NextNews approaches privacy as the app moves toward full
-                production use.
+                and how NextNews approaches privacy in its production environment.
               </p>
 
               <p className="mt-3 text-sm leading-7 text-slate-500 dark:text-slate-400 sm:text-base">
@@ -317,7 +316,7 @@ export default function PrivacyPolicyPage() {
               <p className="mt-3 max-w-4xl text-sm leading-7 text-slate-500 dark:text-slate-400 sm:text-base">
                 This page is intentionally detailed because it is meant to serve
                 as a serious production-facing reference for current app
-                behavior and upcoming monetization features.
+                behavior and monetization features.
               </p>
 
               <div className="mt-5 rounded-[22px] border border-amber-200/80 bg-amber-50/80 px-5 py-4 dark:border-amber-900/40 dark:bg-amber-950/20">
@@ -369,7 +368,7 @@ export default function PrivacyPolicyPage() {
             },
             {
               title: "Plans and Credits",
-              desc: "Current plan previews and future billing plus API-credit systems",
+              desc: "Plan details, active billing, and API-credit systems",
               icon: CreditCard,
             },
           ].map((item, index) => {
@@ -463,7 +462,7 @@ export default function PrivacyPolicyPage() {
               </h2>
               <p className="mt-3 text-sm leading-7 text-slate-300 sm:text-base">
                 If you need help understanding this policy, want clarification
-                about account data, notes, personalization, AI features, future
+                about account data, notes, personalization, AI features,
                 subscriptions, or billing plans, use the app support route to
                 contact the project owner or support team.
               </p>
@@ -489,7 +488,7 @@ export default function PrivacyPolicyPage() {
               </Link>
               <p className="px-1 text-xs leading-5 text-slate-400">
                 Our support team can assist with policy questions, account data
-                requests, and upcoming subscription or billing inquiries.
+                requests, and subscription or billing inquiries.
               </p>
             </div>
           </div>

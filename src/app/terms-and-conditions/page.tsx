@@ -49,12 +49,13 @@ const sections = [
     ],
   },
   {
-    title: "Plans, Billing, and Future Credits",
+    title: "Plans, Billing, and API Credits",
     icon: CreditCard,
     text: [
-      "NextNews currently previews multiple plan tiers and is preparing for domain launch and payment integration. Once paid plans are activated, plan access, subscription periods, payment obligations, renewal handling, cancellation rules, and any related News API or AI API credits will be governed by the active billing terms then published by the platform.",
-      "Any future API-credit allocations for News or AI usage will be treated as account-specific service entitlements. Unless explicitly stated otherwise, such credits will not be transferable, redeemable for cash, or guaranteed beyond the applicable billing period or promotional terms.",
-      "A refund policy will be published before billing goes live and will be referenced in the checkout flow or account billing settings.",
+      "NextNews offers free and paid subscription plans with allocated API credits for News and AI features. The free 16-day trial includes 20 weighted AI credits. Free users who exhaust their credits enter a 12-day cooldown before regaining access. Paid plans (Pro and Pro+) include higher or unlimited API credit allocations.",
+      "API-credit allocations are account-specific service entitlements. Unless explicitly stated otherwise, such credits are non-transferable, non-redeemable for cash, and valid only for the applicable billing period or promotional term. After canceling a paid plan, you may continue using remaining credits until exhausted or access expires.",
+      "Payment integration and formal billing are now active via Dodo Payments. Additional payment terms, refund policies, renewal handling, and cancellation rules are provided in the checkout flow and account settings.",
+      "API credits represent usage allowances tied to your account and the relevant billing cycle. NextNews tracks usage, enforces limits, and restricts access after credits are exhausted unless the account is upgraded or credits are replenished.",
     ],
   },
   {
@@ -118,7 +119,7 @@ export default function TermsAndConditionsPage() {
             Terms governing the use of NextNews
           </h1>
           <p className="mt-3 text-sm font-semibold uppercase tracking-[0.2em] text-blue-700/80 dark:text-blue-300/80">
-            Last updated: April, 2026
+            Last updated: May, 2026
           </p>
           <p className="mt-4 text-sm leading-7 text-slate-600 dark:text-slate-300 sm:text-base">
             These Terms & Conditions set out the rules that apply to account

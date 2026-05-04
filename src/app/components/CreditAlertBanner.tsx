@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { Sparkles, Clock } from "lucide-react";
+import { Sparkles } from "lucide-react";
 import clsx from "clsx";
 import { useState, useEffect } from "react";
+import LottiePlayer from "./LottiePlayer";
 
 type CreditAlertBannerProps = {
   limit?: number;
@@ -71,9 +72,12 @@ export default function CreditAlertBanner({
       <div className="flex flex-col items-center text-center gap-4">
         <div className="relative">
           <div className="absolute inset-0 bg-amber-400 blur-xl opacity-20 animate-pulse" />
-          <div className="relative flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-100 to-orange-100 text-amber-700 shadow-sm dark:from-amber-900/40 dark:to-orange-900/40 dark:text-amber-200">
+          <div className="relative flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-100 to-orange-100 text-amber-700 shadow-sm dark:from-amber-500/10 dark:to-orange-500/10 dark:text-amber-200 dark:ring-1 dark:ring-amber-500/20">
             {isFreePlanCooldown && countdown ? (
-              <Clock className="h-6 w-6" />
+              <LottiePlayer
+                src="/actiivity/Timer clock animation.json"
+                className="h-9 w-9 dark:invert dark:brightness-125"
+              />
             ) : (
               <Sparkles className="h-6 w-6" />
             )}

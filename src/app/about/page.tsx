@@ -717,7 +717,7 @@ export default function AboutPage() {
               Stay Informed. Stay Ahead.
             </h2>
             <p className="relative text-slate-500 dark:text-slate-400 max-w-md mx-auto mb-2 text-[15px] leading-relaxed">
-              NextNews delivers real-time headlines, AI-powered insights, and a personalized feed — all in one place, completely free.
+              NextNews delivers real-time headlines, AI-powered insights, and a personalized feed — all in one place with premium plans for power readers.
             </p>
 
             {/* Cool emoji Lottie */}
