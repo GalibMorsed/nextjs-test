@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { AlertCircle, ArrowUpRight, Lock, Search, X } from "lucide-react";
+import { loadUserSubscriptionPlan } from "@/app/services/subscriptionPlanService";
 
 interface YoutubeLiveItem {
   id: {
@@ -40,10 +41,10 @@ const hasLocalAuth = () => {
   return Boolean(authToken || authEmail);
 };
 
-const hasFreePlanAccess = () => {
+const hasActivePlanAccess = () => {
   if (typeof window === "undefined") return false;
 
-  return localStorage.getItem("nextnews-plan") === "Free";
+  return Boolean(localStorage.getItem("nextnews-plan")?.trim());
 };
 
 export default function LiveNewsPage() {
@@ -52,21 +53,36 @@ export default function LiveNewsPage() {
   const [error, setError] = useState<string | null>(null);
   const [fallbackQuery, setFallbackQuery] = useState(DEFAULT_QUERY);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [hasFreePlan, setHasFreePlan] = useState(false);
+  const [hasActivePlan, setHasActivePlan] = useState(false);
   const [searchQuery, setSearchQuery] = useState(DEFAULT_QUERY);
   const [activeVideoId, setActiveVideoId] = useState<string | null>(null);
 
   useEffect(() => {
-    const syncAccessState = () => {
-      setIsAuthenticated(hasLocalAuth());
-      setHasFreePlan(hasFreePlanAccess());
+    let isMounted = true;
+
+    const syncAccessState = async () => {
+      const authenticated = hasLocalAuth();
+      let activePlanAccess = hasActivePlanAccess();
+
+      if (!activePlanAccess && authenticated) {
+        const { data } = await loadUserSubscriptionPlan().catch(() => ({
+          data: null,
+        }));
+        activePlanAccess = data?.status === "active";
+      }
+
+      if (!isMounted) return;
+
+      setIsAuthenticated(authenticated);
+      setHasActivePlan(activePlanAccess);
     };
 
-    syncAccessState();
+    void syncAccessState();
     window.addEventListener("storage", syncAccessState);
     window.addEventListener("focus", syncAccessState);
 
     return () => {
+      isMounted = false;
       window.removeEventListener("storage", syncAccessState);
       window.removeEventListener("focus", syncAccessState);
     };
@@ -131,7 +147,7 @@ export default function LiveNewsPage() {
     window.location.assign(`https://www.youtube.com/watch?v=${videoId}`);
   };
 
-  const canShowAllVideos = hasFreePlan;
+  const canShowAllVideos = hasActivePlan;
   const visibleVideos = useMemo(
     () => (canShowAllVideos ? videos : videos.slice(0, GUEST_VIDEO_LIMIT)),
     [canShowAllVideos, videos],
@@ -306,7 +322,7 @@ export default function LiveNewsPage() {
           })}
         </div>
 
-        {isAuthenticated && !hasFreePlan && hiddenVideoCount > 0 && (
+        {isAuthenticated && !hasActivePlan && hiddenVideoCount > 0 && (
           <div className="mx-auto mt-10 max-w-3xl">
             <div className="rounded-2xl border border-amber-200 dark:border-amber-900/60 bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/60 dark:to-orange-950/60 p-6 text-center shadow-sm">
               <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-white dark:bg-slate-800 shadow-sm ring-1 ring-amber-100 dark:ring-amber-900">
