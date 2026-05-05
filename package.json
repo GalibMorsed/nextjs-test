@@ -46,6 +46,7 @@
     "react-scripts": "^5.0.1",
     "react-toastify": "^11.0.5",
     "recharts": "^3.8.1",
+    "rss-parser": "^3.13.0",
     "scss": "^0.2.4",
     "standardwebhooks": "^1.0.0",
     "tailwind": "^4.0.0",

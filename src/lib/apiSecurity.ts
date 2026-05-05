@@ -79,3 +79,9 @@ export async function verifySupabaseAccessToken(token: string) {
     return null;
   }
 }
+
+export async function getAuthenticatedUser(request: Request) {
+  const token = getBearerToken(request);
+  if (!token) return null;
+  return verifySupabaseAccessToken(token);
+}

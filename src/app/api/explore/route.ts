@@ -100,7 +100,7 @@ function normalizeArticle(article: NewsApiArticle): ExploreArticle | null {
 function buildExploreNewsUrl(regionId: string, query: string) {
   const region = getExploreRegion(regionId);
   const baseUrl = process.env.NEWS_API_BASE_URL || "https://newsapi.org/v2";
-  const apiKey = process.env.NEWS_API_KEY2 || process.env.NEWS_API_KEY;
+  const apiKey = process.env.NEWS_API_KEY4 || process.env.NEWS_API_KEY2;
   if (!apiKey) return null;
 
   const trimmedQuery = query.trim();

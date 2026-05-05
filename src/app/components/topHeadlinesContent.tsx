@@ -28,7 +28,7 @@ interface TopHeadlinesContentProps {
 
 const PERSONALIZATION_REMINDER_DISMISS_KEY =
   "top_headlines_personalization_reminder_until";
-const TWO_HOURS_MS = 2 * 60 * 60 * 1000;
+const TWENTY_MINUTES_MS = 20 * 60 * 1000;
 const PERSONALIZATION_REQUIRED_TOPICS = 10;
 const PERSONALIZATION_REQUIRED_SOURCES = 1;
 
@@ -167,7 +167,7 @@ export default function TopHeadlinesContent({
   const dismissPersonalizationReminder = () => {
     localStorage.setItem(
       PERSONALIZATION_REMINDER_DISMISS_KEY,
-      String(Date.now() + TWO_HOURS_MS),
+      String(Date.now() + TWENTY_MINUTES_MS),
     );
     setShowPersonalizationReminder(false);
   };

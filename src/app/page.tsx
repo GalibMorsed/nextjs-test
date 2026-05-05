@@ -13,16 +13,41 @@ interface Article {
   content: string | null;
 }
 
+interface CurrentsNewsItem {
+  title?: string;
+  description?: string | null;
+  url?: string;
+  author?: string | null;
+  image?: string | null;
+  published?: string;
+  category?: string[];
+}
+
 interface NewsResponse {
   status: string;
-  totalResults: number;
-  articles: Article[];
+  page: number;
+  news: CurrentsNewsItem[];
+}
+
+function mapCurrentsNewsItem(item: CurrentsNewsItem): Article {
+  return {
+    source: { id: null, name: item.category?.[0] ?? "Currents" },
+    author: item.author ?? null,
+    title: item.title ?? "Untitled story",
+    description: item.description ?? null,
+    url: item.url ?? "",
+    urlToImage: item.image ?? null,
+    publishedAt: item.published ?? new Date().toISOString(),
+    content: item.description ?? null,
+  };
 }
 
 // 2. Create a data fetching function
 async function getNews(): Promise<Article[]> {
   // Ensure you have this in your .env.local file
-  const apiKey = process.env.NEWS_API_KEY2 || process.env.NEWS_API_KEY3;
+  const apiKey = process.env.NEWS_API_KEY2 || process.env.NEWS_API_KEY4;
+  const baseUrl =
+    process.env.NEWS_API_BASE_URL || "https://api.currentsapi.services/v1";
 
   if (!apiKey) {
     console.error("NEWS_API_KEY is missing");
@@ -30,20 +55,24 @@ async function getNews(): Promise<Article[]> {
   }
 
   try {
-    const res = await fetch(
-      `https://newsapi.org/v2/top-headlines?country=us&page=1&pageSize=20&apiKey=${apiKey}`,
-      {
-        // Revalidate every hour (3600 seconds)
-        next: { revalidate: 3600 },
-      },
-    );
+    const params = new URLSearchParams({
+      language: "en",
+      page_number: "1",
+      page_size: "40",
+      apiKey,
+    });
+
+    const res = await fetch(`${baseUrl}/latest-news?${params.toString()}`, {
+      // Revalidate every hour (3600 seconds)
+      next: { revalidate: 3600 },
+    });
 
     if (!res.ok) {
       throw new Error(`Failed to fetch news: ${res.status} ${res.statusText}`);
     }
 
     const data: NewsResponse = await res.json();
-    return data.articles;
+    return (data.news ?? []).map(mapCurrentsNewsItem);
   } catch (error) {
     console.error("Error fetching news:", error);
     // Return empty array or rethrow to trigger error.tsx
@@ -91,4 +120,3 @@ export default async function Home() {
     </main>
   );
 }
-

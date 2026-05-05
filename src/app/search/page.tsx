@@ -19,7 +19,7 @@ interface NewsResponse {
 
 async function getSearchNews(query: string): Promise<Article[]> {
   const baseUrl = process.env.NEWS_API_BASE_URL || "https://newsapi.org/v2";
-  const apiKey = process.env.NEWS_API_KEY2 || process.env.NEWS_API_KEY;
+  const apiKey = process.env.NEWS_API_KEY4 || process.env.NEWS_API_KEY2;
 
   if (!apiKey) {
     console.error("NEWS_API_KEY is missing");
@@ -92,7 +92,7 @@ export default async function SearchPage({
             key={query}
             initialArticles={articles}
             query={query}
-            pageSize={20}
+            pageSize={40}
             emptyMessage={`No articles found for "${query}".`}
           />
         ) : (

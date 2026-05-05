@@ -19,7 +19,7 @@ interface Article {
 
 async function getCategoryNews(category: string, regionId?: string) {
   const baseUrl = process.env.NEWS_API_BASE_URL || "https://newsapi.org/v2";
-  const apiKey = process.env.NEWS_API_KEY2 || process.env.NEWS_API_KEY;
+  const apiKey = process.env.NEWS_API_KEY4 || process.env.NEWS_API_KEY2;
 
   if (!apiKey) {
     return { articles: [] };
@@ -80,7 +80,7 @@ export default async function CategoryPage({
       <CategoryContent
         category={category}
         initialArticles={articles}
-        pageSize={20}
+        pageSize={40}
         regionId={region}
       />
     </main>
