@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import Parser from "rss-parser";
+import { enforceRateLimit, getClientIp } from "@/lib/apiSecurity";
 
 const parser = new Parser({
   customFields: {
@@ -35,19 +36,41 @@ const SOURCE_NAMES: Record<string, string> = {
 };
 
 export async function GET(req: Request) {
-  const { searchParams } = new URL(req.url);
-  const source = searchParams.get("source") || searchParams.get("category");
-
-  if (!source || !INDIAN_NEWS_FEEDS[source]) {
-    return NextResponse.json(
-      { error: "Invalid or missing source parameter" },
-      { status: 400 }
-    );
-  }
-
   try {
+    // 1. Rate Limiting (30 requests per minute per IP for RSS)
+    const ip = getClientIp(req);
+    const ratelimit = enforceRateLimit(`indian_tadka_${ip}`, 30, 60 * 1000);
+    if (!ratelimit.allowed) {
+      return NextResponse.json(
+        { error: "Too many requests. Please try again later." },
+        { status: 429, headers: { "Retry-After": String(ratelimit.retryAfterSeconds) } }
+      );
+    }
+
+    const { searchParams } = new URL(req.url);
+    const source = searchParams.get("source") || searchParams.get("category");
+
+    if (!source || !INDIAN_NEWS_FEEDS[source]) {
+      return NextResponse.json(
+        { error: "Invalid or missing source parameter" },
+        { status: 400 }
+      );
+    }
+
     const feedUrl = INDIAN_NEWS_FEEDS[source];
-    const feed = await parser.parseURL(feedUrl);
+
+    // 2. Fetch with Caching (revalidate every 5 minutes)
+    const res = await fetch(feedUrl, { 
+      next: { revalidate: 300 },
+      signal: AbortSignal.timeout(8000) // 8s timeout for RSS
+    });
+
+    if (!res.ok) {
+      throw new Error(`Failed to fetch RSS feed: ${res.statusText}`);
+    }
+
+    const xml = await res.text();
+    const feed = await parser.parseString(xml);
 
     const articles = feed.items.map((rawItem) => {
       const item = rawItem as RSSItem;
@@ -86,11 +109,13 @@ export async function GET(req: Request) {
     });
 
     return NextResponse.json({ articles }, { status: 200 });
-  } catch (error) {
-    console.error("RSS Parsing Error:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch or parse RSS feed" },
-      { status: 500 }
-    );
+  } catch (error: any) {
+    console.error("Indian Tadka API Error:", error);
+    const status = error.name === "TimeoutError" ? 504 : 500;
+    const message = error.name === "TimeoutError"
+      ? "The news source took too long to respond. Please try again."
+      : "Failed to fetch or parse news from this source.";
+      
+    return NextResponse.json({ error: message }, { status });
   }
 }

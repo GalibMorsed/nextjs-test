@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getExploreRegion } from "@/lib/explore";
+import { enforceRateLimit, getClientIp } from "@/lib/apiSecurity";
 
 interface CurrentsNewsItem {
   title?: string;
@@ -100,60 +101,86 @@ function mapCurrentsNewsItem(item: CurrentsNewsItem) {
 }
 
 export async function GET(req: Request) {
-  const { searchParams } = new URL(req.url);
-  const category = searchParams.get("category");
-  const regionId = searchParams.get("region");
-  const region = regionId ? getExploreRegion(regionId) : null;
-  const country = region?.country ?? searchParams.get("country");
-  const rawPage = Number(searchParams.get("page") || "1");
-  const rawPageSize = Number(searchParams.get("pageSize") || "20");
-  const page = Number.isFinite(rawPage) && rawPage > 0 ? rawPage : 1;
-  const pageSize =
-    Number.isFinite(rawPageSize) && rawPageSize > 0
-      ? Math.min(rawPageSize, 100)
-      : 20;
+  try {
+    // 1. Rate Limiting (60 requests per minute per IP)
+    const ip = getClientIp(req);
+    const ratelimit = enforceRateLimit(`news_api_${ip}`, 60, 60 * 1000);
+    if (!ratelimit.allowed) {
+      return NextResponse.json(
+        { error: "Too many requests. Please try again later." },
+        { status: 429, headers: { "Retry-After": String(ratelimit.retryAfterSeconds) } }
+      );
+    }
 
-  const baseUrl =
-    process.env.NEWS_API_BASE_URL || "https://api.currentsapi.services/v2";
-  const apiKey = process.env.NEWS_API_KEY2 || process.env.NEWS_API_KEY;
+    const { searchParams } = new URL(req.url);
+    const category = searchParams.get("category");
+    const regionId = searchParams.get("region");
+    const region = regionId ? getExploreRegion(regionId) : null;
+    const country = region?.country ?? searchParams.get("country");
+    const rawPage = Number(searchParams.get("page") || "1");
+    const rawPageSize = Number(searchParams.get("pageSize") || "20");
+    const page = Number.isFinite(rawPage) && rawPage > 0 ? rawPage : 1;
+    const pageSize =
+      Number.isFinite(rawPageSize) && rawPageSize > 0
+        ? Math.min(rawPageSize, 100)
+        : 20;
 
-  if (!apiKey) {
+    const baseUrl =
+      process.env.NEWS_API_BASE_URL || "https://api.currentsapi.services/v2";
+    const apiKey = process.env.NEWS_API_KEY2 || process.env.NEWS_API_KEY;
+
+    if (!apiKey) {
+      return NextResponse.json(
+        { error: "Missing NEWS API key in environment variables" },
+        { status: 500 },
+      );
+    }
+
+    const params = new URLSearchParams({
+      language: "en",
+      page_number: String(page),
+      page_size: String(pageSize),
+      apiKey,
+    });
+
+    if (country) {
+      params.set("country", country);
+    }
+
+    if (category) {
+      params.set("category", mapCategoryToCurrents(category));
+    }
+
+    const url = `${baseUrl}/latest-news?${params.toString()}`;
+    const res = await fetch(url, { 
+      next: { revalidate: 60 },
+      signal: AbortSignal.timeout(10000) // 10s timeout
+    });
+
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      return NextResponse.json(
+        { error: data.message || "Failed to fetch news from provider" },
+        { status: res.status }
+      );
+    }
+
+    const data: NewsResponse = await res.json();
+
     return NextResponse.json(
-      { error: "Missing NEWS API key in environment variables" },
-      { status: 500 },
+      {
+        ...data,
+        articles: (data.news ?? []).map(mapCurrentsNewsItem),
+      },
+      { status: 200 },
     );
+  } catch (error: any) {
+    console.error("News API Internal Error:", error);
+    const status = error.name === "TimeoutError" ? 504 : 500;
+    const message = error.name === "TimeoutError" 
+      ? "News provider took too long to respond. Please try again."
+      : "An unexpected error occurred while fetching news.";
+    
+    return NextResponse.json({ error: message }, { status });
   }
-
-  const params = new URLSearchParams({
-    language: "en",
-    page_number: String(page),
-    page_size: String(pageSize),
-    apiKey,
-  });
-
-  if (country) {
-    params.set("country", country);
-  }
-
-  if (category) {
-    params.set("category", mapCategoryToCurrents(category));
-  }
-
-  const url = `${baseUrl}/latest-news?${params.toString()}`;
-  const res = await fetch(url, { next: { revalidate: 60 } });
-
-  if (!res.ok) {
-    const data = await res.json().catch(() => ({}));
-    return NextResponse.json(data, { status: res.status });
-  }
-
-  const data: NewsResponse = await res.json();
-
-  return NextResponse.json(
-    {
-      ...data,
-      articles: (data.news ?? []).map(mapCurrentsNewsItem),
-    },
-    { status: res.status },
-  );
-}
+}

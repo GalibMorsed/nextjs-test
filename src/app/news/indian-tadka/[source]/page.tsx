@@ -1,5 +1,6 @@
 import IndianTadkaContent from "./IndianTadkaContent";
 import { headers } from "next/headers";
+import RegisterReminder from "@/app/components/registerReminder";
 
 interface Article {
   source?: { id?: string | null; name?: string };
@@ -50,6 +51,7 @@ export default async function IndianTadkaPage({
 
   return (
     <main className="p-6">
+      <RegisterReminder />
       <IndianTadkaContent source={source} initialArticles={articles} />
     </main>
   );
