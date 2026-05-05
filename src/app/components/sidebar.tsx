@@ -16,8 +16,12 @@ import {
   X,
   PanelLeftClose,
   PanelLeftOpen,
+  Info,
+  Sparkles,
+  HelpCircle,
 } from "lucide-react";
 import { DynamicIcon, type IconName } from "lucide-react/dynamic";
+import LottiePlayer from "./LottiePlayer";
 import { supabase } from "../../../lib/superbaseClient";
 import {
   PERSONALIZATION_UPDATED_EVENT,
@@ -99,6 +103,14 @@ const CATEGORY_NAV_ITEMS: CategoryNavItem[] = [
     href: "/categories/personal-finance",
     iconName: "piggy-bank",
   },
+];
+
+const INDIAN_TADKA_SOURCES = [
+  { name: "NDTV", id: "ndtv", href: "/news/indian-tadka/ndtv", icon: "/indianTadka/NDTV.jpg" },
+  { name: "Times of India", id: "times-of-india", href: "/news/indian-tadka/times-of-india", icon: "/indianTadka/timesofIndia.jpg" },
+  { name: "Hindustan Times", id: "hindustan-times", href: "/news/indian-tadka/hindustan-times", icon: "/indianTadka/hindustanTimes.jpg" },
+  { name: "Indian Express", id: "indian-express", href: "/news/indian-tadka/indian-express", icon: "/indianTadka/indianExpress.jpg" },
+  { name: "The Hindu", id: "the-hindu", href: "/news/indian-tadka/the-hindu", icon: "/indianTadka/theHindu.jpg" },
 ];
 
 const CATEGORY_NAV_BY_TOPIC = new Map(
@@ -352,6 +364,7 @@ export default function Sidebar({ isMobileOpen, onCloseMobile, isDesktopCollapse
       router={router}
       isDesktopCollapsed={isDesktopCollapsed}
       onToggleDesktop={onToggleDesktop}
+      isMobile={false}
     />
   );
 
@@ -368,6 +381,7 @@ export default function Sidebar({ isMobileOpen, onCloseMobile, isDesktopCollapse
       isPersonalizationLoaded={isPersonalizationLoaded}
       router={router}
       isDesktopCollapsed={false}
+      isMobile={true}
     />
   );
 
@@ -418,6 +432,7 @@ function SidebarContent({
   router,
   isDesktopCollapsed,
   onToggleDesktop,
+  isMobile,
 }: {
   query: string;
   setQuery: React.Dispatch<React.SetStateAction<string>>;
@@ -431,6 +446,7 @@ function SidebarContent({
   router: ReturnType<typeof useRouter>;
   isDesktopCollapsed?: boolean;
   onToggleDesktop?: () => void;
+  isMobile?: boolean;
 }) {
   const closeAndNavigate = () => onCloseMobile();
   const [userMenuOpen, setUserMenuOpen] = useState(false);
@@ -511,40 +527,84 @@ function SidebarContent({
   return (
     <>
       <div className={`flex-1 overflow-y-auto ${isDesktopCollapsed ? "p-3 overflow-x-hidden" : "p-6"}`}>
-        <div className={`flex items-center ${isDesktopCollapsed ? "justify-center" : "justify-between"} mb-6`}>
-          <motion.h2
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            whileHover={{ scale: 1.05 }}
-            transition={{ type: "spring", stiffness: 600, damping: 12, bounce: 0.4, duration: 0.4 }}
-            className={`text-3xl font-black bg-gradient-to-r from-blue-600 via-purple-500 to-indigo-600 bg-clip-text text-transparent cursor-default overflow-hidden whitespace-nowrap transition-all duration-300 ${isDesktopCollapsed ? "max-w-0 opacity-0" : "max-w-[200px] opacity-100"}`}
-          >
-            DailyScoop
-          </motion.h2>
-          <button 
-            onClick={onToggleDesktop} 
-            className="hidden md:flex p-2 rounded-xl text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-            title={isDesktopCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
-          >
-            {isDesktopCollapsed ? <PanelLeftOpen size={20} /> : <PanelLeftClose size={20} />}
-          </button>
+        <div className={`flex items-center ${isDesktopCollapsed ? "flex-col gap-4" : "gap-3"} mb-8`}>
+          {/* Header Action Row */}
+          {!isMobile && isDesktopCollapsed && onToggleDesktop && (
+            <button 
+              onClick={onToggleDesktop} 
+              className="p-2.5 rounded-xl text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+              title="Expand Sidebar"
+            >
+              <PanelLeftOpen size={20} />
+            </button>
+          )}
+
+          {isMobile ? (
+            <motion.h2
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              whileHover={{ scale: 1.05 }}
+              transition={{ type: "spring", stiffness: 600, damping: 12, bounce: 0.4, duration: 0.4 }}
+              className="text-3xl font-black bg-gradient-to-r from-blue-600 via-purple-500 to-indigo-600 bg-clip-text text-transparent cursor-default overflow-hidden whitespace-nowrap"
+            >
+              DailyScoop
+            </motion.h2>
+          ) : (
+            <>
+              {!isDesktopCollapsed ? (
+                <div className="flex-1">
+                  <form onSubmit={handleSearch} className="relative group">
+                    <Search
+                      className="absolute left-3 top-1/2 -translate-y-1/2 text-indigo-600 group-focus-within:text-indigo-700 transition-colors"
+                      size={18}
+                    />
+                    <input
+                      ref={searchInputRef}
+                      type="text"
+                      placeholder="Search news..."
+                      value={query}
+                      onChange={(e) => setQuery(e.target.value)}
+                      className="w-full rounded-xl border-2 border-indigo-100 bg-indigo-50/40 py-2.5 pl-10 pr-10 text-sm font-semibold text-slate-800 placeholder:text-indigo-400/60 transition-all duration-300 hover:bg-indigo-50/60 hover:border-indigo-200 focus:outline-none focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 dark:border-indigo-900/50 dark:bg-indigo-950/30 dark:text-slate-100 dark:placeholder:text-indigo-700/50 dark:focus:bg-slate-900"
+                    />
+                    {query && (
+                      <button
+                        type="button"
+                        onClick={() => setQuery("")}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-1 text-slate-400 transition-colors hover:bg-slate-200 hover:text-slate-600 dark:text-slate-400 dark:hover:bg-slate-700 dark:hover:text-white"
+                      >
+                        <X size={14} />
+                      </button>
+                    )}
+                  </form>
+                </div>
+              ) : (
+                <button
+                  onClick={handleSearchClick}
+                  className="flex items-center justify-center w-12 h-12 rounded-xl bg-slate-50 hover:bg-slate-100 text-indigo-600 transition-colors dark:bg-slate-800 dark:hover:bg-slate-700"
+                  title="Search"
+                >
+                  <Search size={20} />
+                </button>
+              )}
+            </>
+          )}
+
+          {!isMobile && !isDesktopCollapsed && onToggleDesktop && (
+            <button 
+              onClick={onToggleDesktop} 
+              className="p-2.5 rounded-xl text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors ml-auto"
+              title="Collapse Sidebar"
+            >
+              <PanelLeftClose size={20} />
+            </button>
+          )}
         </div>
 
-        <div className="relative mb-6">
-          <div className={`flex justify-center transition-all duration-300 ${isDesktopCollapsed ? "max-h-12 opacity-100" : "max-h-0 opacity-0 overflow-hidden"}`}>
-            <button
-              onClick={handleSearchClick}
-              className="flex items-center justify-center w-12 h-12 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500"
-              title="Search"
-            >
-              <Search size={18} />
-            </button>
-          </div>
-
-          <div className={`overflow-hidden transition-all duration-300 ${isDesktopCollapsed ? "max-h-0 opacity-0" : "max-h-20 opacity-100"}`}>
-            <form onSubmit={handleSearch} className="relative">
+        {isMobile && (
+          <div className="relative mb-6">
+            <form onSubmit={handleSearch} className="relative group">
               <Search
-                className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-slate-300"
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-indigo-600 group-focus-within:text-indigo-700 transition-colors"
                 size={18}
               />
               <input
@@ -553,37 +613,113 @@ function SidebarContent({
                 placeholder="Search news..."
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                className="w-full rounded-xl border border-gray-200 bg-gray-100 py-2 pl-10 pr-10 text-sm text-gray-800 placeholder:text-gray-500 transition-all duration-300 focus:outline-none focus:border-[var(--primary)] focus:ring-[3px] focus:ring-[var(--primary)]/20 focus:shadow-[0_0_12px_var(--primary)] dark:border-slate-500 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-300 dark:focus:border-[var(--primary)] dark:focus:ring-[var(--primary)]/20 dark:focus:bg-slate-700"
+                className="w-full rounded-xl border-2 border-indigo-100 bg-indigo-50/40 py-2.5 pl-10 pr-10 text-sm font-semibold text-slate-800 placeholder:text-indigo-400/60 transition-all duration-300 hover:bg-indigo-50/60 hover:border-indigo-200 focus:outline-none focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 dark:border-indigo-900/50 dark:bg-indigo-950/30 dark:text-slate-100 dark:placeholder:text-indigo-700/50 dark:focus:bg-slate-900"
               />
               {query && (
                 <button
                   type="button"
                   onClick={() => setQuery("")}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-1 text-gray-400 transition-colors hover:bg-slate-200 hover:text-slate-600 dark:text-slate-300 dark:hover:bg-slate-700 dark:hover:text-white"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-1 text-slate-400 transition-colors hover:bg-slate-200 hover:text-slate-600 dark:text-slate-400 dark:hover:bg-slate-700 dark:hover:text-white"
                 >
                   <X size={14} />
                 </button>
               )}
             </form>
           </div>
-        </div>
+        )}
 
         <nav className="space-y-2">
-          <Link
-            href="/live-news"
-            className={navItemClass(pathname.startsWith("/live-news"))}
-            onClick={closeAndNavigate}
-            title={isDesktopCollapsed ? "Live News Streaming" : undefined}
+          <CollapsibleSection
+            title="Streamings"
+            isDesktopCollapsed={isDesktopCollapsed}
+            icon={
+              <LottiePlayer
+                src="/indianTadka/play button animation.json"
+                className="w-6 h-6 -ml-1"
+              />
+            }
           >
-            <SidebarIcon
-              name="radio"
-              size={18}
-              className="transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6 shrink-0"
-            />
-            <span className={`overflow-hidden whitespace-nowrap transition-all duration-300 ${isDesktopCollapsed ? "max-w-0 opacity-0" : "max-w-[200px] opacity-100"}`}>
-              Live News Streaming
-            </span>
-          </Link>
+            <div className="space-y-1">
+              <Link
+                href="/live-news"
+                className={`flex items-center ${isDesktopCollapsed ? "justify-center w-12 h-12 mx-auto" : "gap-3 px-4 py-2"} rounded-xl text-sm font-medium transition ${
+                  pathname.startsWith("/live-news")
+                    ? "bg-[var(--card)] text-[var(--primary)] border border-[var(--primary)]"
+                    : "text-gray-600 hover:bg-gray-100 hover:text-[var(--primary)] dark:text-slate-400 dark:hover:bg-slate-800"
+                }`}
+                onClick={closeAndNavigate}
+                title={isDesktopCollapsed ? "Live News Streaming" : undefined}
+              >
+                <SidebarIcon
+                  name="radio"
+                  size={isDesktopCollapsed ? 18 : 14}
+                  className="shrink-0 text-red-500"
+                />
+                <span className={`overflow-hidden whitespace-nowrap transition-all duration-300 ${isDesktopCollapsed ? "max-w-0 opacity-0" : "max-w-[200px] opacity-100"}`}>
+                  Live News Streaming
+                </span>
+              </Link>
+              <Link
+                href="/live-shorts"
+                className={`flex items-center ${isDesktopCollapsed ? "justify-center w-12 h-12 mx-auto" : "gap-3 px-4 py-2"} rounded-xl text-sm font-medium transition ${
+                  pathname.startsWith("/live-shorts")
+                    ? "bg-[var(--card)] text-[var(--primary)] border border-[var(--primary)]"
+                    : "text-gray-600 hover:bg-gray-100 hover:text-[var(--primary)] dark:text-slate-400 dark:hover:bg-slate-800"
+                }`}
+                onClick={closeAndNavigate}
+                title={isDesktopCollapsed ? "Live Shorts" : undefined}
+              >
+                <SidebarIcon
+                  name="video"
+                  size={isDesktopCollapsed ? 18 : 14}
+                  className="shrink-0 text-purple-500"
+                />
+                <span className={`overflow-hidden whitespace-nowrap transition-all duration-300 ${isDesktopCollapsed ? "max-w-0 opacity-0" : "max-w-[200px] opacity-100"}`}>
+                  Live Shorts
+                </span>
+              </Link>
+            </div>
+          </CollapsibleSection>
+
+          <CollapsibleSection 
+            title={
+              <span className="bg-gradient-to-r from-orange-500 via-red-500 to-amber-500 bg-clip-text text-transparent font-bold">
+                Indian Tadka
+              </span>
+            }
+            isDesktopCollapsed={isDesktopCollapsed}
+            icon={
+              <LottiePlayer 
+                src="/indianTadka/fire.json" 
+                className="w-6 h-6 -ml-1" 
+              />
+            }
+          >
+            <div className="space-y-1">
+              {INDIAN_TADKA_SOURCES.map((source) => (
+                <Link
+                  key={source.id}
+                  href={source.href}
+                  className={`flex items-center ${isDesktopCollapsed ? "justify-center w-12 h-12 mx-auto" : "gap-3 px-4 py-2"} rounded-xl text-sm font-medium transition ${
+                    pathname === source.href
+                      ? "bg-[var(--card)] text-[var(--primary)] border border-[var(--primary)]"
+                      : "text-gray-600 hover:bg-gray-100 hover:text-[var(--primary)] dark:text-slate-400 dark:hover:bg-slate-800"
+                  }`}
+                  onClick={closeAndNavigate}
+                  title={isDesktopCollapsed ? source.name : undefined}
+                >
+                  <img
+                    src={source.icon}
+                    alt={source.name}
+                    className={`shrink-0 rounded-md object-cover border border-slate-200 dark:border-slate-700 ${isDesktopCollapsed ? "w-6 h-6" : "w-5 h-5"}`}
+                  />
+                  <span className={`overflow-hidden whitespace-nowrap transition-all duration-300 ${isDesktopCollapsed ? "max-w-0 opacity-0" : "max-w-[200px] opacity-100"}`}>
+                    {source.name}
+                  </span>
+                </Link>
+              ))}
+            </div>
+          </CollapsibleSection>
           {visibleNavigationItems.map((item) => {
             const isActive =
               item.href === "/"
@@ -655,10 +791,14 @@ function SidebarContent({
         {/* Collapsible Sections */}
         <div className={`overflow-hidden transition-all duration-300 ${isDesktopCollapsed ? "max-h-0 opacity-0" : "max-h-[500px] opacity-100"}`}>
           {isAuthenticated && (
-          <CollapsibleSection title="Extra Options" isDesktopCollapsed={isDesktopCollapsed}>
+          <CollapsibleSection 
+            title="Extra Options" 
+            isDesktopCollapsed={isDesktopCollapsed}
+            icon={<Sparkles size={16} className="text-amber-500" />}
+          >
             <Link
               href="/personalization"
-              className={`inline-flex items-center ${isDesktopCollapsed ? "justify-center w-12 h-12 mx-auto" : "gap-2 px-4 py-1"} text-sm text-slate-600 hover:text-[var(--primary)] cursor-pointer transition-colors rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800`}
+              className={`inline-flex items-center ${isDesktopCollapsed ? "justify-center w-12 h-12 mx-auto" : "gap-3 px-4 py-1.5"} text-sm text-slate-600 hover:text-[var(--primary)] cursor-pointer transition-colors rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800`}
               onClick={closeAndNavigate}
               title={isDesktopCollapsed ? "Personalization" : undefined}
             >
@@ -669,7 +809,7 @@ function SidebarContent({
             </Link>
             <Link
               href="/appearance"
-              className={`inline-flex items-center ${isDesktopCollapsed ? "justify-center w-12 h-12 mx-auto" : "gap-2 px-4 py-1"} text-sm text-slate-600 hover:text-[var(--primary)] cursor-pointer transition-colors rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800`}
+              className={`inline-flex items-center ${isDesktopCollapsed ? "justify-center w-12 h-12 mx-auto" : "gap-3 px-4 py-1.5"} text-sm text-slate-600 hover:text-[var(--primary)] cursor-pointer transition-colors rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800`}
               onClick={closeAndNavigate}
               title={isDesktopCollapsed ? "Appearance" : undefined}
             >
@@ -680,7 +820,7 @@ function SidebarContent({
             </Link>
             <Link
               href="/plans"
-              className={`inline-flex items-center ${isDesktopCollapsed ? "justify-center w-12 h-12 mx-auto" : "gap-2 px-4 py-1"} text-sm text-slate-600 hover:text-indigo-600 cursor-pointer transition-colors rounded-xl hover:bg-slate-100 dark:text-slate-400 dark:hover:text-indigo-400 dark:hover:bg-slate-800`}
+              className={`inline-flex items-center ${isDesktopCollapsed ? "justify-center w-12 h-12 mx-auto" : "gap-3 px-4 py-1.5"} text-sm text-slate-600 hover:text-indigo-600 cursor-pointer transition-colors rounded-xl hover:bg-slate-100 dark:text-slate-400 dark:hover:text-indigo-400 dark:hover:bg-slate-800`}
               onClick={closeAndNavigate}
               title={isDesktopCollapsed ? "Subscriptions" : undefined}
             >
@@ -692,10 +832,14 @@ function SidebarContent({
           </CollapsibleSection>
         )}
 
-        <CollapsibleSection title="More Info" isDesktopCollapsed={isDesktopCollapsed}>
+        <CollapsibleSection 
+          title="More Info" 
+          isDesktopCollapsed={isDesktopCollapsed}
+          icon={<HelpCircle size={16} className="text-blue-500" />}
+        >
           <Link
             href="/about"
-            className={`inline-flex items-center ${isDesktopCollapsed ? "justify-center w-12 h-12 mx-auto" : "gap-2 px-4 py-1"} text-sm text-slate-600 transition-colors hover:text-[var(--primary)] rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800`}
+            className={`inline-flex items-center ${isDesktopCollapsed ? "justify-center w-12 h-12 mx-auto" : "gap-3 px-4 py-1.5"} text-sm text-slate-600 transition-colors hover:text-[var(--primary)] rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800`}
             onClick={closeAndNavigate}
             title={isDesktopCollapsed ? "About NextNews" : undefined}
           >
@@ -706,7 +850,7 @@ function SidebarContent({
           </Link>
           <Link
             href="/support"
-            className={`inline-flex items-center ${isDesktopCollapsed ? "justify-center w-12 h-12 mx-auto" : "gap-2 px-4 py-1"} text-sm text-slate-600 hover:text-[var(--primary)] cursor-pointer transition-colors rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800`}
+            className={`inline-flex items-center ${isDesktopCollapsed ? "justify-center w-12 h-12 mx-auto" : "gap-3 px-4 py-1.5"} text-sm text-slate-600 hover:text-[var(--primary)] cursor-pointer transition-colors rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800`}
             onClick={closeAndNavigate}
             title={isDesktopCollapsed ? "Contact Support" : undefined}
           >
@@ -717,7 +861,7 @@ function SidebarContent({
           </Link>
           <Link
             href="/privacy-policy"
-            className={`inline-flex items-center ${isDesktopCollapsed ? "justify-center w-12 h-12 mx-auto" : "gap-2 px-4 py-1"} text-sm text-slate-600 hover:text-[var(--primary)] cursor-pointer transition-colors rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800`}
+            className={`inline-flex items-center ${isDesktopCollapsed ? "justify-center w-12 h-12 mx-auto" : "gap-3 px-4 py-1.5"} text-sm text-slate-600 hover:text-[var(--primary)] cursor-pointer transition-colors rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800`}
             onClick={closeAndNavigate}
             title={isDesktopCollapsed ? "Privacy Policy" : undefined}
           >
@@ -817,10 +961,12 @@ function CollapsibleSection({
   title,
   children,
   isDesktopCollapsed,
+  icon,
 }: {
-  title: string;
+  title: React.ReactNode;
   children: React.ReactNode;
   isDesktopCollapsed?: boolean;
+  icon?: React.ReactNode;
 }) {
   const [isOpen, setIsOpen] = useState(false);
 
@@ -829,17 +975,24 @@ function CollapsibleSection({
       <div className={`overflow-hidden transition-all duration-300 ${isDesktopCollapsed ? "max-h-0 opacity-0" : "max-h-12 opacity-100"}`}>
         <button
           onClick={() => setIsOpen(!isOpen)}
-          className="flex items-center justify-between w-full px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 rounded-xl transition"
+          className={`flex items-center justify-between w-full px-4 py-2.5 text-sm font-semibold rounded-xl transition-all duration-200 group ${
+            isOpen 
+              ? "bg-slate-50 text-slate-900 shadow-sm ring-1 ring-slate-200/50 dark:bg-slate-800/50 dark:text-slate-100 dark:ring-slate-700/50" 
+              : "text-slate-600 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800/50 dark:hover:text-slate-200"
+          }`}
         >
-          <span className="whitespace-nowrap">{title}</span>
+          <div className="flex items-center gap-3 min-w-0">
+            {icon && <div className="shrink-0 flex items-center justify-center">{icon}</div>}
+            <span className="whitespace-nowrap truncate">{title}</span>
+          </div>
           <ChevronDown
             size={16}
-            className={`transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
+            className={`transition-transform duration-300 shrink-0 ${isOpen ? "rotate-180" : "opacity-60 group-hover:opacity-100"}`}
           />
         </button>
       </div>
       <AnimatePresence>
-        {(isOpen || isDesktopCollapsed) && (
+        {isOpen && !isDesktopCollapsed && (
           <motion.div
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: "auto", opacity: 1 }}

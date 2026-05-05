@@ -6,6 +6,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { ArrowDown, CreditCard, Loader2, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import ArticleCard from "./articleCart";
+import { useUserPlan } from "@/app/plans/payments/useUserPlan";
 
 interface Article {
   source?: { id?: string | null; name?: string };
@@ -27,6 +28,7 @@ interface NewsFeedWithLoadMoreProps {
   date?: string;
   pageSize?: number;
   emptyMessage?: string;
+  apiUrl?: string;
 }
 
 function formatPublishedDate(date?: string) {
@@ -60,8 +62,9 @@ export default function NewsFeedWithLoadMore({
   region,
   query,
   date,
-  pageSize = 20,
+  pageSize = 80,
   emptyMessage = "No news available right now.",
+  apiUrl = "/api/news",
 }: NewsFeedWithLoadMoreProps) {
   const [articles, setArticles] = useState<Article[]>(initialArticles ?? []);
   const [page, setPage] = useState(1);
@@ -81,6 +84,7 @@ export default function NewsFeedWithLoadMore({
     null,
   );
   const router = useRouter();
+  const { isProPlus, loading: isPlanLoading } = useUserPlan();
 
   useEffect(() => {
     setArticles(initialArticles ?? []);
@@ -172,7 +176,7 @@ export default function NewsFeedWithLoadMore({
       if (query) params.set("q", query);
       if (date) params.set("date", date);
 
-      const response = await fetch(`/api/news?${params.toString()}`, {
+      const response = await fetch(`${apiUrl}?${params.toString()}`, {
         cache: "no-store",
       });
 
@@ -321,17 +325,28 @@ export default function NewsFeedWithLoadMore({
             transition={{ duration: 0.4, ease: "easeOut" }}
             className="rounded-2xl border border-[color:color-mix(in_srgb,var(--primary)_18%,white)] bg-[color:color-mix(in_srgb,var(--primary)_8%,white)] px-5 py-4 text-center shadow-sm dark:border-[color:color-mix(in_srgb,var(--primary)_24%,transparent)] dark:bg-[color:color-mix(in_srgb,var(--primary)_12%,#0f172a)]"
           >
-            <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-300">
-              You&apos;re all caught up. Explore other topics or view our{" "}
-              <button
-                type="button"
-                onClick={() => void handlePlansClick()}
-                className="font-semibold text-[var(--primary)] underline decoration-[color:color-mix(in_srgb,var(--primary)_45%,transparent)] underline-offset-4 transition-colors hover:text-[color:color-mix(in_srgb,var(--primary)_82%,black_10%)]"
-              >
-                Plans
-              </button>{" "}
-              for an enhanced experience.
-            </p>
+            {isPlanLoading ? (
+              <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-300">
+                Checking your plan...
+              </p>
+            ) : isProPlus ? (
+              <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-300">
+                That&apos;s all for the day. Come back after some time to get
+                new articles.
+              </p>
+            ) : (
+              <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-300">
+                You&apos;re all caught up. Explore other topics or view our{" "}
+                <button
+                  type="button"
+                  onClick={() => void handlePlansClick()}
+                  className="font-semibold text-[var(--primary)] underline decoration-[color:color-mix(in_srgb,var(--primary)_45%,transparent)] underline-offset-4 transition-colors hover:text-[color:color-mix(in_srgb,var(--primary)_82%,black_10%)]"
+                >
+                  Plans
+                </button>{" "}
+                for an enhanced experience.
+              </p>
+            )}
           </motion.div>
         )}
 
