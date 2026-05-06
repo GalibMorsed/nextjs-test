@@ -8,6 +8,7 @@ type RateLimitResult =
   | { allowed: false; retryAfterSeconds: number };
 
 const rateLimitStore = new Map<string, RateLimitEntry>();
+const ALLOWED_FETCH_SITES = new Set(["same-origin", "same-site", "none"]);
 
 export function getBearerToken(request: Request): string | null {
   const authHeader = request.headers.get("authorization") ?? "";
@@ -23,6 +24,53 @@ export function getClientIp(request: Request): string {
   }
 
   return request.headers.get("x-real-ip")?.trim() || "unknown";
+}
+
+function normalizeOriginCandidate(value: string | null): string | null {
+  if (!value) return null;
+
+  try {
+    return new URL(value).origin;
+  } catch {
+    return null;
+  }
+}
+
+export function getRequestHost(request: Request): string | null {
+  const forwardedHost = request.headers.get("x-forwarded-host")?.trim();
+  const host = request.headers.get("host")?.trim();
+  return forwardedHost || host || null;
+}
+
+export function getRequestOrigin(request: Request): string | null {
+  const explicitOrigin = normalizeOriginCandidate(request.headers.get("origin"));
+  if (explicitOrigin) return explicitOrigin;
+
+  const refererOrigin = normalizeOriginCandidate(request.headers.get("referer"));
+  if (refererOrigin) return refererOrigin;
+
+  const host = getRequestHost(request);
+  if (!host) return null;
+
+  const protocol = request.headers.get("x-forwarded-proto")?.trim() || "https";
+  return `${protocol}://${host}`;
+}
+
+export function isTrustedSameOriginRequest(request: Request): boolean {
+  const fetchSite = request.headers.get("sec-fetch-site")?.trim().toLowerCase();
+  if (fetchSite && !ALLOWED_FETCH_SITES.has(fetchSite)) {
+    return false;
+  }
+
+  const host = getRequestHost(request);
+  const requestOrigin = getRequestOrigin(request);
+  if (!host || !requestOrigin) return false;
+
+  try {
+    return new URL(requestOrigin).host === host;
+  } catch {
+    return false;
+  }
 }
 
 export function enforceRateLimit(

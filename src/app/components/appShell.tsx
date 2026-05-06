@@ -39,6 +39,33 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
+    const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
+      const reason = event.reason;
+      const errorName =
+        reason instanceof Error
+          ? reason.name
+          : typeof reason === "object" &&
+              reason !== null &&
+              "name" in reason &&
+              typeof (reason as { name?: unknown }).name === "string"
+            ? (reason as { name: string }).name
+            : "";
+
+      if (errorName === "AbortError") {
+        // Ignore expected aborts from auth lock timeouts.
+        event.preventDefault();
+      }
+    };
+
+    window.addEventListener("unhandledrejection", handleUnhandledRejection);
+    return () =>
+      window.removeEventListener(
+        "unhandledrejection",
+        handleUnhandledRejection,
+      );
+  }, []);
+
+  useEffect(() => {
     const handleAppearanceChange = (event: Event) => {
       const customEvent = event as CustomEvent<AppearanceSettings>;
       applyAppearanceSettings(customEvent.detail);

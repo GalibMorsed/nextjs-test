@@ -84,7 +84,7 @@ export default function NewsFeedWithLoadMore({
     null,
   );
   const router = useRouter();
-  const { isProPlus, loading: isPlanLoading } = useUserPlan();
+  const { isProPlus, loading: isPlanLoading, hasCachedPlan } = useUserPlan();
 
   useEffect(() => {
     setArticles(initialArticles ?? []);
@@ -244,6 +244,8 @@ export default function NewsFeedWithLoadMore({
   const showBackToTopText =
     isBackToTopHovered || isBackToTopFocused || showBackToTopHint;
 
+  const shouldShowPlanLoading = isLoggedIn && isPlanLoading && !hasCachedPlan;
+
   const popupVariants = isMobile
     ? {
         initial: { opacity: 0, y: "100%" },
@@ -325,11 +327,11 @@ export default function NewsFeedWithLoadMore({
             transition={{ duration: 0.4, ease: "easeOut" }}
             className="rounded-2xl border border-[color:color-mix(in_srgb,var(--primary)_18%,white)] bg-[color:color-mix(in_srgb,var(--primary)_8%,white)] px-5 py-4 text-center shadow-sm dark:border-[color:color-mix(in_srgb,var(--primary)_24%,transparent)] dark:bg-[color:color-mix(in_srgb,var(--primary)_12%,#0f172a)]"
           >
-            {isPlanLoading ? (
+            {shouldShowPlanLoading ? (
               <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-300">
                 Checking your plan...
               </p>
-            ) : isProPlus ? (
+            ) : isProPlus && isLoggedIn ? (
               <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-300">
                 That&apos;s all for the day. Come back after some time to get
                 new articles.

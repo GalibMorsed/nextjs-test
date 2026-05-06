@@ -19,6 +19,7 @@ import {
   Info,
   Sparkles,
   HelpCircle,
+  PlayCircle,
 } from "lucide-react";
 import { DynamicIcon, type IconName } from "lucide-react/dynamic";
 import LottiePlayer from "./LottiePlayer";
@@ -530,8 +531,8 @@ function SidebarContent({
         <div className={`flex items-center ${isDesktopCollapsed ? "flex-col gap-4" : "gap-3"} mb-8`}>
           {/* Header Action Row */}
           {!isMobile && isDesktopCollapsed && onToggleDesktop && (
-            <button 
-              onClick={onToggleDesktop} 
+            <button
+              onClick={onToggleDesktop}
               className="p-2.5 rounded-xl text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
               title="Expand Sidebar"
             >
@@ -590,8 +591,8 @@ function SidebarContent({
           )}
 
           {!isMobile && !isDesktopCollapsed && onToggleDesktop && (
-            <button 
-              onClick={onToggleDesktop} 
+            <button
+              onClick={onToggleDesktop}
               className="p-2.5 rounded-xl text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors ml-auto"
               title="Collapse Sidebar"
             >
@@ -648,40 +649,48 @@ function SidebarContent({
                     : "text-gray-600 hover:bg-gray-100 hover:text-[var(--primary)] dark:text-slate-400 dark:hover:bg-slate-800"
                 }`}
                 onClick={closeAndNavigate}
-                title={isDesktopCollapsed ? "Live News Streaming" : undefined}
+                title={isDesktopCollapsed ? "News Streaming" : undefined}
               >
                 <SidebarIcon
                   name="radio"
                   size={isDesktopCollapsed ? 18 : 14}
                   className="shrink-0 text-red-500"
                 />
-                <span className={`overflow-hidden whitespace-nowrap transition-all duration-300 ${isDesktopCollapsed ? "max-w-0 opacity-0" : "max-w-[200px] opacity-100"}`}>
-                  Live News Streaming
+                <span
+                  className={`overflow-hidden whitespace-nowrap transition-all duration-300 ${isDesktopCollapsed ? "max-w-0 opacity-0" : "max-w-[200px] opacity-100"}`}
+                >
+                  News Streaming
                 </span>
+                {!isDesktopCollapsed && (
+                  <span className="ml-auto rounded-full bg-red-500 px-1.5 py-0.5 text-[10px] font-bold text-white">
+                    LIVE
+                  </span>
+                )}
               </Link>
               <Link
-                href="/live-shorts"
+                href="/shorts"
                 className={`flex items-center ${isDesktopCollapsed ? "justify-center w-12 h-12 mx-auto" : "gap-3 px-4 py-2"} rounded-xl text-sm font-medium transition ${
-                  pathname.startsWith("/live-shorts")
+                  pathname.startsWith("/shorts")
                     ? "bg-[var(--card)] text-[var(--primary)] border border-[var(--primary)]"
                     : "text-gray-600 hover:bg-gray-100 hover:text-[var(--primary)] dark:text-slate-400 dark:hover:bg-slate-800"
                 }`}
                 onClick={closeAndNavigate}
-                title={isDesktopCollapsed ? "Live Shorts" : undefined}
+                title={isDesktopCollapsed ? "Shorts" : undefined}
               >
-                <SidebarIcon
-                  name="video"
+                <PlayCircle
                   size={isDesktopCollapsed ? 18 : 14}
                   className="shrink-0 text-purple-500"
                 />
-                <span className={`overflow-hidden whitespace-nowrap transition-all duration-300 ${isDesktopCollapsed ? "max-w-0 opacity-0" : "max-w-[200px] opacity-100"}`}>
-                  Live Shorts
+                <span
+                  className={`overflow-hidden whitespace-nowrap transition-all duration-300 ${isDesktopCollapsed ? "max-w-0 opacity-0" : "max-w-[200px] opacity-100"}`}
+                >
+                  Shorts
                 </span>
               </Link>
             </div>
           </CollapsibleSection>
 
-          <CollapsibleSection 
+          <CollapsibleSection
             title={
               <span className="bg-gradient-to-r from-orange-500 via-red-500 to-amber-500 bg-clip-text text-transparent font-bold">
                 Indian Tadka
@@ -689,9 +698,9 @@ function SidebarContent({
             }
             isDesktopCollapsed={isDesktopCollapsed}
             icon={
-              <LottiePlayer 
-                src="/indianTadka/fire.json" 
-                className="w-6 h-6 -ml-1" 
+              <LottiePlayer
+                src="/indianTadka/fire.json"
+                className="w-6 h-6 -ml-1"
               />
             }
           >
@@ -791,86 +800,86 @@ function SidebarContent({
         {/* Collapsible Sections */}
         <div className={`overflow-hidden transition-all duration-300 ${isDesktopCollapsed ? "max-h-0 opacity-0" : "max-h-[500px] opacity-100"}`}>
           {isAuthenticated && (
-          <CollapsibleSection 
-            title="Extra Options" 
-            isDesktopCollapsed={isDesktopCollapsed}
-            icon={<Sparkles size={16} className="text-amber-500" />}
-          >
-            <Link
-              href="/personalization"
-              className={`inline-flex items-center ${isDesktopCollapsed ? "justify-center w-12 h-12 mx-auto" : "gap-3 px-4 py-1.5"} text-sm text-slate-600 hover:text-[var(--primary)] cursor-pointer transition-colors rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800`}
-              onClick={closeAndNavigate}
-              title={isDesktopCollapsed ? "Personalization" : undefined}
+            <CollapsibleSection
+              title="Extra Options"
+              isDesktopCollapsed={isDesktopCollapsed}
+              icon={<Sparkles size={16} className="text-amber-500" />}
             >
+              <Link
+                href="/personalization"
+                className={`inline-flex items-center ${isDesktopCollapsed ? "justify-center w-12 h-12 mx-auto" : "gap-3 px-4 py-1.5"} text-sm text-slate-600 hover:text-[var(--primary)] cursor-pointer transition-colors rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800`}
+                onClick={closeAndNavigate}
+                title={isDesktopCollapsed ? "Personalization" : undefined}
+              >
               <SlidersHorizontal className="shrink-0" size={isDesktopCollapsed ? 18 : 14} />
               <span className={`overflow-hidden whitespace-nowrap transition-all duration-300 ${isDesktopCollapsed ? "max-w-0 opacity-0" : "max-w-[200px] opacity-100"}`}>
-                Personalization
-              </span>
-            </Link>
-            <Link
-              href="/appearance"
-              className={`inline-flex items-center ${isDesktopCollapsed ? "justify-center w-12 h-12 mx-auto" : "gap-3 px-4 py-1.5"} text-sm text-slate-600 hover:text-[var(--primary)] cursor-pointer transition-colors rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800`}
-              onClick={closeAndNavigate}
-              title={isDesktopCollapsed ? "Appearance" : undefined}
-            >
+                  Personalization
+                </span>
+              </Link>
+              <Link
+                href="/appearance"
+                className={`inline-flex items-center ${isDesktopCollapsed ? "justify-center w-12 h-12 mx-auto" : "gap-3 px-4 py-1.5"} text-sm text-slate-600 hover:text-[var(--primary)] cursor-pointer transition-colors rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800`}
+                onClick={closeAndNavigate}
+                title={isDesktopCollapsed ? "Appearance" : undefined}
+              >
               <SidebarIcon className="shrink-0" name="palette" size={isDesktopCollapsed ? 18 : 14} />
               <span className={`overflow-hidden whitespace-nowrap transition-all duration-300 ${isDesktopCollapsed ? "max-w-0 opacity-0" : "max-w-[200px] opacity-100"}`}>
-                Appearance
+                  Appearance
+                </span>
+              </Link>
+              <Link
+                href="/plans"
+                className={`inline-flex items-center ${isDesktopCollapsed ? "justify-center w-12 h-12 mx-auto" : "gap-3 px-4 py-1.5"} text-sm text-slate-600 hover:text-indigo-600 cursor-pointer transition-colors rounded-xl hover:bg-slate-100 dark:text-slate-400 dark:hover:text-indigo-400 dark:hover:bg-slate-800`}
+                onClick={closeAndNavigate}
+                title={isDesktopCollapsed ? "Subscriptions" : undefined}
+              >
+              <SidebarIcon className="shrink-0" name="gem" size={isDesktopCollapsed ? 18 : 14} />
+              <span className={`overflow-hidden whitespace-nowrap transition-all duration-300 ${isDesktopCollapsed ? "max-w-0 opacity-0" : "max-w-[200px] opacity-100"}`}>
+                  Subscriptions
+                </span>
+              </Link>
+            </CollapsibleSection>
+          )}
+
+          <CollapsibleSection
+            title="More Info"
+            isDesktopCollapsed={isDesktopCollapsed}
+            icon={<HelpCircle size={16} className="text-blue-500" />}
+          >
+            <Link
+              href="/about"
+              className={`inline-flex items-center ${isDesktopCollapsed ? "justify-center w-12 h-12 mx-auto" : "gap-3 px-4 py-1.5"} text-sm text-slate-600 transition-colors hover:text-[var(--primary)] rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800`}
+              onClick={closeAndNavigate}
+              title={isDesktopCollapsed ? "About NextNews" : undefined}
+            >
+            <SidebarIcon className="shrink-0" name="info" size={isDesktopCollapsed ? 18 : 14} />
+            <span className={`overflow-hidden whitespace-nowrap transition-all duration-300 ${isDesktopCollapsed ? "max-w-0 opacity-0" : "max-w-[200px] opacity-100"}`}>
+                About NextNews
               </span>
             </Link>
             <Link
-              href="/plans"
-              className={`inline-flex items-center ${isDesktopCollapsed ? "justify-center w-12 h-12 mx-auto" : "gap-3 px-4 py-1.5"} text-sm text-slate-600 hover:text-indigo-600 cursor-pointer transition-colors rounded-xl hover:bg-slate-100 dark:text-slate-400 dark:hover:text-indigo-400 dark:hover:bg-slate-800`}
+              href="/support"
+              className={`inline-flex items-center ${isDesktopCollapsed ? "justify-center w-12 h-12 mx-auto" : "gap-3 px-4 py-1.5"} text-sm text-slate-600 hover:text-[var(--primary)] cursor-pointer transition-colors rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800`}
               onClick={closeAndNavigate}
-              title={isDesktopCollapsed ? "Subscriptions" : undefined}
+              title={isDesktopCollapsed ? "Contact Support" : undefined}
             >
-              <SidebarIcon className="shrink-0" name="gem" size={isDesktopCollapsed ? 18 : 14} />
-              <span className={`overflow-hidden whitespace-nowrap transition-all duration-300 ${isDesktopCollapsed ? "max-w-0 opacity-0" : "max-w-[200px] opacity-100"}`}>
-                Subscriptions
+            <LifeBuoy className="shrink-0" size={isDesktopCollapsed ? 18 : 14} />
+            <span className={`overflow-hidden whitespace-nowrap transition-all duration-300 ${isDesktopCollapsed ? "max-w-0 opacity-0" : "max-w-[200px] opacity-100"}`}>
+                Contact Support
+              </span>
+            </Link>
+            <Link
+              href="/privacy-policy"
+              className={`inline-flex items-center ${isDesktopCollapsed ? "justify-center w-12 h-12 mx-auto" : "gap-3 px-4 py-1.5"} text-sm text-slate-600 hover:text-[var(--primary)] cursor-pointer transition-colors rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800`}
+              onClick={closeAndNavigate}
+              title={isDesktopCollapsed ? "Privacy Policy" : undefined}
+            >
+            <SidebarIcon className="shrink-0" name="shield" size={isDesktopCollapsed ? 18 : 14} />
+            <span className={`overflow-hidden whitespace-nowrap transition-all duration-300 ${isDesktopCollapsed ? "max-w-0 opacity-0" : "max-w-[200px] opacity-100"}`}>
+                Privacy Policy
               </span>
             </Link>
           </CollapsibleSection>
-        )}
-
-        <CollapsibleSection 
-          title="More Info" 
-          isDesktopCollapsed={isDesktopCollapsed}
-          icon={<HelpCircle size={16} className="text-blue-500" />}
-        >
-          <Link
-            href="/about"
-            className={`inline-flex items-center ${isDesktopCollapsed ? "justify-center w-12 h-12 mx-auto" : "gap-3 px-4 py-1.5"} text-sm text-slate-600 transition-colors hover:text-[var(--primary)] rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800`}
-            onClick={closeAndNavigate}
-            title={isDesktopCollapsed ? "About NextNews" : undefined}
-          >
-            <SidebarIcon className="shrink-0" name="info" size={isDesktopCollapsed ? 18 : 14} />
-            <span className={`overflow-hidden whitespace-nowrap transition-all duration-300 ${isDesktopCollapsed ? "max-w-0 opacity-0" : "max-w-[200px] opacity-100"}`}>
-              About NextNews
-            </span>
-          </Link>
-          <Link
-            href="/support"
-            className={`inline-flex items-center ${isDesktopCollapsed ? "justify-center w-12 h-12 mx-auto" : "gap-3 px-4 py-1.5"} text-sm text-slate-600 hover:text-[var(--primary)] cursor-pointer transition-colors rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800`}
-            onClick={closeAndNavigate}
-            title={isDesktopCollapsed ? "Contact Support" : undefined}
-          >
-            <LifeBuoy className="shrink-0" size={isDesktopCollapsed ? 18 : 14} />
-            <span className={`overflow-hidden whitespace-nowrap transition-all duration-300 ${isDesktopCollapsed ? "max-w-0 opacity-0" : "max-w-[200px] opacity-100"}`}>
-              Contact Support
-            </span>
-          </Link>
-          <Link
-            href="/privacy-policy"
-            className={`inline-flex items-center ${isDesktopCollapsed ? "justify-center w-12 h-12 mx-auto" : "gap-3 px-4 py-1.5"} text-sm text-slate-600 hover:text-[var(--primary)] cursor-pointer transition-colors rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800`}
-            onClick={closeAndNavigate}
-            title={isDesktopCollapsed ? "Privacy Policy" : undefined}
-          >
-            <SidebarIcon className="shrink-0" name="shield" size={isDesktopCollapsed ? 18 : 14} />
-            <span className={`overflow-hidden whitespace-nowrap transition-all duration-300 ${isDesktopCollapsed ? "max-w-0 opacity-0" : "max-w-[200px] opacity-100"}`}>
-              Privacy Policy
-            </span>
-          </Link>
-        </CollapsibleSection>
         </div>
       </div>
 

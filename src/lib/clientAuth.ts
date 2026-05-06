@@ -55,6 +55,10 @@ export function clearClientSession(email?: string | null) {
     localStorage.removeItem(key);
   }
 
+  localStorage.removeItem("nextnews-plan");
+  localStorage.removeItem("nextnews-plan-date");
+  localStorage.removeItem("nextnews-plan-expiry");
+
   for (let i = localStorage.length - 1; i >= 0; i -= 1) {
     const key = localStorage.key(i);
     if (!key) continue;
