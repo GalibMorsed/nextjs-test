@@ -4,11 +4,14 @@ import { useEffect, useMemo, useState } from "react";
 import { EyeOff, Globe, Lock, Moon } from "lucide-react";
 import { supabase } from "../../../lib/superbaseClient";
 import {
+  ACCOUNT_SETTINGS_EVENT,
+  DARK_MODE_STORAGE_KEY,
   applyDarkMode,
   broadcastAccountSettings,
   getAccountSettingsStorageKey,
   persistDarkModeSetting,
   readDarkModeSetting,
+  type StoredAccountSettings,
 } from "@/lib/accountSettings";
 import { clearClientSession, getVerifiedAuthUser } from "@/lib/clientAuth";
 import StatusPopup from "../components/statusPopup";
@@ -229,6 +232,33 @@ export default function AccountSettingsPage() {
     return () => {
       mounted = false;
       subscription.unsubscribe();
+    };
+  }, []);
+
+  useEffect(() => {
+    const syncDarkMode = (nextValue: boolean) => {
+      setSettings((prev) =>
+        prev.darkMode === nextValue ? prev : { ...prev, darkMode: nextValue },
+      );
+    };
+
+    const handleAccountSettings = (event: Event) => {
+      const detail = (event as CustomEvent<StoredAccountSettings>).detail;
+      if (typeof detail?.darkMode !== "boolean") return;
+      syncDarkMode(detail.darkMode);
+    };
+
+    const handleStorage = (event: StorageEvent) => {
+      if (event.key !== DARK_MODE_STORAGE_KEY) return;
+      if (event.newValue === null) return;
+      syncDarkMode(event.newValue === "true");
+    };
+
+    window.addEventListener(ACCOUNT_SETTINGS_EVENT, handleAccountSettings);
+    window.addEventListener("storage", handleStorage);
+    return () => {
+      window.removeEventListener(ACCOUNT_SETTINGS_EVENT, handleAccountSettings);
+      window.removeEventListener("storage", handleStorage);
     };
   }, []);
 

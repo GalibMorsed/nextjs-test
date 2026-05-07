@@ -6,6 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   ChevronDown,
+  Crown,
   LifeBuoy,
   LogOut,
   Search,
@@ -20,6 +21,8 @@ import {
   Sparkles,
   HelpCircle,
   PlayCircle,
+  Sun,
+  Moon,
 } from "lucide-react";
 import { DynamicIcon, type IconName } from "lucide-react/dynamic";
 import LottiePlayer from "./LottiePlayer";
@@ -28,7 +31,28 @@ import {
   PERSONALIZATION_UPDATED_EVENT,
   getUserPersonalization,
 } from "../services/personalizationService";
-import { clearClientSession, getVerifiedAuthUser, persistClientSession } from "@/lib/clientAuth";
+import {
+  readActivityAnalytics,
+  readGoalTrackerState,
+  ACTIVITY_DATA_EVENT,
+  GOAL_TRACKER_EVENT,
+  type ActivityAnalytics,
+} from "@/lib/activityAnalytics";
+import {
+  ACCOUNT_SETTINGS_EVENT,
+  DARK_MODE_STORAGE_KEY,
+  applyDarkMode,
+  broadcastAccountSettings,
+  persistDarkModeSetting,
+  readDarkModeSetting,
+  type StoredAccountSettings,
+} from "@/lib/accountSettings";
+import { loadUserSubscriptionPlan } from "../services/subscriptionPlanService";
+import {
+  clearClientSession,
+  getVerifiedAuthUser,
+  persistClientSession,
+} from "@/lib/clientAuth";
 import {
   sanitizePersonalizationTopic,
   slugifyPersonalizationTopic,
@@ -51,7 +75,11 @@ const CATEGORY_NAV_ITEMS: CategoryNavItem[] = [
   { topic: "Top Headlines", href: "/", iconName: "home" },
   { topic: "Technology", href: "/categories/technology", iconName: "laptop" },
   { topic: "Business", href: "/categories/business", iconName: "briefcase" },
-  { topic: "Entertainment", href: "/categories/entertainment", iconName: "film" },
+  {
+    topic: "Entertainment",
+    href: "/categories/entertainment",
+    iconName: "film",
+  },
   { topic: "Sports", href: "/categories/sports", iconName: "trophy" },
   { topic: "Health", href: "/categories/health", iconName: "heart" },
   { topic: "Science", href: "/categories/science", iconName: "flask-conical" },
@@ -59,7 +87,11 @@ const CATEGORY_NAV_ITEMS: CategoryNavItem[] = [
   { topic: "Tourism", href: "/categories/tourism", iconName: "plane" },
   { topic: "Crime", href: "/categories/crime", iconName: "shield-alert" },
   { topic: "Environment", href: "/categories/environment", iconName: "leaf" },
-  { topic: "Education", href: "/categories/education", iconName: "graduation-cap" },
+  {
+    topic: "Education",
+    href: "/categories/education",
+    iconName: "graduation-cap",
+  },
   { topic: "Travel", href: "/categories/travel", iconName: "map" },
   { topic: "Food", href: "/categories/food", iconName: "utensils-crossed" },
   { topic: "Fashion", href: "/categories/fashion", iconName: "shirt" },
@@ -76,18 +108,46 @@ const CATEGORY_NAV_ITEMS: CategoryNavItem[] = [
     href: "/categories/spirituality-religion",
     iconName: "gem",
   },
-  { topic: "Mental Health", href: "/categories/mental-health", iconName: "heart" },
+  {
+    topic: "Mental Health",
+    href: "/categories/mental-health",
+    iconName: "heart",
+  },
   {
     topic: "Artificial Intelligence",
     href: "/categories/artificial-intelligence",
     iconName: "bot",
   },
-  { topic: "Cybersecurity", href: "/categories/cybersecurity", iconName: "shield-alert" },
-  { topic: "Space & Astronomy", href: "/categories/space-astronomy", iconName: "telescope" },
-  { topic: "Stock Market", href: "/categories/stock-market", iconName: "chart-candlestick" },
-  { topic: "Trade & Economy", href: "/categories/trade-economy", iconName: "trending-up" },
-  { topic: "Real Estate", href: "/categories/real-estate", iconName: "building-2" },
-  { topic: "Defense & Military", href: "/categories/defense-military", iconName: "shield" },
+  {
+    topic: "Cybersecurity",
+    href: "/categories/cybersecurity",
+    iconName: "shield-alert",
+  },
+  {
+    topic: "Space & Astronomy",
+    href: "/categories/space-astronomy",
+    iconName: "telescope",
+  },
+  {
+    topic: "Stock Market",
+    href: "/categories/stock-market",
+    iconName: "chart-candlestick",
+  },
+  {
+    topic: "Trade & Economy",
+    href: "/categories/trade-economy",
+    iconName: "trending-up",
+  },
+  {
+    topic: "Real Estate",
+    href: "/categories/real-estate",
+    iconName: "building-2",
+  },
+  {
+    topic: "Defense & Military",
+    href: "/categories/defense-military",
+    iconName: "shield",
+  },
   {
     topic: "Agriculture & Farming",
     href: "/categories/agriculture-farming",
@@ -97,8 +157,16 @@ const CATEGORY_NAV_ITEMS: CategoryNavItem[] = [
   { topic: "Weather", href: "/categories/weather", iconName: "cloud-sun" },
   { topic: "Energy", href: "/categories/energy", iconName: "zap" },
   { topic: "Startups", href: "/categories/startups", iconName: "rocket" },
-  { topic: "Law & Justice", href: "/categories/law-justice", iconName: "scale" },
-  { topic: "Social Media", href: "/categories/social-media", iconName: "share-2" },
+  {
+    topic: "Law & Justice",
+    href: "/categories/law-justice",
+    iconName: "scale",
+  },
+  {
+    topic: "Social Media",
+    href: "/categories/social-media",
+    iconName: "share-2",
+  },
   {
     topic: "Personal Finance",
     href: "/categories/personal-finance",
@@ -107,11 +175,36 @@ const CATEGORY_NAV_ITEMS: CategoryNavItem[] = [
 ];
 
 const INDIAN_TADKA_SOURCES = [
-  { name: "NDTV", id: "ndtv", href: "/news/indian-tadka/ndtv", icon: "/indianTadka/NDTV.jpg" },
-  { name: "Times of India", id: "times-of-india", href: "/news/indian-tadka/times-of-india", icon: "/indianTadka/timesofIndia.jpg" },
-  { name: "Hindustan Times", id: "hindustan-times", href: "/news/indian-tadka/hindustan-times", icon: "/indianTadka/hindustanTimes.jpg" },
-  { name: "Indian Express", id: "indian-express", href: "/news/indian-tadka/indian-express", icon: "/indianTadka/indianExpress.jpg" },
-  { name: "The Hindu", id: "the-hindu", href: "/news/indian-tadka/the-hindu", icon: "/indianTadka/theHindu.jpg" },
+  {
+    name: "NDTV",
+    id: "ndtv",
+    href: "/news/indian-tadka/ndtv",
+    icon: "/indianTadka/NDTV.jpg",
+  },
+  {
+    name: "Times of India",
+    id: "times-of-india",
+    href: "/news/indian-tadka/times-of-india",
+    icon: "/indianTadka/timesofIndia.jpg",
+  },
+  {
+    name: "Hindustan Times",
+    id: "hindustan-times",
+    href: "/news/indian-tadka/hindustan-times",
+    icon: "/indianTadka/hindustanTimes.jpg",
+  },
+  {
+    name: "Indian Express",
+    id: "indian-express",
+    href: "/news/indian-tadka/indian-express",
+    icon: "/indianTadka/indianExpress.jpg",
+  },
+  {
+    name: "The Hindu",
+    id: "the-hindu",
+    href: "/news/indian-tadka/the-hindu",
+    icon: "/indianTadka/theHindu.jpg",
+  },
 ];
 
 const CATEGORY_NAV_BY_TOPIC = new Map(
@@ -138,36 +231,81 @@ function SidebarIcon({
 }
 
 const TOPIC_ICON_RULES: Array<[RegExp, IconName]> = [
-  [/\b(ai|artificial intelligence|machine learning|generative|llm|chatbot|robot|automation)\b/, "bot"],
+  [
+    /\b(ai|artificial intelligence|machine learning|generative|llm|chatbot|robot|automation)\b/,
+    "bot",
+  ],
   [/\b(chip|semiconductor|processor|cpu|gpu|hardware|quantum|device)\b/, "cpu"],
-  [/\b(neural|brain|cognitive|mental health|psychology|therapy)\b/, "brain-circuit"],
-  [/\b(cyber|cybersecurity|hack|hacker|ransomware|malware|phishing|breach|password|privacy|encryption)\b/, "lock-keyhole"],
+  [
+    /\b(neural|brain|cognitive|mental health|psychology|therapy)\b/,
+    "brain-circuit",
+  ],
+  [
+    /\b(cyber|cybersecurity|hack|hacker|ransomware|malware|phishing|breach|password|privacy|encryption)\b/,
+    "lock-keyhole",
+  ],
   [/\b(bug|vulnerability|zero-day|exploit|patch)\b/, "bug"],
-  [/\b(software|app|apps|platform|internet|cloud|database|data|server|saas|code|developer)\b/, "database"],
-  [/\b(phone|smartphone|mobile|ios|android|telecom|5g|network)\b/, "smartphone"],
+  [
+    /\b(software|app|apps|platform|internet|cloud|database|data|server|saas|code|developer)\b/,
+    "database",
+  ],
+  [
+    /\b(phone|smartphone|mobile|ios|android|telecom|5g|network)\b/,
+    "smartphone",
+  ],
   [/\b(startup|startups|founder|venture|funding|ipo|entrepreneur)\b/, "rocket"],
-  [/\b(election|vote|voting|poll|campaign|ballot|democrat|republican)\b/, "vote"],
-  [/\b(politic|government|parliament|congress|senate|policy|minister|president|diplomacy)\b/, "landmark"],
+  [
+    /\b(election|vote|voting|poll|campaign|ballot|democrat|republican)\b/,
+    "vote",
+  ],
+  [
+    /\b(politic|government|parliament|congress|senate|policy|minister|president|diplomacy)\b/,
+    "landmark",
+  ],
   [/\b(court|law|justice|legal|judge|lawsuit|trial|ruling)\b/, "gavel"],
-  [/\b(war|defense|military|army|navy|air force|missile|weapon|border|conflict|troop)\b/, "shield"],
+  [
+    /\b(war|defense|military|army|navy|air force|missile|weapon|border|conflict|troop)\b/,
+    "shield",
+  ],
   [/\b(crime|police|arrest|fraud|murder|homicide|theft)\b/, "siren"],
-  [/\b(health|medical|medicine|doctor|hospital|patient|disease|virus|vaccine|covid|flu|wellness)\b/, "stethoscope"],
+  [
+    /\b(health|medical|medicine|doctor|hospital|patient|disease|virus|vaccine|covid|flu|wellness)\b/,
+    "stethoscope",
+  ],
   [/\b(biotech|biology|genetic|dna|pharma|drug|clinical)\b/, "dna"],
   [/\b(science|research|lab|physics|chemistry|discovery|experiment)\b/, "atom"],
   [/\b(space|astronomy|nasa|satellite|moon|mars|rocket|planet)\b/, "telescope"],
-  [/\b(stock|stocks|market|trading|wall street|invest|investment|shares|equity)\b/, "chart-candlestick"],
-  [/\b(economy|inflation|gdp|recession|growth|trade|export|import|tariff)\b/, "trending-up"],
-  [/\b(finance|bank|money|tax|loan|mortgage|credit|debt|retirement|savings)\b/, "banknote"],
+  [
+    /\b(stock|stocks|market|trading|wall street|invest|investment|shares|equity)\b/,
+    "chart-candlestick",
+  ],
+  [
+    /\b(economy|inflation|gdp|recession|growth|trade|export|import|tariff)\b/,
+    "trending-up",
+  ],
+  [
+    /\b(finance|bank|money|tax|loan|mortgage|credit|debt|retirement|savings)\b/,
+    "banknote",
+  ],
   [/\b(crypto|bitcoin|blockchain|ethereum|web3|token)\b/, "bitcoin"],
   [/\b(real estate|housing|property|rent|home price|mortgage)\b/, "building-2"],
-  [/\b(business|company|corporate|earnings|retail|consumer|brand|industry)\b/, "briefcase"],
+  [
+    /\b(business|company|corporate|earnings|retail|consumer|brand|industry)\b/,
+    "briefcase",
+  ],
   [/\b(energy|oil|gas|fuel|petrol|diesel|electricity|power grid)\b/, "fuel"],
   [/\b(solar|wind|renewable|battery|ev charging)\b/, "solar-panel"],
-  [/\b(weather|storm|rain|heatwave|temperature|forecast|snow)\b/, "thermometer"],
+  [
+    /\b(weather|storm|rain|heatwave|temperature|forecast|snow)\b/,
+    "thermometer",
+  ],
   [/\b(climate|environment|pollution|forest|wildfire|carbon)\b/, "tree-pine"],
   [/\b(flood|ocean|sea|water|hurricane|cyclone|tsunami)\b/, "waves"],
   [/\b(fire|wildfire|heat|volcano)\b/, "flame"],
-  [/\b(farm|farming|agriculture|crop|wheat|rice|livestock|irrigation|food security)\b/, "wheat"],
+  [
+    /\b(farm|farming|agriculture|crop|wheat|rice|livestock|irrigation|food security)\b/,
+    "wheat",
+  ],
   [/\b(food|restaurant|recipe|chef|cuisine|nutrition)\b/, "chef-hat"],
   [/\b(travel|tourism|tourist|hotel|airline|visa|destination)\b/, "plane"],
   [/\b(car|auto|automotive|vehicle|ev|tesla|transport)\b/, "car"],
@@ -185,7 +323,10 @@ const TOPIC_ICON_RULES: Array<[RegExp, IconName]> = [
   [/\b(art|artist|gallery|museum|painting|design)\b/, "palette"],
   [/\b(fashion|style|clothing|designer|runway)\b/, "shirt"],
   [/\b(game|gaming|esports|console|playstation|xbox)\b/, "gamepad-2"],
-  [/\b(sport|sports|cricket|football|soccer|tennis|basketball|nba|nfl|olympic)\b/, "trophy"],
+  [
+    /\b(sport|sports|cricket|football|soccer|tennis|basketball|nba|nfl|olympic)\b/,
+    "trophy",
+  ],
   [/\b(school|education|university|college|student|exam)\b/, "graduation-cap"],
   [/\b(religion|faith|spirituality|church|temple|mosque)\b/, "gem"],
   [/\b(shopping|commerce|ecommerce|store|consumer)\b/, "shopping-cart"],
@@ -219,7 +360,12 @@ const DEFAULT_TOPIC_SELECTION = [
 
 const SIDEBAR_SEARCH_EVENT = "sidebar-search";
 
-export default function Sidebar({ isMobileOpen, onCloseMobile, isDesktopCollapsed, onToggleDesktop }: SidebarProps) {
+export default function Sidebar({
+  isMobileOpen,
+  onCloseMobile,
+  isDesktopCollapsed,
+  onToggleDesktop,
+}: SidebarProps) {
   const [query, setQuery] = useState("");
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [userEmail, setUserEmail] = useState("");
@@ -265,7 +411,9 @@ export default function Sidebar({ isMobileOpen, onCloseMobile, isDesktopCollapse
                   ? (err as { name: string }).name
                   : "";
             if (errorName === "AbortError") {
-              console.warn("Sidebar auth operation timed out (expected behavior).");
+              console.warn(
+                "Sidebar auth operation timed out (expected behavior).",
+              );
             }
           }
         } else {
@@ -388,7 +536,29 @@ export default function Sidebar({ isMobileOpen, onCloseMobile, isDesktopCollapse
 
   return (
     <>
-      <aside className={`hidden md:flex fixed left-0 top-[65px] h-[calc(100vh-65px)] ${isDesktopCollapsed ? "w-20" : "w-72"} transition-[width] duration-300 bg-white/95 backdrop-blur border-r border-slate-200/80 shadow-sm flex-col dark:bg-slate-900/95 dark:border-slate-700/80`}>
+      <aside
+        className={`hidden md:flex fixed left-0 top-[65px] h-[calc(100vh-65px)] ${isDesktopCollapsed ? "w-20" : "w-72"} transition-[width] duration-300 bg-white/95 backdrop-blur border-r border-slate-200/80 shadow-sm flex-col dark:bg-slate-900/95 dark:border-slate-700/80 z-10`}
+      >
+        {/* Floating Toggle Button */}
+        {!isMobileOpen && onToggleDesktop && (
+          <button
+            onClick={onToggleDesktop}
+            className="absolute -right-4 top-15 z-20 flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 bg-white shadow-md hover:bg-slate-50 hover:scale-110 transition-all duration-300 dark:border-slate-700 dark:bg-slate-900 dark:hover:bg-slate-800 group"
+            title={isDesktopCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
+          >
+            {isDesktopCollapsed ? (
+              <PanelLeftOpen
+                size={18}
+                className="text-slate-500 group-hover:text-indigo-600 transition-colors"
+              />
+            ) : (
+              <PanelLeftClose
+                size={18}
+                className="text-slate-500 group-hover:text-indigo-600 transition-colors"
+              />
+            )}
+          </button>
+        )}
         {desktopContent}
       </aside>
 
@@ -451,6 +621,101 @@ function SidebarContent({
 }) {
   const closeAndNavigate = () => onCloseMobile();
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [realGoal, setRealGoal] = useState({ current: 0, target: 15 });
+  const [planName, setPlanName] = useState("FREE");
+  const [isDarkMode, setIsDarkMode] = useState(false);
+
+  useEffect(() => {
+    setIsDarkMode(readDarkModeSetting());
+  }, []);
+
+  useEffect(() => {
+    const syncDarkMode = (nextValue: boolean) => {
+      setIsDarkMode((prev) => (prev === nextValue ? prev : nextValue));
+      applyDarkMode(nextValue);
+    };
+
+    const handleAccountSettings = (event: Event) => {
+      const detail = (event as CustomEvent<StoredAccountSettings>).detail;
+      if (typeof detail?.darkMode !== "boolean") return;
+      syncDarkMode(detail.darkMode);
+    };
+
+    const handleStorage = (event: StorageEvent) => {
+      if (event.key !== DARK_MODE_STORAGE_KEY) return;
+      if (event.newValue === null) return;
+      syncDarkMode(event.newValue === "true");
+    };
+
+    window.addEventListener(ACCOUNT_SETTINGS_EVENT, handleAccountSettings);
+    window.addEventListener("storage", handleStorage);
+    return () => {
+      window.removeEventListener(ACCOUNT_SETTINGS_EVENT, handleAccountSettings);
+      window.removeEventListener("storage", handleStorage);
+    };
+  }, []);
+
+  const toggleDarkMode = () => {
+    const nextValue = !isDarkMode;
+    setIsDarkMode(nextValue);
+    applyDarkMode(nextValue);
+    persistDarkModeSetting(nextValue);
+    broadcastAccountSettings({ darkMode: nextValue });
+  };
+
+  useEffect(() => {
+    if (!isAuthenticated) return;
+
+    const loadData = async () => {
+      // Load Subscription
+      const planResult = await loadUserSubscriptionPlan();
+      if (planResult.data) {
+        setPlanName(planResult.data.plan_name.toUpperCase());
+      }
+
+      // Load Analytics & Goal
+      const analytics = await readActivityAnalytics();
+      const goalState = await readGoalTrackerState();
+
+      // Calculate Weekly Progress
+      const now = new Date();
+      const day = now.getDay();
+      const diff = now.getDate() - day + (day === 0 ? -6 : 1);
+      const monday = new Date(now.setDate(diff));
+      monday.setHours(0, 0, 0, 0);
+      const mondayTime = monday.getTime();
+
+      const weekEvents = (analytics.events || []).filter(
+        (e) => new Date(e.timestamp).getTime() >= mondayTime,
+      );
+
+      const aiUsage = weekEvents.filter((e) =>
+        [
+          "ai_summary",
+          "personalization_suggestion",
+          "region_suggestion",
+        ].includes(e.type),
+      ).length;
+      const articles = weekEvents.filter(
+        (e) => e.type === "article_open",
+      ).length;
+
+      setRealGoal({
+        current: aiUsage + articles,
+        target: goalState.weeklyGoal || 15,
+      });
+    };
+
+    void loadData();
+
+    // Listen for updates
+    window.addEventListener(ACTIVITY_DATA_EVENT, loadData);
+    window.addEventListener(GOAL_TRACKER_EVENT, loadData);
+    return () => {
+      window.removeEventListener(ACTIVITY_DATA_EVENT, loadData);
+      window.removeEventListener(GOAL_TRACKER_EVENT, loadData);
+    };
+  }, [isAuthenticated]);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   const handleSearchClick = () => {
@@ -527,25 +792,26 @@ function SidebarContent({
 
   return (
     <>
-      <div className={`flex-1 overflow-y-auto ${isDesktopCollapsed ? "p-3 overflow-x-hidden" : "p-6"}`}>
-        <div className={`flex items-center ${isDesktopCollapsed ? "flex-col gap-4" : "gap-3"} mb-8`}>
-          {/* Header Action Row */}
-          {!isMobile && isDesktopCollapsed && onToggleDesktop && (
-            <button
-              onClick={onToggleDesktop}
-              className="p-2.5 rounded-xl text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-              title="Expand Sidebar"
-            >
-              <PanelLeftOpen size={20} />
-            </button>
-          )}
+      <div
+        className={`flex-1 overflow-y-auto ${isDesktopCollapsed ? "p-3 overflow-x-hidden" : "p-6"}`}
+      >
+        <div
+          className={`flex items-center ${isDesktopCollapsed ? "flex-col gap-4" : "gap-3"} mb-8`}
+        >
+          {/* Header Action Row Removed */}
 
           {isMobile ? (
             <motion.h2
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
               whileHover={{ scale: 1.05 }}
-              transition={{ type: "spring", stiffness: 600, damping: 12, bounce: 0.4, duration: 0.4 }}
+              transition={{
+                type: "spring",
+                stiffness: 600,
+                damping: 12,
+                bounce: 0.4,
+                duration: 0.4,
+              }}
               className="text-3xl font-black bg-gradient-to-r from-blue-600 via-purple-500 to-indigo-600 bg-clip-text text-transparent cursor-default overflow-hidden whitespace-nowrap"
             >
               DailyScoop
@@ -556,7 +822,7 @@ function SidebarContent({
                 <div className="flex-1">
                   <form onSubmit={handleSearch} className="relative group">
                     <Search
-                      className="absolute left-3 top-1/2 -translate-y-1/2 text-indigo-600 group-focus-within:text-indigo-700 transition-colors"
+                      className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors pointer-events-none"
                       size={18}
                     />
                     <input
@@ -565,13 +831,17 @@ function SidebarContent({
                       placeholder="Search news..."
                       value={query}
                       onChange={(e) => setQuery(e.target.value)}
-                      className="w-full rounded-xl border-2 border-indigo-100 bg-indigo-50/40 py-2.5 pl-10 pr-10 text-sm font-semibold text-slate-800 placeholder:text-indigo-400/60 transition-all duration-300 hover:bg-indigo-50/60 hover:border-indigo-200 focus:outline-none focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 dark:border-indigo-900/50 dark:bg-indigo-950/30 dark:text-slate-100 dark:placeholder:text-indigo-700/50 dark:focus:bg-slate-900"
+                      className="w-full rounded-xl border border-slate-200/60 bg-slate-100/40 py-2.5 pl-11 pr-10 text-sm font-semibold text-slate-800 placeholder:text-slate-400/60 transition-all duration-300 hover:bg-slate-100/60 hover:border-slate-300/80 focus:outline-none focus:bg-white focus:border-indigo-500/40 focus:ring-4 focus:ring-indigo-500/10 dark:border-slate-700/50 dark:bg-slate-800/40 dark:text-slate-100 dark:placeholder:text-slate-500/50 dark:hover:bg-slate-800/60 dark:hover:border-slate-600/50 dark:focus:bg-slate-900"
                     />
+                    <div className="absolute right-3.5 top-1/2 -translate-y-1/2 px-1.5 py-0.5 rounded border border-slate-200 bg-white text-[10px] font-bold text-slate-400 shadow-sm pointer-events-none group-focus-within:opacity-0 transition-opacity dark:bg-slate-800 dark:border-slate-700/80 dark:text-slate-500">
+                      <span className="text-[12px] leading-none mt-0.5">⌘</span>
+                      <span>/</span>
+                    </div>
                     {query && (
                       <button
                         type="button"
                         onClick={() => setQuery("")}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-1 text-slate-400 transition-colors hover:bg-slate-200 hover:text-slate-600 dark:text-slate-400 dark:hover:bg-slate-700 dark:hover:text-white"
+                        className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-1 text-slate-400 transition-colors hover:bg-slate-200 hover:text-slate-600 dark:text-slate-500 dark:hover:bg-slate-700 dark:hover:text-white"
                       >
                         <X size={14} />
                       </button>
@@ -581,24 +851,19 @@ function SidebarContent({
               ) : (
                 <button
                   onClick={handleSearchClick}
-                  className="flex items-center justify-center w-12 h-12 rounded-xl bg-slate-50 hover:bg-slate-100 text-indigo-600 transition-colors dark:bg-slate-800 dark:hover:bg-slate-700"
+                  className="flex items-center justify-center w-12 h-12 mx-auto rounded-xl bg-slate-50/80 shadow-sm border border-slate-200/60 hover:bg-slate-100 hover:scale-105 transition-all dark:bg-slate-800/80 dark:border-slate-700/60 dark:hover:bg-slate-700 dark:hover:border-slate-600"
                   title="Search"
                 >
-                  <Search size={20} />
+                  <Search
+                    size={20}
+                    className="text-slate-500 dark:text-slate-400"
+                  />
                 </button>
               )}
             </>
           )}
 
-          {!isMobile && !isDesktopCollapsed && onToggleDesktop && (
-            <button
-              onClick={onToggleDesktop}
-              className="p-2.5 rounded-xl text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors ml-auto"
-              title="Collapse Sidebar"
-            >
-              <PanelLeftClose size={20} />
-            </button>
-          )}
+          {/* Toggle Button Removed */}
         </div>
 
         {isMobile && (
@@ -633,6 +898,7 @@ function SidebarContent({
           <CollapsibleSection
             title="Streamings"
             isDesktopCollapsed={isDesktopCollapsed}
+            onToggleDesktop={onToggleDesktop}
             icon={
               <LottiePlayer
                 src="/indianTadka/play button animation.json"
@@ -640,54 +906,52 @@ function SidebarContent({
               />
             }
           >
-            <div className="space-y-1">
-              <Link
-                href="/live-news"
-                className={`flex items-center ${isDesktopCollapsed ? "justify-center w-12 h-12 mx-auto" : "gap-3 px-4 py-2"} rounded-xl text-sm font-medium transition ${
-                  pathname.startsWith("/live-news")
-                    ? "bg-[var(--card)] text-[var(--primary)] border border-[var(--primary)]"
-                    : "text-gray-600 hover:bg-gray-100 hover:text-[var(--primary)] dark:text-slate-400 dark:hover:bg-slate-800"
-                }`}
-                onClick={closeAndNavigate}
-                title={isDesktopCollapsed ? "News Streaming" : undefined}
+            <Link
+              href="/live-news"
+              className={`flex items-center ${isDesktopCollapsed ? "justify-center w-12 h-12 mx-auto" : "gap-3 px-4 py-2"} rounded-xl text-sm font-medium transition ${
+                pathname.startsWith("/live-news")
+                  ? "bg-[var(--card)] text-[var(--primary)] border border-[var(--primary)]"
+                  : "text-gray-600 hover:bg-gray-100 hover:text-[var(--primary)] dark:text-slate-400 dark:hover:bg-slate-800"
+              }`}
+              onClick={closeAndNavigate}
+              title={isDesktopCollapsed ? "News Streaming" : undefined}
+            >
+              <SidebarIcon
+                name="radio"
+                size={isDesktopCollapsed ? 18 : 14}
+                className="shrink-0 text-red-500"
+              />
+              <span
+                className={`overflow-hidden whitespace-nowrap transition-all duration-300 ${isDesktopCollapsed ? "max-w-0 opacity-0" : "max-w-[200px] opacity-100"}`}
               >
-                <SidebarIcon
-                  name="radio"
-                  size={isDesktopCollapsed ? 18 : 14}
-                  className="shrink-0 text-red-500"
-                />
-                <span
-                  className={`overflow-hidden whitespace-nowrap transition-all duration-300 ${isDesktopCollapsed ? "max-w-0 opacity-0" : "max-w-[200px] opacity-100"}`}
-                >
-                  News Streaming
+                News Streaming
+              </span>
+              {!isDesktopCollapsed && (
+                <span className="ml-auto rounded-full bg-red-500 px-1.5 py-0.5 text-[10px] font-bold text-white">
+                  LIVE
                 </span>
-                {!isDesktopCollapsed && (
-                  <span className="ml-auto rounded-full bg-red-500 px-1.5 py-0.5 text-[10px] font-bold text-white">
-                    LIVE
-                  </span>
-                )}
-              </Link>
-              <Link
-                href="/shorts"
-                className={`flex items-center ${isDesktopCollapsed ? "justify-center w-12 h-12 mx-auto" : "gap-3 px-4 py-2"} rounded-xl text-sm font-medium transition ${
-                  pathname.startsWith("/shorts")
-                    ? "bg-[var(--card)] text-[var(--primary)] border border-[var(--primary)]"
-                    : "text-gray-600 hover:bg-gray-100 hover:text-[var(--primary)] dark:text-slate-400 dark:hover:bg-slate-800"
-                }`}
-                onClick={closeAndNavigate}
-                title={isDesktopCollapsed ? "Shorts" : undefined}
+              )}
+            </Link>
+            <Link
+              href="/shorts"
+              className={`flex items-center ${isDesktopCollapsed ? "justify-center w-12 h-12 mx-auto" : "gap-3 px-4 py-2"} rounded-xl text-sm font-medium transition ${
+                pathname.startsWith("/shorts")
+                  ? "bg-[var(--card)] text-[var(--primary)] border border-[var(--primary)]"
+                  : "text-gray-600 hover:bg-gray-100 hover:text-[var(--primary)] dark:text-slate-400 dark:hover:bg-slate-800"
+              }`}
+              onClick={closeAndNavigate}
+              title={isDesktopCollapsed ? "Shorts" : undefined}
+            >
+              <PlayCircle
+                size={isDesktopCollapsed ? 18 : 14}
+                className="shrink-0 text-purple-500"
+              />
+              <span
+                className={`overflow-hidden whitespace-nowrap transition-all duration-300 ${isDesktopCollapsed ? "max-w-0 opacity-0" : "max-w-[200px] opacity-100"}`}
               >
-                <PlayCircle
-                  size={isDesktopCollapsed ? 18 : 14}
-                  className="shrink-0 text-purple-500"
-                />
-                <span
-                  className={`overflow-hidden whitespace-nowrap transition-all duration-300 ${isDesktopCollapsed ? "max-w-0 opacity-0" : "max-w-[200px] opacity-100"}`}
-                >
-                  Shorts
-                </span>
-              </Link>
-            </div>
+                Shorts
+              </span>
+            </Link>
           </CollapsibleSection>
 
           <CollapsibleSection
@@ -697,6 +961,7 @@ function SidebarContent({
               </span>
             }
             isDesktopCollapsed={isDesktopCollapsed}
+            onToggleDesktop={onToggleDesktop}
             icon={
               <LottiePlayer
                 src="/indianTadka/fire.json"
@@ -704,57 +969,75 @@ function SidebarContent({
               />
             }
           >
-            <div className="space-y-1">
-              {INDIAN_TADKA_SOURCES.map((source) => (
-                <Link
-                  key={source.id}
-                  href={source.href}
-                  className={`flex items-center ${isDesktopCollapsed ? "justify-center w-12 h-12 mx-auto" : "gap-3 px-4 py-2"} rounded-xl text-sm font-medium transition ${
-                    pathname === source.href
-                      ? "bg-[var(--card)] text-[var(--primary)] border border-[var(--primary)]"
-                      : "text-gray-600 hover:bg-gray-100 hover:text-[var(--primary)] dark:text-slate-400 dark:hover:bg-slate-800"
-                  }`}
-                  onClick={closeAndNavigate}
-                  title={isDesktopCollapsed ? source.name : undefined}
-                >
-                  <img
-                    src={source.icon}
-                    alt={source.name}
-                    className={`shrink-0 rounded-md object-cover border border-slate-200 dark:border-slate-700 ${isDesktopCollapsed ? "w-6 h-6" : "w-5 h-5"}`}
-                  />
-                  <span className={`overflow-hidden whitespace-nowrap transition-all duration-300 ${isDesktopCollapsed ? "max-w-0 opacity-0" : "max-w-[200px] opacity-100"}`}>
-                    {source.name}
-                  </span>
-                </Link>
-              ))}
-            </div>
-          </CollapsibleSection>
-          {visibleNavigationItems.map((item) => {
-            const isActive =
-              item.href === "/"
-                ? pathname === "/"
-                : pathname.startsWith(item.href);
-
-            return (
+            {INDIAN_TADKA_SOURCES.map((source) => (
               <Link
-                key={item.topic}
-                href={item.href}
-                className={navItemClass(isActive)}
+                key={source.id}
+                href={source.href}
+                className={`flex items-center ${isDesktopCollapsed ? "justify-center w-12 h-12 mx-auto" : "gap-3 px-4 py-2"} rounded-xl text-sm font-medium transition ${
+                  pathname === source.href
+                    ? "bg-[var(--card)] text-[var(--primary)] border border-[var(--primary)]"
+                    : "text-gray-600 hover:bg-gray-100 hover:text-[var(--primary)] dark:text-slate-400 dark:hover:bg-slate-800"
+                }`}
                 onClick={closeAndNavigate}
-                title={isDesktopCollapsed ? item.topic : undefined}
+                title={isDesktopCollapsed ? source.name : undefined}
               >
-                <SidebarIcon
-                  name={item.iconName}
-                  size={18}
-                  className="transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6 shrink-0"
+                <img
+                  src={source.icon}
+                  alt={source.name}
+                  className={`shrink-0 rounded-md object-cover border border-slate-200 dark:border-slate-700 ${isDesktopCollapsed ? "w-6 h-6" : "w-5 h-5"}`}
                 />
-                <span className={`overflow-hidden whitespace-nowrap transition-all duration-300 ${isDesktopCollapsed ? "max-w-0 opacity-0" : "max-w-[200px] opacity-100"}`}>
-                  {item.topic}
+                <span
+                  className={`overflow-hidden whitespace-nowrap transition-all duration-300 ${isDesktopCollapsed ? "max-w-0 opacity-0" : "max-w-[200px] opacity-100"}`}
+                >
+                  {source.name}
                 </span>
               </Link>
-            );
-          })}
-          <div className={`overflow-hidden transition-all duration-300 ${isDesktopCollapsed ? "max-h-0 opacity-0" : "max-h-20 opacity-100"}`}>
+            ))}
+          </CollapsibleSection>
+          <CollapsibleSection
+            title="Catagories"
+            isDesktopCollapsed={isDesktopCollapsed}
+            onToggleDesktop={onToggleDesktop}
+            defaultOpen={true}
+            icon={
+              <SidebarIcon
+                name="layout-grid"
+                size={16}
+                className="text-indigo-500"
+              />
+            }
+          >
+            {visibleNavigationItems.map((item) => {
+              const isActive =
+                item.href === "/"
+                  ? pathname === "/"
+                  : pathname.startsWith(item.href);
+
+              return (
+                <Link
+                  key={item.topic}
+                  href={item.href}
+                  className={navItemClass(isActive)}
+                  onClick={closeAndNavigate}
+                  title={isDesktopCollapsed ? item.topic : undefined}
+                >
+                  <SidebarIcon
+                    name={item.iconName}
+                    size={18}
+                    className="transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6 shrink-0"
+                  />
+                  <span
+                    className={`overflow-hidden whitespace-nowrap transition-all duration-300 ${isDesktopCollapsed ? "max-w-0 opacity-0" : "max-w-[200px] opacity-100"}`}
+                  >
+                    {item.topic}
+                  </span>
+                </Link>
+              );
+            })}
+          </CollapsibleSection>
+          <div
+            className={`overflow-hidden transition-all duration-300 ${isDesktopCollapsed ? "max-h-0 opacity-0" : "max-h-20 opacity-100"}`}
+          >
             {isAuthenticated &&
               isPersonalizationLoaded &&
               visibleNavigationItems.length === 0 && (
@@ -797,12 +1080,53 @@ function SidebarContent({
           )}
         </nav>
 
+        {/* Divider */}
+        <div className="h-px bg-slate-400/40 dark:bg-slate-600/40 my-6 mx-4 transition-all duration-300" />
+
+        {/* Dark Mode Toggle */}
+        {isAuthenticated && (
+          <div className={`${isDesktopCollapsed ? "px-0" : "px-4"} mb-2`}>
+            <button
+              onClick={toggleDarkMode}
+              className={`group flex items-center ${
+                isDesktopCollapsed
+                  ? "justify-center w-12 h-12 mx-auto bg-slate-50/80 shadow-sm border border-slate-200/60 dark:bg-slate-800/80 dark:border-slate-700/60"
+                  : "gap-3 px-4 py-2.5 w-full hover:bg-slate-50 dark:hover:bg-slate-800/60"
+              } rounded-xl transition-all duration-300 text-slate-600 hover:text-indigo-600 dark:text-slate-400 dark:hover:text-indigo-400`}
+              title={isDesktopCollapsed ? "Toggle Theme" : undefined}
+            >
+              <div
+                className={`transition-transform duration-300 group-hover:scale-110 group-hover:rotate-12 shrink-0 ${isDarkMode ? "text-indigo-500" : "text-amber-500"}`}
+              >
+                {isDarkMode ? <Moon size={18} /> : <Sun size={18} />}
+              </div>
+              {!isDesktopCollapsed && (
+                <>
+                  <span className="text-sm font-semibold flex-1 text-left">
+                    Dark Mode
+                  </span>
+                  <div
+                    className={`w-8 h-4 rounded-full relative transition-colors duration-300 ${isDarkMode ? "bg-indigo-500/80" : "bg-slate-200 dark:bg-slate-700"}`}
+                  >
+                    <motion.div
+                      layout
+                      className={`absolute top-0.5 w-3 h-3 rounded-full bg-white shadow-sm ${isDarkMode ? "right-0.5" : "left-0.5"}`}
+                    />
+                  </div>
+                </>
+              )}
+            </button>
+          </div>
+        )}
+
         {/* Collapsible Sections */}
-        <div className={`overflow-hidden transition-all duration-300 ${isDesktopCollapsed ? "max-h-0 opacity-0" : "max-h-[500px] opacity-100"}`}>
+        <div className="overflow-hidden transition-all duration-300">
           {isAuthenticated && (
             <CollapsibleSection
               title="Extra Options"
               isDesktopCollapsed={isDesktopCollapsed}
+              onToggleDesktop={onToggleDesktop}
+              showTreeLines={true}
               icon={<Sparkles size={16} className="text-amber-500" />}
             >
               <Link
@@ -811,8 +1135,13 @@ function SidebarContent({
                 onClick={closeAndNavigate}
                 title={isDesktopCollapsed ? "Personalization" : undefined}
               >
-              <SlidersHorizontal className="shrink-0" size={isDesktopCollapsed ? 18 : 14} />
-              <span className={`overflow-hidden whitespace-nowrap transition-all duration-300 ${isDesktopCollapsed ? "max-w-0 opacity-0" : "max-w-[200px] opacity-100"}`}>
+                <SlidersHorizontal
+                  className="shrink-0"
+                  size={isDesktopCollapsed ? 18 : 14}
+                />
+                <span
+                  className={`overflow-hidden whitespace-nowrap transition-all duration-300 ${isDesktopCollapsed ? "max-w-0 opacity-0" : "max-w-[200px] opacity-100"}`}
+                >
                   Personalization
                 </span>
               </Link>
@@ -822,8 +1151,14 @@ function SidebarContent({
                 onClick={closeAndNavigate}
                 title={isDesktopCollapsed ? "Appearance" : undefined}
               >
-              <SidebarIcon className="shrink-0" name="palette" size={isDesktopCollapsed ? 18 : 14} />
-              <span className={`overflow-hidden whitespace-nowrap transition-all duration-300 ${isDesktopCollapsed ? "max-w-0 opacity-0" : "max-w-[200px] opacity-100"}`}>
+                <SidebarIcon
+                  className="shrink-0"
+                  name="palette"
+                  size={isDesktopCollapsed ? 18 : 14}
+                />
+                <span
+                  className={`overflow-hidden whitespace-nowrap transition-all duration-300 ${isDesktopCollapsed ? "max-w-0 opacity-0" : "max-w-[200px] opacity-100"}`}
+                >
                   Appearance
                 </span>
               </Link>
@@ -833,8 +1168,14 @@ function SidebarContent({
                 onClick={closeAndNavigate}
                 title={isDesktopCollapsed ? "Subscriptions" : undefined}
               >
-              <SidebarIcon className="shrink-0" name="gem" size={isDesktopCollapsed ? 18 : 14} />
-              <span className={`overflow-hidden whitespace-nowrap transition-all duration-300 ${isDesktopCollapsed ? "max-w-0 opacity-0" : "max-w-[200px] opacity-100"}`}>
+                <SidebarIcon
+                  className="shrink-0"
+                  name="gem"
+                  size={isDesktopCollapsed ? 18 : 14}
+                />
+                <span
+                  className={`overflow-hidden whitespace-nowrap transition-all duration-300 ${isDesktopCollapsed ? "max-w-0 opacity-0" : "max-w-[200px] opacity-100"}`}
+                >
                   Subscriptions
                 </span>
               </Link>
@@ -844,6 +1185,8 @@ function SidebarContent({
           <CollapsibleSection
             title="More Info"
             isDesktopCollapsed={isDesktopCollapsed}
+            onToggleDesktop={onToggleDesktop}
+            showTreeLines={true}
             icon={<HelpCircle size={16} className="text-blue-500" />}
           >
             <Link
@@ -852,8 +1195,14 @@ function SidebarContent({
               onClick={closeAndNavigate}
               title={isDesktopCollapsed ? "About NextNews" : undefined}
             >
-            <SidebarIcon className="shrink-0" name="info" size={isDesktopCollapsed ? 18 : 14} />
-            <span className={`overflow-hidden whitespace-nowrap transition-all duration-300 ${isDesktopCollapsed ? "max-w-0 opacity-0" : "max-w-[200px] opacity-100"}`}>
+              <SidebarIcon
+                className="shrink-0"
+                name="info"
+                size={isDesktopCollapsed ? 18 : 14}
+              />
+              <span
+                className={`overflow-hidden whitespace-nowrap transition-all duration-300 ${isDesktopCollapsed ? "max-w-0 opacity-0" : "max-w-[200px] opacity-100"}`}
+              >
                 About NextNews
               </span>
             </Link>
@@ -863,8 +1212,13 @@ function SidebarContent({
               onClick={closeAndNavigate}
               title={isDesktopCollapsed ? "Contact Support" : undefined}
             >
-            <LifeBuoy className="shrink-0" size={isDesktopCollapsed ? 18 : 14} />
-            <span className={`overflow-hidden whitespace-nowrap transition-all duration-300 ${isDesktopCollapsed ? "max-w-0 opacity-0" : "max-w-[200px] opacity-100"}`}>
+              <LifeBuoy
+                className="shrink-0"
+                size={isDesktopCollapsed ? 18 : 14}
+              />
+              <span
+                className={`overflow-hidden whitespace-nowrap transition-all duration-300 ${isDesktopCollapsed ? "max-w-0 opacity-0" : "max-w-[200px] opacity-100"}`}
+              >
                 Contact Support
               </span>
             </Link>
@@ -874,8 +1228,14 @@ function SidebarContent({
               onClick={closeAndNavigate}
               title={isDesktopCollapsed ? "Privacy Policy" : undefined}
             >
-            <SidebarIcon className="shrink-0" name="shield" size={isDesktopCollapsed ? 18 : 14} />
-            <span className={`overflow-hidden whitespace-nowrap transition-all duration-300 ${isDesktopCollapsed ? "max-w-0 opacity-0" : "max-w-[200px] opacity-100"}`}>
+              <SidebarIcon
+                className="shrink-0"
+                name="shield"
+                size={isDesktopCollapsed ? 18 : 14}
+              />
+              <span
+                className={`overflow-hidden whitespace-nowrap transition-all duration-300 ${isDesktopCollapsed ? "max-w-0 opacity-0" : "max-w-[200px] opacity-100"}`}
+              >
                 Privacy Policy
               </span>
             </Link>
@@ -883,7 +1243,9 @@ function SidebarContent({
         </div>
       </div>
 
-      <div className={`p-4 border-t border-[var(--border)] ${isDesktopCollapsed ? "flex justify-center p-3" : ""}`}>
+      <div
+        className={`p-4 border-t border-[var(--border)] ${isDesktopCollapsed ? "flex justify-center p-3" : ""}`}
+      >
         {isAuthenticated ? (
           <div className={`relative ${isDesktopCollapsed ? "" : "w-full"}`}>
             <button
@@ -895,8 +1257,14 @@ function SidebarContent({
                   setUserMenuOpen(!userMenuOpen);
                 }
               }}
-              className={`flex items-center ${isDesktopCollapsed ? "justify-center" : "gap-3 px-2 w-full"} py-2 rounded-xl hover:bg-slate-50 transition-colors text-left focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--primary)] dark:hover:bg-slate-800`}
-              title={isDesktopCollapsed ? `Signed in as ${userEmail}` : undefined}
+              className={`flex items-center ${
+                isDesktopCollapsed
+                  ? "justify-center w-12 h-12 mx-auto bg-slate-50/80 shadow-sm border border-slate-200/60 dark:bg-slate-800/80 dark:border-slate-700/60"
+                  : "gap-3 px-2 w-full"
+              } py-2 rounded-xl hover:bg-slate-100 transition-all text-left focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--primary)] dark:hover:bg-slate-800`}
+              title={
+                isDesktopCollapsed ? `Signed in as ${userEmail}` : undefined
+              }
             >
               <img
                 src={
@@ -907,9 +1275,11 @@ function SidebarContent({
                 alt="User Avatar"
                 width={36}
                 height={36}
-                className="w-9 h-9 rounded-full border-2 border-slate-200 shrink-0"
+                className="w-9 h-9 rounded-full border-2 border-slate-200 dark:border-slate-700/80 shrink-0"
               />
-              <div className={`flex items-center overflow-hidden transition-all duration-300 ${isDesktopCollapsed ? "max-w-0 opacity-0" : "max-w-[200px] opacity-100 flex-1 min-w-0"}`}>
+              <div
+                className={`flex items-center overflow-hidden transition-all duration-300 ${isDesktopCollapsed ? "max-w-0 opacity-0" : "max-w-[200px] opacity-100 flex-1 min-w-0"}`}
+              >
                 <div className="flex-1 min-w-0">
                   <span className="font-medium text-sm text-slate-700 block truncate dark:text-slate-200">
                     {userEmail}
@@ -924,31 +1294,92 @@ function SidebarContent({
               </div>
             </button>
 
-            {userMenuOpen && !isDesktopCollapsed && (
-              <div className="absolute bottom-full left-0 mb-2 w-full rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 py-1 z-50">
-                <div className="px-4 py-2 text-sm text-slate-500 border-b">
-                  Signed in as <br />
-                  <strong className="text-slate-800 truncate block">
-                    {userEmail}
-                  </strong>
-                </div>
-                <Link
-                  href="/settings"
-                  className="flex items-center gap-2 px-4 py-2 text-sm text-slate-700 hover:bg-slate-100"
-                  onClick={closeAndNavigate}
+            <AnimatePresence>
+              {userMenuOpen && !isDesktopCollapsed && (
+                <motion.div
+                  initial={{ opacity: 0, y: 14, scale: 0.98 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: 10, scale: 0.98 }}
+                  transition={{ type: "spring", stiffness: 320, damping: 26 }}
+                  className="absolute bottom-full left-0 mb-4 w-full rounded-2xl shadow-2xl bg-white border border-slate-100 p-2 z-50 backdrop-blur-xl ring-1 ring-slate-200/70 origin-bottom dark:bg-slate-900/95 dark:border-slate-700/80 dark:ring-slate-700/60 dark:shadow-slate-950/60"
                 >
-                  <Settings size={16} className="text-slate-500" />
-                  Settings
-                </Link>
-                <button
-                  onClick={handleSignOut}
-                  className="flex items-center gap-2 w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-100"
-                >
-                  <LogOut size={16} className="text-red-500" />
-                  Logout
-                </button>
-              </div>
-            )}
+                  {/* Profile Header */}
+                  <div className="flex items-center gap-3 p-3 mb-2">
+                    <img
+                      src={`https://ui-avatars.com/api/?name=${userEmail}&background=random`}
+                      className="w-10 h-10 rounded-full border-2 border-indigo-50 dark:border-indigo-900/40"
+                      alt="Avatar"
+                    />
+                    <div className="min-w-0">
+                      <p className="text-sm font-bold text-slate-900 dark:text-white truncate">
+                        Signed in as
+                      </p>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
+                        {userEmail}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Unique Membership Widget */}
+                  <div className="mx-1 mb-2 p-3 rounded-xl bg-gradient-to-br from-indigo-500/10 to-purple-500/10 border border-indigo-100/60 dark:from-indigo-500/20 dark:to-purple-500/20 dark:border-indigo-500/40">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-[10px] font-black uppercase tracking-widest text-indigo-500 dark:text-indigo-400">
+                        Subscription
+                      </span>
+                      <div
+                        className={`flex items-center gap-1 ${planName === "FREE" ? "bg-slate-400" : "bg-indigo-500 animate-pulse"} px-2 py-0.5 rounded-full shadow-lg shadow-indigo-500/20`}
+                      >
+                        <Crown size={10} className="text-white" />
+                        <span className="text-[10px] font-black text-white">
+                          {planName}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="space-y-1.5">
+                      <div className="flex justify-between text-[10px] font-bold text-slate-500 dark:text-slate-400">
+                        <span>Weekly Goal</span>
+                        <span>
+                          {realGoal.current}/{realGoal.target} Activities
+                        </span>
+                      </div>
+                      <div className="h-1.5 w-full bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden">
+                        <motion.div
+                          initial={{ width: 0 }}
+                          animate={{
+                            width: `${Math.min(100, (realGoal.current / realGoal.target) * 100)}%`,
+                          }}
+                          transition={{ duration: 1.5, ease: "easeOut" }}
+                          className="h-full bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Menu Items Group */}
+                  <div className="bg-slate-50/90 rounded-xl p-1 border border-slate-100/80 dark:bg-slate-800/70 dark:border-slate-700/60 mb-2">
+                    <Link
+                      href="/settings"
+                      className="flex items-center gap-3 px-3 py-2.5 text-sm font-semibold text-slate-700 rounded-lg hover:bg-white hover:text-indigo-600 hover:shadow-sm transition-all dark:text-slate-200 dark:hover:bg-slate-800/80 dark:hover:text-indigo-300"
+                      onClick={closeAndNavigate}
+                    >
+                      <Settings size={18} className="text-slate-400" />
+                      Settings
+                    </Link>
+                  </div>
+
+                  {/* Footer Action */}
+                  <button
+                    onClick={handleSignOut}
+                    className="flex items-center gap-3 w-full px-3 py-2.5 text-sm font-bold text-red-600 rounded-xl bg-red-50/50 hover:bg-red-100 transition-colors dark:text-red-300 dark:bg-red-950/40 dark:hover:bg-red-950/70 dark:border dark:border-red-900/50 group"
+                  >
+                    <div className="p-1.5 rounded-lg bg-white dark:bg-slate-900/80 shadow-sm transition-transform group-hover:scale-110">
+                      <LogOut size={16} />
+                    </div>
+                    Logout
+                  </button>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         ) : (
           <Link
@@ -971,44 +1402,139 @@ function CollapsibleSection({
   children,
   isDesktopCollapsed,
   icon,
+  defaultOpen = false,
+  showTreeLines = false,
+  onToggleDesktop,
 }: {
   title: React.ReactNode;
   children: React.ReactNode;
   isDesktopCollapsed?: boolean;
   icon?: React.ReactNode;
+  defaultOpen?: boolean;
+  showTreeLines?: boolean;
+  onToggleDesktop?: () => void;
 }) {
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(defaultOpen);
+  const flattenedChildren = (Array.isArray(children) ? children : [children])
+    .flat()
+    .filter(Boolean);
 
   return (
     <div className="mt-2">
-      <div className={`overflow-hidden transition-all duration-300 ${isDesktopCollapsed ? "max-h-0 opacity-0" : "max-h-12 opacity-100"}`}>
+      <div
+        className={`transition-all duration-300 ${isDesktopCollapsed ? "w-12 h-12 mx-auto" : "max-h-12 opacity-100"}`}
+      >
         <button
-          onClick={() => setIsOpen(!isOpen)}
-          className={`flex items-center justify-between w-full px-4 py-2.5 text-sm font-semibold rounded-xl transition-all duration-200 group ${
-            isOpen 
-              ? "bg-slate-50 text-slate-900 shadow-sm ring-1 ring-slate-200/50 dark:bg-slate-800/50 dark:text-slate-100 dark:ring-slate-700/50" 
-              : "text-slate-600 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800/50 dark:hover:text-slate-200"
+          onClick={() => {
+            if (isDesktopCollapsed) {
+              onToggleDesktop?.();
+              setIsOpen(true);
+            } else {
+              setIsOpen(!isOpen);
+            }
+          }}
+          className={`flex items-center ${isDesktopCollapsed ? "justify-center p-0 h-12 w-12 bg-slate-50/80 shadow-sm border border-slate-200/60 dark:bg-slate-800/80 dark:border-slate-700/60" : "justify-between w-full px-4 py-2.5"} text-sm font-semibold rounded-xl transition-all duration-200 group ${
+            isOpen && !isDesktopCollapsed
+              ? "bg-slate-50 text-slate-900 shadow-sm ring-1 ring-slate-200/50 dark:bg-slate-800/50 dark:text-slate-100 dark:ring-slate-700/50"
+              : "text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200"
           }`}
+          title={
+            isDesktopCollapsed && typeof title === "string" ? title : undefined
+          }
         >
-          <div className="flex items-center gap-3 min-w-0">
-            {icon && <div className="shrink-0 flex items-center justify-center">{icon}</div>}
-            <span className="whitespace-nowrap truncate">{title}</span>
+          <div
+            className={`flex items-center ${isDesktopCollapsed ? "justify-center" : "gap-3"} min-w-0`}
+          >
+            {icon && (
+              <div className="shrink-0 flex items-center justify-center">
+                {icon}
+              </div>
+            )}
+            {!isDesktopCollapsed && (
+              <span className="whitespace-nowrap truncate">{title}</span>
+            )}
           </div>
-          <ChevronDown
-            size={16}
-            className={`transition-transform duration-300 shrink-0 ${isOpen ? "rotate-180" : "opacity-60 group-hover:opacity-100"}`}
-          />
+          {!isDesktopCollapsed && (
+            <ChevronDown
+              size={16}
+              className={`transition-transform duration-300 shrink-0 ${isOpen ? "rotate-180" : "opacity-60 group-hover:opacity-100"}`}
+            />
+          )}
         </button>
       </div>
       <AnimatePresence>
         {isOpen && !isDesktopCollapsed && (
           <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
+            key="content"
+            initial="closed"
+            animate={isOpen && !isDesktopCollapsed ? "open" : "closed"}
+            exit="closed"
+            variants={{
+              open: {
+                height: "auto",
+                opacity: 1,
+                y: 0,
+                transition: {
+                  height: { duration: 0.4, ease: [0.04, 0.62, 0.23, 0.98] },
+                  opacity: { duration: 0.3, delay: 0.1 },
+                  y: { duration: 0.4, ease: "easeOut" },
+                  staggerChildren: 0.1,
+                  delayChildren: 0.05,
+                },
+              },
+              closed: {
+                height: 0,
+                opacity: 0,
+                y: -4,
+                transition: {
+                  height: { duration: 0.3, ease: [0.04, 0.62, 0.23, 0.98] },
+                  opacity: { duration: 0.2 },
+                  y: { duration: 0.2 },
+                  staggerChildren: 0.05,
+                  staggerDirection: -1,
+                },
+              },
+            }}
             className="overflow-hidden"
           >
-            <div className={`space-y-1 ${isDesktopCollapsed ? "py-1" : "py-1"}`}>{children}</div>
+            <div
+              className={`mt-1 ${showTreeLines ? "relative ml-6" : "space-y-1"}`}
+            >
+              {showTreeLines && (
+                <motion.div
+                  variants={{
+                    open: { height: "calc(100% - 22px)", opacity: 1 },
+                    closed: { height: 0, opacity: 0 },
+                  }}
+                  transition={{ duration: 0.5, ease: "easeInOut" }}
+                  className="absolute left-0 -top-2 w-px bg-slate-300 dark:bg-slate-700"
+                />
+              )}
+
+              <div className="space-y-1">
+                {flattenedChildren.map((child, index) => (
+                  <motion.div
+                    key={index}
+                    variants={{
+                      open: { opacity: 1, y: 0, scale: 1 },
+                      closed: { opacity: 0, y: 20, scale: 0.98 },
+                    }}
+                    className={`relative ${showTreeLines ? "pl-6 group/item" : ""}`}
+                  >
+                    {showTreeLines && (
+                      <motion.div
+                        variants={{
+                          open: { width: 16, opacity: 1 },
+                          closed: { width: 0, opacity: 0 },
+                        }}
+                        className="absolute left-0 top-1/2 -translate-y-1/2 h-5 border-l border-b border-slate-300 dark:border-slate-700 rounded-bl-xl -mt-2.5"
+                      />
+                    )}
+                    {child}
+                  </motion.div>
+                ))}
+              </div>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
