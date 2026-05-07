@@ -40,6 +40,14 @@ export default function SupportPage() {
       a: "Check your email and password. If your account is new, verify your email first.",
     },
     {
+      q: "Where do the Shorts videos come from?",
+      a: "Shorts are fetched from the Dailymotion API (news channel) and filtered by category plus India-related keywords. Playback uses the embedded Dailymotion player.",
+    },
+    {
+      q: "Why does Shorts show no videos for a category?",
+      a: "We only surface India-focused clips that match the selected category. If none are available at the moment, the feed can appear empty. Try another category or check back later.",
+    },
+    {
       q: "What if my saved notes are not loading?",
       a: "Refresh the Notes page and confirm you are using the correct account.",
     },
@@ -431,6 +439,9 @@ export default function SupportPage() {
                           </option>
                           <option value="Live News & Video Playback">
                             Live News & Video Playback
+                          </option>
+                          <option value="Shorts & Video Reels">
+                            Shorts & Video Reels
                           </option>
                           <option value="Privacy & Data Requests">
                             Privacy & Data Requests

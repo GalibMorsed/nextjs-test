@@ -139,11 +139,13 @@ const policySections: PolicySection[] = [
     title: "News, Explore, Search, and Live Coverage",
     icon: Radio,
     paragraphs: [
-      "NextNews relies on external news and media providers to power major parts of the reading experience. This includes top headlines, category pages, search results, explore-page article feeds, live headline signals used by AI helpers, and live-news video discovery.",
+      "NextNews relies on external news and media providers to power major parts of the reading experience. This includes top headlines, category pages, search results, explore-page article feeds, live headline signals used by AI helpers, short-form Shorts videos, and live-news video discovery.",
       "Because these features depend on third-party providers, article availability, metadata quality, thumbnails, region targeting, headline freshness, and external link behavior may vary over time. The app may use source and region context to shape results, but some data shown in the app is supplied by external services rather than created directly by NextNews.",
     ],
     bullets: [
       "News content and headline signals may be requested from NewsAPI or similar services configured by the app.",
+      "Shorts are fetched from the Dailymotion API (news channel) based on category queries and India-related keywords. We display metadata and play videos through the embedded Dailymotion player.",
+      "Shorts availability can vary by category and time because results are filtered to India-focused clips.",
       "Live-news discovery may use the YouTube Data API and may direct users to YouTube or embedded live streams.",
       "Live-stream videos, thumbnails, titles, channel names, and related metadata remain the property and responsibility of their respective owners, publishers, or platform providers, not NextNews.",
       "NextNews acts as a discovery and access layer for third-party live coverage and does not claim ownership of, license to, or editorial control over third-party live-stream content unless explicitly stated otherwise.",
@@ -203,7 +205,7 @@ const policySections: PolicySection[] = [
       "Information may also be disclosed where reasonably necessary to protect the service, enforce terms, investigate abuse, comply with valid legal processes, or complete a business or infrastructure transition if the app changes ownership structure in the future.",
     ],
     bullets: [
-      "Current service integrations include Supabase for authentication and database functions, NewsAPI for news retrieval, OpenRouter for AI requests, Dodo Payments for billing, and YouTube services for live-news discovery.",
+      "Current service integrations include Supabase for authentication and database functions, NewsAPI for news retrieval, OpenRouter for AI requests, Dodo Payments for billing, Dailymotion for Shorts discovery and playback, and YouTube services for live-news discovery.",
       "Integrations include payment processors, invoicing tools, anti-fraud tools, customer-support systems, and subscription-management platforms.",
       "Partner-facing data-sharing features are governed by explicit product disclosures and operational controls.",
     ],
@@ -306,7 +308,8 @@ export default function PrivacyPolicyPage() {
                 personalization, AI-powered assistance, notes, settings, support
                 tools, and active subscription capabilities. This policy
                 explains how those product areas interact with user information
-                and how NextNews approaches privacy in its production environment.
+                and how NextNews approaches privacy in its production
+                environment.
               </p>
 
               <p className="mt-3 text-sm leading-7 text-slate-500 dark:text-slate-400 sm:text-base">

@@ -27,6 +27,10 @@ export const faqs = [
     a: "Our platform aggregates data 24/7, providing real-time updates and breaking news alerts almost instantly.",
   },
   {
+    q: "Where do the NextNews Shorts videos come from?",
+    a: "Shorts are short-form news clips fetched through the Dailymotion API (news channel). We filter results by category and India-related keywords, then play them using an embedded Dailymotion player.",
+  },
+  {
     q: "Who curates the news on NextNews?",
     a: "We aggregate news from thousands of verified global publishers. Our AI then categorizes and summarizes the content, while keeping the original context intact.",
   },
@@ -295,6 +299,10 @@ export const faqs = [
     a: "You can read our comprehensive privacy policy by clicking the 'Privacy Policy' link in the website footer.",
   },
   {
+    q: "Does NextNews store or edit the Shorts videos?",
+    a: "No. We only display metadata like title, thumbnail, and duration and embed the original Dailymotion player. Rights remain with the original publishers and platforms.",
+  },
+  {
     q: "Do you share my email with advertisers?",
     a: "Absolutely not. NextNews maintains a strict no-sale policy regarding user contact information.",
   },
@@ -343,6 +351,10 @@ export const faqs = [
   {
     q: "Why are images not loading?",
     a: "If you have a slow connection, NextNews prioritizes text. Check if you have 'Data Saver Mode' enabled in your settings.",
+  },
+  {
+    q: "Why are Shorts missing or showing no videos?",
+    a: "Shorts only surfaces India-focused clips that match your chosen category. If none are available at the moment, the feed may be empty. Try another category or check back later.",
   },
   {
     q: "How do I stop browser notifications?",
