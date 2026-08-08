@@ -2,7 +2,6 @@ import RegisterReminder from "./components/registerReminder";
 import WeeklyRoundup from "./components/weeklyRoundup/WeeklyRoundup";
 import TopHeadlinesContent from "./components/topHeadlinesContent";
 import NewsStatsTicker from "./components/newsStatsTicker";
-import FifaSection from "./components/FifaSection";
 import EmptyState from "./components/EmptyState";
 
 // 1. Define types matching your API response
@@ -129,7 +128,6 @@ export default async function Home() {
 
       <RegisterReminder />
       <div className="max-w-7xl mx-auto">
-        <FifaSection />
         <header className="mb-10">
           <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight mb-2 bg-gradient-to-r from-slate-900 via-indigo-900 to-violet-900 bg-clip-text text-transparent dark:from-white dark:via-indigo-100 dark:to-violet-200">
             Top Headlines
